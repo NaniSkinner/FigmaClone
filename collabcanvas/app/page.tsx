@@ -31,6 +31,7 @@ function HomePage() {
     zoomIn,
     zoomOut,
     resetZoom,
+    centerCanvas,
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -47,6 +48,13 @@ function HomePage() {
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
+
+  // Center canvas on initial load
+  useEffect(() => {
+    if (dimensions.width > 0 && dimensions.height > 0) {
+      centerCanvas(dimensions.width, dimensions.height, scale);
+    }
+  }, [dimensions.width, dimensions.height, centerCanvas, scale]);
 
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -69,7 +77,7 @@ function HomePage() {
         scale={scale}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
-        onResetZoom={resetZoom}
+        onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
       />
 
       {/* Main Canvas */}

@@ -8,6 +8,22 @@ export const useCanvas = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
+  // Calculate centered position for canvas
+  const centerCanvas = useCallback(
+    (
+      viewportWidth: number,
+      viewportHeight: number,
+      currentScale: number = 1
+    ) => {
+      const centeredX = (viewportWidth - CANVAS_SIZE.width * currentScale) / 2;
+      const centeredY =
+        (viewportHeight - CANVAS_SIZE.height * currentScale) / 2;
+
+      setPosition({ x: centeredX, y: centeredY });
+    },
+    []
+  );
+
   // Zoom in
   const zoomIn = useCallback(() => {
     setScale((prevScale) => Math.min(prevScale * 1.2, ZOOM_LIMITS.max));
@@ -18,11 +34,18 @@ export const useCanvas = () => {
     setScale((prevScale) => Math.max(prevScale * 0.8, ZOOM_LIMITS.min));
   }, []);
 
-  // Reset zoom to 100%
-  const resetZoom = useCallback(() => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  }, []);
+  // Reset zoom to 100% and center canvas
+  const resetZoom = useCallback(
+    (viewportWidth?: number, viewportHeight?: number) => {
+      setScale(1);
+      if (viewportWidth && viewportHeight) {
+        centerCanvas(viewportWidth, viewportHeight, 1);
+      } else {
+        setPosition({ x: 0, y: 0 });
+      }
+    },
+    [centerCanvas]
+  );
 
   // Handle wheel zoom
   const handleWheel = useCallback(
@@ -86,6 +109,7 @@ export const useCanvas = () => {
     zoomIn,
     zoomOut,
     resetZoom,
+    centerCanvas,
     handleWheel,
     handleDragStart,
     handleDragEnd,

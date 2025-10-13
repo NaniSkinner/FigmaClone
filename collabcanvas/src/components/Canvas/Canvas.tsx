@@ -3,12 +3,11 @@
 import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Line } from "react-konva";
 import Konva from "konva";
-import { useCanvas } from "@/hooks/useCanvas";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useCanvasStore } from "@/store";
 import { ObjectRenderer } from "@/components/Objects";
 import { CanvasObject } from "@/types";
-import { DEFAULT_RECTANGLE_STYLE } from "@/lib/constants";
+import { DEFAULT_RECTANGLE_STYLE, CANVAS_SIZE } from "@/lib/constants";
 import { v4 as uuidv4 } from "uuid";
 
 interface CanvasProps {
@@ -45,7 +44,7 @@ export default function Canvas({
     height: number;
   } | null>(null);
 
-  const { canvasSize } = useCanvas();
+  const canvasSize = CANVAS_SIZE;
 
   const { objects, selectedObjectId, setSelectedObjectId, updateObject } =
     useCanvasStore();
@@ -88,24 +87,26 @@ export default function Canvas({
       return;
     }
 
-    const clickedOnEmpty =
-      e.target === e.target.getStage() ||
-      e.target.name() === "background" ||
-      (e.target.getClassName() === "Rect" &&
-        (e.target.attrs.fill === "#F5F5F5" || e.target.attrs.fill === "white"));
-
     // Check if Shift key is held for panning
     const isShiftPressed = e.evt.shiftKey;
+
+    // Determine what was clicked
+    const clickedOnBackground = e.target.name() === "background";
+    const clickedOnCanvas = e.target.name() === "canvas-area";
+    const clickedOnEmpty =
+      clickedOnBackground ||
+      clickedOnCanvas ||
+      e.target === e.target.getStage();
 
     if (clickedOnEmpty) {
       setSelectedObjectId(null);
 
-      if (isShiftPressed) {
-        // Start panning mode
+      // If clicked on gray background, always start panning
+      if (clickedOnBackground) {
         setIsPanning(true);
         setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
-      } else {
-        // Start drawing mode - but only within canvas bounds
+      } else if (clickedOnCanvas && !isShiftPressed) {
+        // Clicked on white canvas area - start drawing
         const stage = stageRef.current;
         const point = stage.getPointerPosition();
 
@@ -113,16 +114,12 @@ export default function Canvas({
         const x = (point.x - position.x) / scale;
         const y = (point.y - position.y) / scale;
 
-        // Only allow drawing if click is within canvas bounds
-        if (
-          x >= 0 &&
-          x <= canvasSize.width &&
-          y >= 0 &&
-          y <= canvasSize.height
-        ) {
-          setIsDrawing(true);
-          setNewRect({ x, y, width: 0, height: 0 });
-        }
+        setIsDrawing(true);
+        setNewRect({ x, y, width: 0, height: 0 });
+      } else if (isShiftPressed) {
+        // Shift + click anywhere - pan
+        setIsPanning(true);
+        setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
       }
     }
   };
@@ -279,22 +276,24 @@ export default function Canvas({
         onMouseUp={handleMouseUp}
       >
         <Layer>
-          {/* Background */}
+          {/* Background - Gray Grid Area */}
           <Rect
             name="background"
             className="background"
-            x={-1000}
-            y={-1000}
-            width={canvasSize.width + 2000}
-            height={canvasSize.height + 2000}
+            x={-10000}
+            y={-10000}
+            width={canvasSize.width + 20000}
+            height={canvasSize.height + 20000}
             fill="#F5F5F5"
+            listening={true}
           />
 
           {/* Grid */}
           {gridLines}
 
-          {/* Canvas boundary */}
+          {/* Canvas boundary - White Drawing Area */}
           <Rect
+            name="canvas-area"
             x={0}
             y={0}
             width={canvasSize.width}
@@ -302,6 +301,7 @@ export default function Canvas({
             stroke="#D0D0D0"
             strokeWidth={2}
             fill="white"
+            listening={true}
           />
 
           {/* Render all objects */}
