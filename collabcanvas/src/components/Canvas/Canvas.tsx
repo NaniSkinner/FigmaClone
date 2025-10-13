@@ -50,10 +50,8 @@ export default function Canvas({
 
   const { objects, selectedObjectId, setSelectedObjectId, updateObject } =
     useCanvasStore();
-  const { createObject, updateObjectInFirestore } = useRealtimeSync(
-    canvasId,
-    userId
-  );
+  const { createObject, updateObjectInFirestore, deleteObject } =
+    useRealtimeSync(canvasId, userId);
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -67,6 +65,22 @@ export default function Canvas({
       container.removeEventListener("wheel", handleWheel);
     };
   }, [handleWheel]);
+
+  // Add keyboard event listener for delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedObjectId) {
+        e.preventDefault();
+        deleteObject(selectedObjectId);
+        setSelectedObjectId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedObjectId, deleteObject, setSelectedObjectId]);
 
   // Handle mouse down to start drawing a rectangle or panning
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
