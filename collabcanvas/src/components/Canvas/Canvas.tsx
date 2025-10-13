@@ -70,6 +70,11 @@ export default function Canvas({
 
   // Handle mouse down to start drawing a rectangle or panning
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Don't interfere if clicking on a draggable object (like rectangles)
+    if (e.target.draggable && e.target.draggable()) {
+      return;
+    }
+
     const clickedOnEmpty =
       e.target === e.target.getStage() ||
       e.target.name() === "background" ||
@@ -103,6 +108,16 @@ export default function Canvas({
 
   // Handle mouse move to update rectangle size while drawing or pan canvas
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Don't interfere with object dragging
+    if (
+      e.target.draggable &&
+      e.target.draggable() &&
+      e.target.isDragging &&
+      e.target.isDragging()
+    ) {
+      return;
+    }
+
     if (isPanning && panStart) {
       // Handle panning
       const dx = e.evt.clientX - panStart.x;
@@ -222,9 +237,6 @@ export default function Canvas({
         x={position.x}
         y={position.y}
         draggable={false}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragMove={handleDragMove}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
