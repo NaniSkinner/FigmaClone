@@ -11,23 +11,23 @@ export const ZOOM_LIMITS = {
 
 // Object styling
 export const DEFAULT_RECTANGLE_STYLE = {
-  fill: "#D4E7C5", // Matcha latte
-  stroke: "#B4A7D6", // Lavender purple
-  strokeWidth: 2,
+  fill: "#7BA05B", // Darker matcha green
+  stroke: "#8B5CF6", // Brighter purple
+  strokeWidth: 3,
 };
 
-// User colors for cursor and presence
+// User colors for cursor and presence (darker, more vibrant colors)
 export const USER_COLORS = [
-  "#FF6B6B",
-  "#4ECDC4",
-  "#45B7D1",
-  "#96CEB4",
-  "#FFEAA7",
-  "#DDA15E",
-  "#BC6C25",
-  "#A8DADC",
-  "#E63946",
-  "#F1FAEE",
+  "#B91C1C", // Dark red
+  "#6B8E4E", // Dark matcha green
+  "#1E40AF", // Deep blue
+  "#6B21A8", // Dark purple
+  "#C2410C", // Dark orange
+  "#BE185D", // Deep pink
+  "#581C87", // Deeper purple
+  "#15803D", // Dark forest green
+  "#7E22CE", // Rich purple
+  "#A16207", // Dark gold
 ];
 
 // Real-time sync settings

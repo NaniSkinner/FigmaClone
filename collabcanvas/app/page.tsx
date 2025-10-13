@@ -23,7 +23,15 @@ function HomePage() {
     canvasId,
     user?.id || null
   );
-  const { scale, zoomIn, zoomOut, resetZoom } = useCanvas();
+  const {
+    scale,
+    position,
+    setPosition,
+    handleWheel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+  } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Get window dimensions
@@ -71,6 +79,10 @@ function HomePage() {
           height={dimensions.height}
           userId={user?.id || null}
           canvasId={canvasId}
+          scale={scale}
+          position={position}
+          setPosition={setPosition}
+          handleWheel={handleWheel}
         />
       )}
     </div>

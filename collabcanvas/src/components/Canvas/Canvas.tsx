@@ -16,6 +16,10 @@ interface CanvasProps {
   height: number;
   userId: string | null;
   canvasId: string;
+  scale: number;
+  position: { x: number; y: number };
+  setPosition: (position: { x: number; y: number }) => void;
+  handleWheel: (e: WheelEvent) => void;
 }
 
 export default function Canvas({
@@ -23,6 +27,10 @@ export default function Canvas({
   height,
   userId,
   canvasId,
+  scale,
+  position,
+  setPosition,
+  handleWheel,
 }: CanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -37,16 +45,7 @@ export default function Canvas({
     height: number;
   } | null>(null);
 
-  const {
-    scale,
-    position,
-    setPosition,
-    handleWheel,
-    handleDragStart,
-    handleDragEnd,
-    handleDragMove,
-    canvasSize,
-  } = useCanvas();
+  const { canvasSize } = useCanvas();
 
   const { objects, selectedObjectId, setSelectedObjectId, updateObject } =
     useCanvasStore();
@@ -106,7 +105,7 @@ export default function Canvas({
         setIsPanning(true);
         setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
       } else {
-        // Start drawing mode
+        // Start drawing mode - but only within canvas bounds
         const stage = stageRef.current;
         const point = stage.getPointerPosition();
 
@@ -114,8 +113,16 @@ export default function Canvas({
         const x = (point.x - position.x) / scale;
         const y = (point.y - position.y) / scale;
 
-        setIsDrawing(true);
-        setNewRect({ x, y, width: 0, height: 0 });
+        // Only allow drawing if click is within canvas bounds
+        if (
+          x >= 0 &&
+          x <= canvasSize.width &&
+          y >= 0 &&
+          y <= canvasSize.height
+        ) {
+          setIsDrawing(true);
+          setNewRect({ x, y, width: 0, height: 0 });
+        }
       }
     }
   };
@@ -149,8 +156,12 @@ export default function Canvas({
       const point = stage.getPointerPosition();
 
       // Convert screen coordinates to canvas coordinates
-      const x = (point.x - position.x) / scale;
-      const y = (point.y - position.y) / scale;
+      let x = (point.x - position.x) / scale;
+      let y = (point.y - position.y) / scale;
+
+      // Clamp coordinates to canvas bounds
+      x = Math.max(0, Math.min(x, canvasSize.width));
+      y = Math.max(0, Math.min(y, canvasSize.height));
 
       const width = x - newRect.x;
       const height = y - newRect.y;
@@ -177,13 +188,25 @@ export default function Canvas({
 
     // Only create if rectangle is large enough (at least 10x10)
     if (Math.abs(newRect.width) > 10 && Math.abs(newRect.height) > 10) {
+      // Calculate final position and dimensions
+      let x = newRect.width < 0 ? newRect.x + newRect.width : newRect.x;
+      let y = newRect.height < 0 ? newRect.y + newRect.height : newRect.y;
+      let width = Math.abs(newRect.width);
+      let height = Math.abs(newRect.height);
+
+      // Ensure the rectangle is fully within canvas bounds
+      x = Math.max(0, Math.min(x, canvasSize.width));
+      y = Math.max(0, Math.min(y, canvasSize.height));
+      width = Math.min(width, canvasSize.width - x);
+      height = Math.min(height, canvasSize.height - y);
+
       const finalRect: CanvasObject = {
         id: uuidv4(),
         type: "rectangle",
-        x: newRect.width < 0 ? newRect.x + newRect.width : newRect.x,
-        y: newRect.height < 0 ? newRect.y + newRect.height : newRect.y,
-        width: Math.abs(newRect.width),
-        height: Math.abs(newRect.height),
+        x,
+        y,
+        width,
+        height,
         fill: DEFAULT_RECTANGLE_STYLE.fill,
         stroke: DEFAULT_RECTANGLE_STYLE.stroke,
         strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
