@@ -49,8 +49,10 @@ export default function CanvasControls({
 
       {/* Help Text */}
       <div className="text-xs text-gray-500 px-2">
-        <div>🖱️ Drag to pan</div>
+        <div>✏️ Click & drag to draw</div>
         <div>⚙️ Scroll to zoom</div>
+        <div>⌨️ Shift + drag to pan</div>
+        <div>📦 Click to select</div>
       </div>
     </div>
   );

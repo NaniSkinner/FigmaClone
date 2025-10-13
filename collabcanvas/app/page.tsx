@@ -18,8 +18,9 @@ export default function Home() {
 
 function HomePage() {
   const { user } = useAuth();
+  const canvasId = "default-canvas";
   const { onlineUsers, updateCursorPosition } = useMultiplayer(
-    "default-canvas",
+    canvasId,
     user?.id || null
   );
   const { scale, zoomIn, zoomOut, resetZoom } = useCanvas();
@@ -65,7 +66,12 @@ function HomePage() {
 
       {/* Main Canvas */}
       {dimensions.width > 0 && (
-        <Canvas width={dimensions.width} height={dimensions.height} />
+        <Canvas
+          width={dimensions.width}
+          height={dimensions.height}
+          userId={user?.id || null}
+          canvasId={canvasId}
+        />
       )}
     </div>
   );

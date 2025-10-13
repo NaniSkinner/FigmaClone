@@ -81,6 +81,7 @@ export const useCanvas = () => {
   return {
     scale,
     position,
+    setPosition,
     isDragging,
     zoomIn,
     zoomOut,
