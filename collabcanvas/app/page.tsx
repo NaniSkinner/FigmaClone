@@ -2,6 +2,8 @@
 
 import AuthGuard from "@/components/Auth/AuthGuard";
 import { useAuth } from "@/hooks/useAuth";
+import { useMultiplayer } from "@/hooks/useMultiplayer";
+import { CursorPresence, OnlineUsers } from "@/components/Multiplayer";
 
 export default function Home() {
   return (
@@ -13,9 +15,27 @@ export default function Home() {
 
 function HomePage() {
   const { user, logout } = useAuth();
+  const { onlineUsers, updateCursorPosition } = useMultiplayer(
+    "default-canvas",
+    user?.id || null
+  );
+
+  // Track mouse movement
+  const handleMouseMove = (e: React.MouseEvent) => {
+    updateCursorPosition(e.clientX, e.clientY);
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+    <div
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Show other users' cursors */}
+      <CursorPresence onlineUsers={onlineUsers} />
+
+      {/* Show online users list */}
+      <OnlineUsers onlineUsers={onlineUsers} currentUserName={user?.name} />
+
       <div className="text-center">
         <h1 className="text-6xl font-bold text-gray-800 mb-4">
           🍵 Mockup Matcha Hub
@@ -51,18 +71,19 @@ function HomePage() {
           </div>
 
           <h2 className="text-2xl font-semibold mb-4 text-gray-700">
-            PR #2: Authentication Complete ✅
+            PR #3: Real-time Cursor Presence ✅
           </h2>
           <ul className="text-left text-gray-600 space-y-2">
-            <li>✅ User authentication</li>
-            <li>✅ Email/password login</li>
-            <li>✅ Anonymous auth</li>
-            <li>✅ User profiles</li>
-            <li>✅ Color assignment</li>
+            <li>✅ Real-time cursor tracking</li>
+            <li>✅ See other users' cursors</li>
+            <li>✅ Online users list</li>
+            <li>✅ Presence system</li>
+            <li>✅ User name labels</li>
           </ul>
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-500">
-              Next up: Real-time Cursor Presence
+              💡 Move your mouse around! Open this page in another browser to
+              see multiplayer in action.
             </p>
           </div>
         </div>
