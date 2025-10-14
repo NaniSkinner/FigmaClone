@@ -5,6 +5,7 @@ import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
 import { CanvasObject } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
+import { ToolMode } from "@/components/Canvas/CanvasControls";
 
 interface RectangleProps {
   object: CanvasObject;
@@ -12,6 +13,8 @@ interface RectangleProps {
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
   onChange: (attrs: Partial<CanvasObject>) => void;
+  tool: ToolMode;
+  onDelete: () => void;
 }
 
 function Rectangle({
@@ -20,6 +23,8 @@ function Rectangle({
   onSelect,
   onDragEnd,
   onChange,
+  tool,
+  onDelete,
 }: RectangleProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -96,6 +101,21 @@ function Rectangle({
     });
   };
 
+  // Handle click based on tool mode
+  const handleClick = () => {
+    if (tool === "delete") {
+      onDelete();
+    } else if (tool === "select") {
+      onSelect();
+    }
+    // In draw and pan mode, don't do anything on click
+  };
+
+  // Determine if object should be draggable based on tool
+  const isDraggable = tool === "select";
+  // Show transformer only in select mode when selected
+  const showTransformer = isSelected && tool === "select";
+
   return (
     <>
       <Rect
@@ -107,14 +127,14 @@ function Rectangle({
         fill={object.fill}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
-        draggable
+        draggable={isDraggable}
         onDragMove={handleDragMove}
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={handleClick}
+        onTap={handleClick}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       />
-      {isSelected && (
+      {showTransformer && (
         <Transformer
           ref={transformerRef}
           boundBoxFunc={(oldBox, newBox) => {

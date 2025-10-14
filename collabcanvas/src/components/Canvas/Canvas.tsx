@@ -9,6 +9,7 @@ import ObjectRenderer from "@/components/Objects/ObjectRenderer";
 import { CanvasObject } from "@/types";
 import { DEFAULT_RECTANGLE_STYLE, CANVAS_SIZE } from "@/lib/constants";
 import { v4 as uuidv4 } from "uuid";
+import { ToolMode } from "@/components/Canvas/CanvasControls";
 
 interface CanvasProps {
   width: number;
@@ -19,6 +20,7 @@ interface CanvasProps {
   position: { x: number; y: number };
   setPosition: (position: { x: number; y: number }) => void;
   handleWheel: (e: WheelEvent) => void;
+  tool: ToolMode;
 }
 
 export default function Canvas({
@@ -30,6 +32,7 @@ export default function Canvas({
   position,
   setPosition,
   handleWheel,
+  tool,
 }: CanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -82,13 +85,10 @@ export default function Canvas({
 
   // Handle mouse down to start drawing a rectangle or panning
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Don't interfere if clicking on a draggable object (like rectangles)
-    if (e.target.draggable && e.target.draggable()) {
+    // Don't interfere if clicking on a draggable object (like rectangles) - unless we're in delete mode
+    if (e.target.draggable && e.target.draggable() && tool !== "delete") {
       return;
     }
-
-    // Check if Shift key is held for panning
-    const isShiftPressed = e.evt.shiftKey;
 
     // Determine what was clicked
     const clickedOnBackground = e.target.name() === "background";
@@ -99,31 +99,43 @@ export default function Canvas({
       e.target === e.target.getStage();
 
     if (clickedOnEmpty) {
-      setSelectedObjectId(null);
+      // Deselect when clicking on empty space (except in delete mode)
+      if (tool !== "delete") {
+        setSelectedObjectId(null);
+      }
 
-      // If clicked on gray background, always start panning
-      if (clickedOnBackground) {
+      // Handle different tool modes
+      if (tool === "draw") {
+        // Draw mode: only draw on white canvas area
+        if (clickedOnCanvas) {
+          const stage = stageRef.current;
+          const point = stage.getPointerPosition();
+
+          // Convert screen coordinates to canvas coordinates
+          let x = (point.x - position.x) / scale;
+          let y = (point.y - position.y) / scale;
+
+          // Clamp initial coordinates to canvas bounds
+          x = Math.max(0, Math.min(x, canvasSize.width));
+          y = Math.max(0, Math.min(y, canvasSize.height));
+
+          setIsDrawing(true);
+          setNewRect({ x, y, width: 0, height: 0 });
+        } else if (clickedOnBackground) {
+          // On gray background, allow panning even in draw mode
+          setIsPanning(true);
+          setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+        }
+      } else if (tool === "pan") {
+        // Pan mode: drag anywhere to pan
         setIsPanning(true);
         setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
-      } else if (clickedOnCanvas && !isShiftPressed) {
-        // Clicked on white canvas area - start drawing
-        const stage = stageRef.current;
-        const point = stage.getPointerPosition();
-
-        // Convert screen coordinates to canvas coordinates
-        let x = (point.x - position.x) / scale;
-        let y = (point.y - position.y) / scale;
-
-        // Clamp initial coordinates to canvas bounds
-        x = Math.max(0, Math.min(x, canvasSize.width));
-        y = Math.max(0, Math.min(y, canvasSize.height));
-
-        setIsDrawing(true);
-        setNewRect({ x, y, width: 0, height: 0 });
-      } else if (isShiftPressed) {
-        // Shift + click anywhere - pan
-        setIsPanning(true);
-        setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+      } else if (tool === "select") {
+        // Select mode: just deselect on empty click (already handled above)
+        // Objects will handle their own selection in Rectangle component
+      } else if (tool === "delete") {
+        // Delete mode: objects will handle their own deletion in Rectangle component
+        // Clicking on empty space does nothing
       }
     }
   };
@@ -324,6 +336,8 @@ export default function Canvas({
             selectedId={selectedObjectId}
             onSelect={setSelectedObjectId}
             onObjectChange={handleObjectChange}
+            tool={tool}
+            onDelete={deleteObject}
           />
 
           {/* Show rectangle being drawn */}

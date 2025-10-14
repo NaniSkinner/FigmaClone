@@ -9,7 +9,7 @@ import { useToast } from "@/contexts/ToastContext";
 import CursorPresence from "@/components/Multiplayer/CursorPresence";
 import OnlineUsers from "@/components/Multiplayer/OnlineUsers";
 import Canvas from "@/components/Canvas/Canvas";
-import CanvasControls from "@/components/Canvas/CanvasControls";
+import CanvasControls, { ToolMode } from "@/components/Canvas/CanvasControls";
 import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
 
@@ -59,6 +59,7 @@ function HomePage() {
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [tool, setTool] = useState<ToolMode>("draw");
 
   // Handle logout
   const handleLogout = async () => {
@@ -142,9 +143,11 @@ function HomePage() {
         {/* Canvas Controls */}
         <CanvasControls
           scale={scale}
+          tool={tool}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
+          onSetTool={setTool}
         />
 
         {/* Main Canvas */}
@@ -158,6 +161,7 @@ function HomePage() {
             position={position}
             setPosition={setPosition}
             handleWheel={handleWheel}
+            tool={tool}
           />
         )}
       </div>
