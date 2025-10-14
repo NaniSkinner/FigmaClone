@@ -5,7 +5,7 @@ import { Stage, Layer, Rect, Line } from "react-konva";
 import Konva from "konva";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useCanvasStore } from "@/store";
-import { ObjectRenderer } from "@/components/Objects";
+import ObjectRenderer from "@/components/Objects/ObjectRenderer";
 import { CanvasObject } from "@/types";
 import { DEFAULT_RECTANGLE_STYLE, CANVAS_SIZE } from "@/lib/constants";
 import { v4 as uuidv4 } from "uuid";

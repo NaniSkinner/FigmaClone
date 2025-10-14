@@ -5,9 +5,12 @@ import AuthGuard from "@/components/Auth/AuthGuard";
 import { useAuth } from "@/hooks/useAuth";
 import { useCanvas } from "@/hooks/useCanvas";
 import { useMultiplayer } from "@/hooks/useMultiplayer";
-import { CursorPresence, OnlineUsers } from "@/components/Multiplayer";
-import { Canvas, CanvasControls } from "@/components/Canvas";
-import { LoadingSpinner, ConnectionStatus } from "@/components/UI";
+import CursorPresence from "@/components/Multiplayer/CursorPresence";
+import OnlineUsers from "@/components/Multiplayer/OnlineUsers";
+import Canvas from "@/components/Canvas/Canvas";
+import CanvasControls from "@/components/Canvas/CanvasControls";
+import LoadingSpinner from "@/components/UI/LoadingSpinner";
+import ConnectionStatus from "@/components/UI/ConnectionStatus";
 
 export default function Home() {
   return (
