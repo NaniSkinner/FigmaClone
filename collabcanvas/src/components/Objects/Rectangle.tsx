@@ -4,6 +4,7 @@ import { Rect, Transformer } from "react-konva";
 import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
 import { CanvasObject } from "@/types";
+import { CANVAS_SIZE } from "@/lib/constants";
 
 interface RectangleProps {
   object: CanvasObject;
@@ -31,8 +32,37 @@ function Rectangle({
     }
   }, [isSelected]);
 
+  // Handle drag move - enforce boundaries in real-time
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const x = node.x();
+    const y = node.y();
+    const width = object.width;
+    const height = object.height;
+
+    // Clamp position to canvas bounds
+    const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
+    const clampedY = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
+
+    // Apply clamped position if it differs
+    if (x !== clampedX || y !== clampedY) {
+      node.x(clampedX);
+      node.y(clampedY);
+    }
+  };
+
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onDragEnd(e.target.x(), e.target.y());
+    // Final clamp on drag end for safety
+    const node = e.target;
+    const x = node.x();
+    const y = node.y();
+    const width = object.width;
+    const height = object.height;
+
+    const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
+    const clampedY = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
+
+    onDragEnd(clampedX, clampedY);
   };
 
   const handleTransformEnd = () => {
@@ -46,11 +76,23 @@ function Rectangle({
     node.scaleX(1);
     node.scaleY(1);
 
+    // Calculate new dimensions
+    let x = node.x();
+    let y = node.y();
+    let width = Math.max(5, node.width() * scaleX);
+    let height = Math.max(5, node.height() * scaleY);
+
+    // Ensure the resized rectangle stays within canvas bounds
+    x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
+    y = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
+    width = Math.min(width, CANVAS_SIZE.width - x);
+    height = Math.min(height, CANVAS_SIZE.height - y);
+
     onChange({
-      x: node.x(),
-      y: node.y(),
-      width: Math.max(5, node.width() * scaleX),
-      height: Math.max(5, node.height() * scaleY),
+      x,
+      y,
+      width,
+      height,
     });
   };
 
@@ -66,6 +108,7 @@ function Rectangle({
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
         draggable
+        onDragMove={handleDragMove}
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={handleDragEnd}
@@ -79,6 +122,39 @@ function Rectangle({
             if (newBox.width < 5 || newBox.height < 5) {
               return oldBox;
             }
+
+            // Constrain to canvas bounds
+            let x = newBox.x;
+            let y = newBox.y;
+            let width = newBox.width;
+            let height = newBox.height;
+
+            // Ensure position is within bounds
+            x = Math.max(0, x);
+            y = Math.max(0, y);
+
+            // Ensure size doesn't exceed canvas from current position
+            const maxWidth = CANVAS_SIZE.width - x;
+            const maxHeight = CANVAS_SIZE.height - y;
+            width = Math.min(width, maxWidth);
+            height = Math.min(height, maxHeight);
+
+            // If any constraint was applied, return adjusted box
+            if (
+              x !== newBox.x ||
+              y !== newBox.y ||
+              width !== newBox.width ||
+              height !== newBox.height
+            ) {
+              return {
+                ...newBox,
+                x,
+                y,
+                width,
+                height,
+              };
+            }
+
             return newBox;
           }}
         />

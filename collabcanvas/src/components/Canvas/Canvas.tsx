@@ -111,8 +111,12 @@ export default function Canvas({
         const point = stage.getPointerPosition();
 
         // Convert screen coordinates to canvas coordinates
-        const x = (point.x - position.x) / scale;
-        const y = (point.y - position.y) / scale;
+        let x = (point.x - position.x) / scale;
+        let y = (point.y - position.y) / scale;
+
+        // Clamp initial coordinates to canvas bounds
+        x = Math.max(0, Math.min(x, canvasSize.width));
+        y = Math.max(0, Math.min(y, canvasSize.height));
 
         setIsDrawing(true);
         setNewRect({ x, y, width: 0, height: 0 });
@@ -197,21 +201,31 @@ export default function Canvas({
       width = Math.min(width, canvasSize.width - x);
       height = Math.min(height, canvasSize.height - y);
 
-      const finalRect: CanvasObject = {
-        id: uuidv4(),
-        type: "rectangle",
-        x,
-        y,
-        width,
-        height,
-        fill: DEFAULT_RECTANGLE_STYLE.fill,
-        stroke: DEFAULT_RECTANGLE_STYLE.stroke,
-        strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
-        userId,
-        createdAt: new Date(),
-      };
+      // Final check: only create if the rectangle is within bounds and still large enough
+      if (
+        x >= 0 &&
+        y >= 0 &&
+        x + width <= canvasSize.width &&
+        y + height <= canvasSize.height &&
+        width >= 10 &&
+        height >= 10
+      ) {
+        const finalRect: CanvasObject = {
+          id: uuidv4(),
+          type: "rectangle",
+          x,
+          y,
+          width,
+          height,
+          fill: DEFAULT_RECTANGLE_STYLE.fill,
+          stroke: DEFAULT_RECTANGLE_STYLE.stroke,
+          strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
+          userId,
+          createdAt: new Date(),
+        };
 
-      await createObject(finalRect);
+        await createObject(finalRect);
+      }
     }
 
     setNewRect(null);
