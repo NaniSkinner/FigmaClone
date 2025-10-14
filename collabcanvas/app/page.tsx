@@ -21,7 +21,7 @@ export default function Home() {
 }
 
 function HomePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const canvasId = "default-canvas";
   const { onlineUsers, updateCursorPosition } = useMultiplayer(
     canvasId,
@@ -40,6 +40,16 @@ function HomePage() {
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Firebase auth will redirect to login page via AuthGuard
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   // Get window dimensions
   useEffect(() => {
@@ -82,6 +92,27 @@ function HomePage() {
       >
         {/* Connection Status */}
         <ConnectionStatus />
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="fixed top-4 left-4 z-50 px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow-lg border border-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
+          title="Logout"
+        >
+          <span>⏻</span>
+          <span className="hidden sm:inline">Logout</span>
+        </button>
+
+        {/* App Title */}
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg border border-gray-200">
+          <h1
+            className="text-base sm:text-xl md:text-2xl font-bold flex items-center gap-2"
+            style={{ color: "#7BA05B" }}
+          >
+            <span className="text-xl sm:text-2xl md:text-3xl">🍵</span>
+            <span>Mockup Matcha Hub</span>
+          </h1>
+        </div>
 
         {/* Show other users' cursors */}
         <CursorPresence onlineUsers={onlineUsers} />
