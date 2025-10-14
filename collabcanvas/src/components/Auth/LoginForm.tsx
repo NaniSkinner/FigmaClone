@@ -9,7 +9,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { signUp, login, loginAnonymously, loading, error } = useAuth();
+  const { signUp, login, loading, error } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,16 +22,6 @@ export default function LoginForm() {
       } else {
         await login(email, password);
       }
-      router.push("/");
-    } catch (err: any) {
-      setLocalError(err.message);
-    }
-  };
-
-  const handleAnonymousLogin = async () => {
-    setLocalError(null);
-    try {
-      await loginAnonymously();
       router.push("/");
     } catch (err: any) {
       setLocalError(err.message);
@@ -118,23 +108,6 @@ export default function LoginForm() {
               : "Don't have an account? Sign up"}
           </button>
         </div>
-
-        <div className="my-8 relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500 font-medium">Or</span>
-          </div>
-        </div>
-
-        <button
-          onClick={handleAnonymousLogin}
-          disabled={loading}
-          className="w-full bg-white text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 disabled:bg-gray-200 disabled:cursor-not-allowed transition-all font-semibold border-2 border-gray-300 hover:border-gray-400 shadow-sm"
-        >
-          Continue as Guest
-        </button>
 
         <p className="mt-8 text-xs text-gray-500 text-center">
           By continuing, you agree to our terms of service
