@@ -98,6 +98,7 @@ function HomePage() {
 
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
+    console.log(`[MouseMove] Calling updateCursorPosition with (${e.clientX}, ${e.clientY})`);
     updateCursorPosition(e.clientX, e.clientY);
   };
 

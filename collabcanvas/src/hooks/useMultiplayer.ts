@@ -12,7 +12,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserPresence } from "@/types";
-import { throttle } from "@/lib/utils";
 import { CURSOR_UPDATE_THROTTLE } from "@/lib/constants";
 
 export const useMultiplayer = (
@@ -25,11 +24,27 @@ export const useMultiplayer = (
     new Map()
   );
   const previousUsersRef = useRef<Set<string>>(new Set());
+  const lastUpdateTimeRef = useRef<number>(0);
 
-  // Update cursor position in Firestore
+  // Update cursor position in Firestore with proper throttling
   const updateCursorPosition = useCallback(
-    throttle((x: number, y: number) => {
-      if (!userId) return;
+    (x: number, y: number) => {
+      if (!userId) {
+        console.log("[Cursor] No userId, skipping update");
+        return;
+      }
+
+      const now = Date.now();
+      const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
+
+      // Throttle: only update if enough time has passed
+      if (timeSinceLastUpdate < CURSOR_UPDATE_THROTTLE) {
+        return;
+      }
+
+      lastUpdateTimeRef.current = now;
+
+      console.log(`[Cursor] Updating position for user ${userId}:`, { x, y });
 
       const presenceRef = doc(db, "presence", userId);
       setDoc(
@@ -39,8 +54,14 @@ export const useMultiplayer = (
           lastSeen: serverTimestamp(),
         },
         { merge: true }
-      );
-    }, CURSOR_UPDATE_THROTTLE),
+      )
+        .then(() => {
+          console.log(`[Cursor] Successfully updated cursor to (${x}, ${y})`);
+        })
+        .catch((error) => {
+          console.error("[Cursor] Error updating cursor position:", error);
+        });
+    },
     [userId]
   );
 
@@ -111,6 +132,7 @@ export const useMultiplayer = (
 
       snapshot.forEach((doc) => {
         const data = doc.data();
+
         // Don't include current user in the list
         if (doc.id !== userId) {
           const userPresence: UserPresence = {
@@ -159,7 +181,7 @@ export const useMultiplayer = (
     });
 
     return () => unsubscribe();
-  }, [userId, onUserJoined, onUserLeft, onlineUsers]);
+  }, [userId, onUserJoined, onUserLeft]);
 
   return {
     onlineUsers,
