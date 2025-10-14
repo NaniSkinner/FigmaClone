@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { CanvasObject } from "@/types";
 import Rectangle from "./Rectangle";
 
@@ -10,7 +11,7 @@ interface ObjectRendererProps {
   onObjectChange: (id: string, attrs: Partial<CanvasObject>) => void;
 }
 
-export default function ObjectRenderer({
+function ObjectRenderer({
   objects,
   selectedId,
   onSelect,
@@ -36,3 +37,5 @@ export default function ObjectRenderer({
     </>
   );
 }
+
+export default memo(ObjectRenderer);

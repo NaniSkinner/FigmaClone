@@ -1,7 +1,7 @@
 "use client";
 
 import { Rect, Transformer } from "react-konva";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
 import { CanvasObject } from "@/types";
 
@@ -13,7 +13,7 @@ interface RectangleProps {
   onChange: (attrs: Partial<CanvasObject>) => void;
 }
 
-export default function Rectangle({
+function Rectangle({
   object,
   isSelected,
   onSelect,
@@ -86,3 +86,5 @@ export default function Rectangle({
     </>
   );
 }
+
+export default memo(Rectangle);

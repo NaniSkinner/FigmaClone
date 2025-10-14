@@ -1,12 +1,13 @@
 "use client";
 
+import { memo } from "react";
 import { UserPresence } from "@/types";
 
 interface CursorProps {
   user: UserPresence;
 }
 
-export default function Cursor({ user }: CursorProps) {
+function Cursor({ user }: CursorProps) {
   return (
     <div
       className="pointer-events-none fixed z-50 transition-all duration-75 ease-out"
@@ -44,3 +45,5 @@ export default function Cursor({ user }: CursorProps) {
     </div>
   );
 }
+
+export default memo(Cursor);

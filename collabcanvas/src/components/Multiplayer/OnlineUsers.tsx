@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { UserPresence } from "@/types";
 
 interface OnlineUsersProps {
@@ -8,10 +8,7 @@ interface OnlineUsersProps {
   currentUserName?: string;
 }
 
-export default function OnlineUsers({
-  onlineUsers,
-  currentUserName,
-}: OnlineUsersProps) {
+function OnlineUsers({ onlineUsers, currentUserName }: OnlineUsersProps) {
   const userCount = onlineUsers.size + 1; // +1 for current user
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 16 });
@@ -103,3 +100,5 @@ export default function OnlineUsers({
     </div>
   );
 }
+
+export default memo(OnlineUsers);

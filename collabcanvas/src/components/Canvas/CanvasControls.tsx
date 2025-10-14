@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 interface CanvasControlsProps {
   scale: number;
   onZoomIn: () => void;
@@ -7,7 +9,7 @@ interface CanvasControlsProps {
   onResetZoom: () => void;
 }
 
-export default function CanvasControls({
+function CanvasControls({
   scale,
   onZoomIn,
   onZoomOut,
@@ -96,3 +98,5 @@ export default function CanvasControls({
     </div>
   );
 }
+
+export default memo(CanvasControls);
