@@ -55,7 +55,6 @@ function HomePage() {
     zoomIn,
     zoomOut,
     resetZoom,
-    centerCanvas,
     fitToScreen,
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
