@@ -52,7 +52,7 @@ class ErrorBoundary extends Component<Props, State> {
               Oops! Something went wrong
             </h1>
             <p className="text-gray-600 mb-6">
-              We encountered an unexpected error. Don't worry, your work is
+              We encountered an unexpected error. Don&apos;t worry, your work is
               saved in the cloud.
             </p>
             {this.state.error && (
