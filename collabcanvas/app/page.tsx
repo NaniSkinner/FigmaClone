@@ -7,6 +7,7 @@ import { useCanvas } from "@/hooks/useCanvas";
 import { useMultiplayer } from "@/hooks/useMultiplayer";
 import { CursorPresence, OnlineUsers } from "@/components/Multiplayer";
 import { Canvas, CanvasControls } from "@/components/Canvas";
+import { LoadingSpinner, ConnectionStatus } from "@/components/UI";
 
 export default function Home() {
   return (
@@ -32,8 +33,10 @@ function HomePage() {
     zoomOut,
     resetZoom,
     centerCanvas,
+    fitToScreen,
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get window dimensions
   useEffect(() => {
@@ -49,12 +52,16 @@ function HomePage() {
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // Center canvas on initial load
+  // Fit canvas to screen on initial load and hide loading spinner
   useEffect(() => {
     if (dimensions.width > 0 && dimensions.height > 0) {
-      centerCanvas(dimensions.width, dimensions.height, scale);
+      fitToScreen(dimensions.width, dimensions.height);
+      // Small delay to ensure canvas is ready
+      const timer = setTimeout(() => setIsLoading(false), 500);
+      return () => clearTimeout(timer);
     }
-  }, [dimensions.width, dimensions.height, centerCanvas, scale]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dimensions.width, dimensions.height]); // Only run when dimensions change, not when scale changes
 
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -62,37 +69,45 @@ function HomePage() {
   };
 
   return (
-    <div
-      className="w-screen h-screen overflow-hidden"
-      onMouseMove={handleMouseMove}
-    >
-      {/* Show other users' cursors */}
-      <CursorPresence onlineUsers={onlineUsers} />
+    <>
+      {/* Loading Spinner */}
+      {isLoading && <LoadingSpinner />}
 
-      {/* Show online users list */}
-      <OnlineUsers onlineUsers={onlineUsers} currentUserName={user?.name} />
+      <div
+        className="w-screen h-screen overflow-hidden bg-gray-50"
+        onMouseMove={handleMouseMove}
+      >
+        {/* Connection Status */}
+        <ConnectionStatus />
 
-      {/* Canvas Controls */}
-      <CanvasControls
-        scale={scale}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
-      />
+        {/* Show other users' cursors */}
+        <CursorPresence onlineUsers={onlineUsers} />
 
-      {/* Main Canvas */}
-      {dimensions.width > 0 && (
-        <Canvas
-          width={dimensions.width}
-          height={dimensions.height}
-          userId={user?.id || null}
-          canvasId={canvasId}
+        {/* Show online users list */}
+        <OnlineUsers onlineUsers={onlineUsers} currentUserName={user?.name} />
+
+        {/* Canvas Controls */}
+        <CanvasControls
           scale={scale}
-          position={position}
-          setPosition={setPosition}
-          handleWheel={handleWheel}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
         />
-      )}
-    </div>
+
+        {/* Main Canvas */}
+        {dimensions.width > 0 && (
+          <Canvas
+            width={dimensions.width}
+            height={dimensions.height}
+            userId={user?.id || null}
+            canvasId={canvasId}
+            scale={scale}
+            position={position}
+            setPosition={setPosition}
+            handleWheel={handleWheel}
+          />
+        )}
+      </div>
+    </>
   );
 }

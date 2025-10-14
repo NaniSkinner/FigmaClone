@@ -24,6 +24,27 @@ export const useCanvas = () => {
     []
   );
 
+  // Fit entire canvas to screen with padding
+  const fitToScreen = useCallback(
+    (viewportWidth: number, viewportHeight: number) => {
+      const padding = 100; // 100px padding on all sides
+      const availableWidth = viewportWidth - padding * 2;
+      const availableHeight = viewportHeight - padding * 2;
+
+      // Calculate scale to fit both width and height
+      const scaleX = availableWidth / CANVAS_SIZE.width;
+      const scaleY = availableHeight / CANVAS_SIZE.height;
+
+      // Use the smaller scale to ensure entire canvas is visible
+      const fitScale = Math.min(scaleX, scaleY, 1); // Don't zoom in beyond 100%
+      const clampedScale = Math.max(fitScale, ZOOM_LIMITS.min); // Respect min zoom
+
+      setScale(clampedScale);
+      centerCanvas(viewportWidth, viewportHeight, clampedScale);
+    },
+    [centerCanvas]
+  );
+
   // Zoom in
   const zoomIn = useCallback(() => {
     setScale((prevScale) => Math.min(prevScale * 1.2, ZOOM_LIMITS.max));
@@ -110,6 +131,7 @@ export const useCanvas = () => {
     zoomOut,
     resetZoom,
     centerCanvas,
+    fitToScreen,
     handleWheel,
     handleDragStart,
     handleDragEnd,
