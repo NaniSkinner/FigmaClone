@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   collection,
   doc,
@@ -15,10 +15,16 @@ import { UserPresence } from "@/types";
 import { throttle } from "@/lib/utils";
 import { CURSOR_UPDATE_THROTTLE } from "@/lib/constants";
 
-export const useMultiplayer = (canvasId: string, userId: string | null) => {
+export const useMultiplayer = (
+  canvasId: string,
+  userId: string | null,
+  onUserJoined?: (userName: string) => void,
+  onUserLeft?: (userName: string) => void
+) => {
   const [onlineUsers, setOnlineUsers] = useState<Map<string, UserPresence>>(
     new Map()
   );
+  const previousUsersRef = useRef<Set<string>>(new Set());
 
   // Update cursor position in Firestore
   const updateCursorPosition = useCallback(
@@ -101,12 +107,13 @@ export const useMultiplayer = (canvasId: string, userId: string | null) => {
 
     const unsubscribe = onSnapshot(presenceQuery, (snapshot) => {
       const users = new Map<string, UserPresence>();
+      const currentUserIds = new Set<string>();
 
       snapshot.forEach((doc) => {
         const data = doc.data();
         // Don't include current user in the list
         if (doc.id !== userId) {
-          users.set(doc.id, {
+          const userPresence: UserPresence = {
             userId: doc.id,
             cursor: data.cursor || { x: 0, y: 0 },
             lastSeen: data.lastSeen?.toDate() || new Date(),
@@ -115,15 +122,44 @@ export const useMultiplayer = (canvasId: string, userId: string | null) => {
               name: data.name || "Anonymous",
               color: data.color || "#999",
             },
-          });
+          };
+          users.set(doc.id, userPresence);
+          currentUserIds.add(doc.id);
         }
       });
+
+      // Detect new users (joined)
+      if (onUserJoined) {
+        currentUserIds.forEach((id) => {
+          if (!previousUsersRef.current.has(id)) {
+            const user = users.get(id);
+            if (user) {
+              onUserJoined(user.user.name);
+            }
+          }
+        });
+      }
+
+      // Detect users who left
+      if (onUserLeft) {
+        previousUsersRef.current.forEach((id) => {
+          if (!currentUserIds.has(id)) {
+            const user = onlineUsers.get(id);
+            if (user) {
+              onUserLeft(user.user.name);
+            }
+          }
+        });
+      }
+
+      // Update ref with current users
+      previousUsersRef.current = currentUserIds;
 
       setOnlineUsers(users);
     });
 
     return () => unsubscribe();
-  }, [userId]);
+  }, [userId, onUserJoined, onUserLeft, onlineUsers]);
 
   return {
     onlineUsers,

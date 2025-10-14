@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AuthGuard from "@/components/Auth/AuthGuard";
 import { useAuth } from "@/hooks/useAuth";
 import { useCanvas } from "@/hooks/useCanvas";
 import { useMultiplayer } from "@/hooks/useMultiplayer";
+import { useToast } from "@/contexts/ToastContext";
 import CursorPresence from "@/components/Multiplayer/CursorPresence";
 import OnlineUsers from "@/components/Multiplayer/OnlineUsers";
 import Canvas from "@/components/Canvas/Canvas";
@@ -22,10 +23,29 @@ export default function Home() {
 
 function HomePage() {
   const { user, logout } = useAuth();
+  const { addToast } = useToast();
   const canvasId = "default-canvas";
+
+  // Toast callbacks for user join/leave events
+  const handleUserJoined = useCallback(
+    (userName: string) => {
+      addToast(`${userName} joined the canvas 👋`, "info", 3000);
+    },
+    [addToast]
+  );
+
+  const handleUserLeft = useCallback(
+    (userName: string) => {
+      addToast(`${userName} left the canvas 👋`, "info", 3000);
+    },
+    [addToast]
+  );
+
   const { onlineUsers, updateCursorPosition } = useMultiplayer(
     canvasId,
-    user?.id || null
+    user?.id || null,
+    handleUserJoined,
+    handleUserLeft
   );
   const {
     scale,
