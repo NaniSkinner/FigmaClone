@@ -1,4 +1,4 @@
-# 🍵 Mockup Matcha Hub
+#  Mockup Matcha Hub
 
 A **real-time collaborative canvas** application built with Next.js, Firebase, and Konva.js. Design mockups together with your team and see everyone's cursor movements in real-time!
 
@@ -7,9 +7,9 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 [![Firebase](https://img.shields.io/badge/Firebase-12.4-orange)](https://firebase.google.com/)
 [![License](https://img.shields.io/badge/License-GAUNTLET-green)](./LICENSE)
 
-## ✨ Features
+##  Features
 
-### 🎨 Canvas & Objects
+###  Canvas & Objects
 
 - **Infinite canvas** with smooth pan and zoom controls
 - **Draw rectangles** by click & drag
@@ -18,7 +18,7 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 - **Fit to screen** - automatic canvas centering and zoom
 - **Persistent state** - your work is saved in real-time
 
-### 👥 Real-time Collaboration
+###  Real-time Collaboration
 
 - **Live cursor tracking** - see where others are working
 - **User presence** - know who's online with draggable user list
@@ -26,14 +26,14 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 - **Color-coded cursors** - each user gets a unique color
 - **Anonymous usernames** - fun auto-generated names
 
-### 🔐 Authentication
+###  Authentication
 
 - **Email/Password** authentication
 - **Anonymous login** for quick starts
 - **Secure sessions** with Firebase Auth
 - **Auto-generated profiles** with unique colors
 
-### 💅 User Experience
+###  User Experience
 
 - **Responsive design** - works on desktop and mobile
 - **Loading states** - smooth transitions
@@ -42,14 +42,14 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 - **Matcha-themed UI** - beautiful green and purple design
 - **Dark mode support** (removed in final version for consistency)
 
-### ⚡ Performance
+###  Performance
 
 - **Throttled updates** - 20 FPS cursor, 10 FPS object sync
 - **Optimized rendering** - React.memo on key components
 - **Efficient state management** - Zustand for minimal re-renders
 - **Real-time sync** - <100ms latency for object updates
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 ### Frontend
 
@@ -80,7 +80,7 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 
 - **[Vercel](https://vercel.com/)** - Hosting and CI/CD
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -110,7 +110,7 @@ A **real-time collaborative canvas** application built with Next.js, Firebase, a
 
 4. **Get Firebase Configuration**
 
-   - Go to **Project Settings** (⚙️ icon)
+   - Go to **Project Settings** ( icon)
    - Scroll to "Your apps" section
    - Click the web icon (`</>`) to add a web app
    - Register your app and copy the configuration values
@@ -197,7 +197,7 @@ service cloud.firestore {
 }
 ```
 
-## 📖 Usage
+##  Usage
 
 ### Creating Your First Shape
 
@@ -227,79 +227,79 @@ service cloud.firestore {
 - **Profile** - Auto-generated username and color
 - **Session** - Stays logged in until you sign out
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 mockup-matcha-hub/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx               # Root layout with providers
-│   ├── page.tsx                 # Main canvas page
-│   ├── auth/
-│   │   └── page.tsx             # Authentication page
-│   ├── not-found.tsx            # 404 page
-│   └── globals.css              # Global styles
-│
-├── src/
-│   ├── components/
-│   │   ├── Auth/
-│   │   │   ├── AuthGuard.tsx   # Protected route wrapper
-│   │   │   └── LoginForm.tsx   # Login/signup form
-│   │   ├── Canvas/
-│   │   │   ├── Canvas.tsx       # Main Konva canvas
-│   │   │   └── CanvasControls.tsx # Zoom controls toolbar
-│   │   ├── Multiplayer/
-│   │   │   ├── Cursor.tsx       # Individual cursor component
-│   │   │   ├── CursorPresence.tsx # Cursor manager
-│   │   │   └── OnlineUsers.tsx  # Online users list
-│   │   ├── Objects/
-│   │   │   ├── Rectangle.tsx    # Rectangle shape component
-│   │   │   └── ObjectRenderer.tsx # Object list renderer
-│   │   ├── UI/
-│   │   │   ├── LoadingSpinner.tsx # Loading indicator
-│   │   │   └── ConnectionStatus.tsx # Online/offline status
-│   │   ├── ErrorBoundary.tsx    # Error boundary wrapper
-│   │   └── Providers/
-│   │       └── ClientProviders.tsx # Client-side providers
-│   │
-│   ├── hooks/
-│   │   ├── useAuth.ts           # Authentication hook
-│   │   ├── useCanvas.ts         # Canvas state (pan, zoom)
-│   │   ├── useMultiplayer.ts    # Presence & cursor tracking
-│   │   └── useRealtimeSync.ts   # Firestore sync hook
-│   │
-│   ├── lib/
-│   │   ├── firebase.ts          # Firebase initialization
-│   │   ├── constants.ts         # App constants & config
-│   │   └── utils.ts             # Helper functions
-│   │
-│   ├── store/
-│   │   ├── userStore.ts         # User state (Zustand)
-│   │   ├── canvasStore.ts       # Canvas state (Zustand)
-│   │   └── index.ts             # Store exports
-│   │
-│   ├── types/
-│   │   ├── user.ts              # User type definitions
-│   │   ├── canvas.ts            # Canvas type definitions
-│   │   └── index.ts             # Type exports
-│   │
-│   └── __tests__/               # Test files
-│       ├── auth.test.ts
-│       ├── multiplayer.test.ts
-│       ├── canvas.test.ts
-│       └── objectSync.test.ts
-│
-├── public/                       # Static assets
-├── .env.local                    # Environment variables (not in git)
-├── .eslintrc.json               # ESLint configuration
-├── jest.config.js               # Jest configuration
-├── jest.setup.js                # Jest setup file
-├── next.config.ts               # Next.js configuration
-├── tailwind.config.js           # Tailwind CSS configuration
-├── tsconfig.json                # TypeScript configuration
-└── package.json                 # Dependencies & scripts
+ app/                          # Next.js App Router
+�    layout.tsx               # Root layout with providers
+�    page.tsx                 # Main canvas page
+�    auth/
+�   �    page.tsx             # Authentication page
+�    not-found.tsx            # 404 page
+�    globals.css              # Global styles
+�
+ src/
+�    components/
+�   �    Auth/
+�   �   �    AuthGuard.tsx   # Protected route wrapper
+�   �   �    LoginForm.tsx   # Login/signup form
+�   �    Canvas/
+�   �   �    Canvas.tsx       # Main Konva canvas
+�   �   �    CanvasControls.tsx # Zoom controls toolbar
+�   �    Multiplayer/
+�   �   �    Cursor.tsx       # Individual cursor component
+�   �   �    CursorPresence.tsx # Cursor manager
+�   �   �    OnlineUsers.tsx  # Online users list
+�   �    Objects/
+�   �   �    Rectangle.tsx    # Rectangle shape component
+�   �   �    ObjectRenderer.tsx # Object list renderer
+�   �    UI/
+�   �   �    LoadingSpinner.tsx # Loading indicator
+�   �   �    ConnectionStatus.tsx # Online/offline status
+�   �    ErrorBoundary.tsx    # Error boundary wrapper
+�   �    Providers/
+�   �        ClientProviders.tsx # Client-side providers
+�   �
+�    hooks/
+�   �    useAuth.ts           # Authentication hook
+�   �    useCanvas.ts         # Canvas state (pan, zoom)
+�   �    useMultiplayer.ts    # Presence & cursor tracking
+�   �    useRealtimeSync.ts   # Firestore sync hook
+�   �
+�    lib/
+�   �    firebase.ts          # Firebase initialization
+�   �    constants.ts         # App constants & config
+�   �    utils.ts             # Helper functions
+�   �
+�    store/
+�   �    userStore.ts         # User state (Zustand)
+�   �    canvasStore.ts       # Canvas state (Zustand)
+�   �    index.ts             # Store exports
+�   �
+�    types/
+�   �    user.ts              # User type definitions
+�   �    canvas.ts            # Canvas type definitions
+�   �    index.ts             # Type exports
+�   �
+�    __tests__/               # Test files
+�        auth.test.ts
+�        multiplayer.test.ts
+�        canvas.test.ts
+�        objectSync.test.ts
+�
+ public/                       # Static assets
+ .env.local                    # Environment variables (not in git)
+ .eslintrc.json               # ESLint configuration
+ jest.config.js               # Jest configuration
+ jest.setup.js                # Jest setup file
+ next.config.ts               # Next.js configuration
+ tailwind.config.js           # Tailwind CSS configuration
+ tsconfig.json                # TypeScript configuration
+ package.json                 # Dependencies & scripts
 ```
 
-## 🧪 Testing
+##  Testing
 
 Run the full test suite:
 
@@ -319,7 +319,7 @@ Run linting:
 npm run lint
 ```
 
-## 📦 Building for Production
+##  Building for Production
 
 Build the production bundle:
 
@@ -339,7 +339,7 @@ Test the production build locally:
 npm run build && npm start
 ```
 
-## 🌐 Deployment
+##  Deployment
 
 ### Deploy to Vercel (Recommended)
 
@@ -375,9 +375,9 @@ This app can be deployed to any platform that supports Next.js:
 - **Railway** - Simple container deployment
 - **DigitalOcean** - App Platform support
 
-## 🎯 Development Roadmap
+##  Development Roadmap
 
-### ✅ Completed
+###  Completed
 
 - **PR #1: Project Foundation** - Next.js setup, Firebase config, type definitions
 - **PR #2: Authentication** - Email/password & anonymous auth, user profiles
@@ -388,7 +388,7 @@ This app can be deployed to any platform that supports Next.js:
 - **PR #7: Performance & Polish** - Error boundaries, React.memo, toast notifications
 - **PR #8: Final Testing & Deployment** - ESLint setup, production build testing
 
-### 🚀 Future Enhancements
+###  Future Enhancements
 
 - **More shapes** - Circles, triangles, lines, arrows
 - **Text tool** - Add and edit text labels
@@ -404,19 +404,19 @@ This app can be deployed to any platform that supports Next.js:
 - **Permissions** - View-only mode for stakeholders
 - **Version history** - Time-travel through changes
 
-## ⚡ Performance Metrics
+##  Performance Metrics
 
 Target performance for optimal user experience:
 
-- ✅ **Cursor updates**: <50ms latency (20 FPS)
-- ✅ **Object sync**: <100ms latency (10 FPS)
-- ✅ **Rendering**: 60 FPS maintained
-- ✅ **Canvas capacity**: 50+ objects per canvas
-- ✅ **Concurrent users**: 5+ users simultaneous
-- ✅ **Initial load**: <2s time to interactive
-- ✅ **Build size**: Optimized with Next.js code splitting
+-  **Cursor updates**: <50ms latency (20 FPS)
+-  **Object sync**: <100ms latency (10 FPS)
+-  **Rendering**: 60 FPS maintained
+-  **Canvas capacity**: 50+ objects per canvas
+-  **Concurrent users**: 5+ users simultaneous
+-  **Initial load**: <2s time to interactive
+-  **Build size**: Optimized with Next.js code splitting
 
-## 🐛 Known Limitations (MVP Scope)
+##  Known Limitations (MVP Scope)
 
 - Single canvas per session (no canvas selection)
 - Rectangle shapes only (no circles, text, or images)
@@ -428,7 +428,7 @@ Target performance for optimal user experience:
 - No canvas versioning or history
 - No mobile touch optimizations (works but not optimized)
 
-## 🤝 Contributing
+##  Contributing
 
 This project was built as a **24-hour MVP sprint** following a structured PR approach. Each PR builds on the previous one:
 
@@ -438,19 +438,19 @@ This project was built as a **24-hour MVP sprint** following a structured PR app
 4. **Push to the branch** (`git push origin feature/amazing-feature`)
 5. **Open a Pull Request**
 
-## 📝 License
+##  License
 
 This project is licensed under the **GAUNTLET** License.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Next.js Team** - For the amazing React framework
 - **Firebase** - For the real-time backend infrastructure
 - **Konva.js** - For the powerful canvas library
 - **Vercel** - For seamless deployment
-- **Matcha** - For the inspiration 🍵
+- **Matcha** - For the inspiration 
 
-## 📧 Contact
+##  Contact
 
 Questions? Issues? Suggestions?
 
@@ -459,6 +459,6 @@ Questions? Issues? Suggestions?
 
 ---
 
-**Built with 🍵 matcha love during a 24-hour development sprint**
+**Built with  matcha love during a 24-hour development sprint**
 
-_Mockup Matcha Hub - Where design collaboration meets real-time magic_ ✨
+_Mockup Matcha Hub - Where design collaboration meets real-time magic_ 
