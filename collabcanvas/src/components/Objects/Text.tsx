@@ -1,23 +1,23 @@
 "use client";
 
-import { Rect, Transformer } from "react-konva";
+import { Text as KonvaText, Transformer } from "react-konva";
 import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
-import { Rectangle as RectangleType } from "@/types";
+import { Text as TextType } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 
-interface RectangleProps {
-  object: RectangleType;
+interface TextProps {
+  object: TextType;
   isSelected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
-  onChange: (attrs: Partial<RectangleType>) => void;
+  onChange: (attrs: Partial<TextType>) => void;
   tool: ToolMode;
   onDelete: () => void;
 }
 
-function Rectangle({
+function Text({
   object,
   isSelected,
   onSelect,
@@ -25,8 +25,8 @@ function Rectangle({
   onChange,
   tool,
   onDelete,
-}: RectangleProps) {
-  const shapeRef = useRef<Konva.Rect>(null);
+}: TextProps) {
+  const shapeRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
 
   useEffect(() => {
@@ -39,11 +39,11 @@ function Rectangle({
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const node = e.target;
+    const node = e.target as Konva.Text;
     const x = node.x();
     const y = node.y();
-    const width = object.width;
-    const height = object.height;
+    const width = node.width();
+    const height = node.height();
 
     // Clamp position to canvas bounds
     const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
@@ -58,11 +58,11 @@ function Rectangle({
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Final clamp on drag end for safety
-    const node = e.target;
+    const node = e.target as Konva.Text;
     const x = node.x();
     const y = node.y();
-    const width = object.width;
-    const height = object.height;
+    const width = node.width();
+    const height = node.height();
 
     const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
     const clampedY = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
@@ -77,27 +77,27 @@ function Rectangle({
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
 
-    // Reset scale to 1 and adjust width/height instead
+    // Reset scale to 1
     node.scaleX(1);
     node.scaleY(1);
 
-    // Calculate new dimensions
+    // Calculate new font size based on scale
+    const newFontSize = Math.max(8, object.fontSize * scaleY);
+
+    // Get new dimensions
     let x = node.x();
     let y = node.y();
-    let width = Math.max(5, node.width() * scaleX);
-    let height = Math.max(5, node.height() * scaleY);
+    let width = node.width() * scaleX;
 
-    // Ensure the resized rectangle stays within canvas bounds
+    // Ensure the text stays within canvas bounds
     x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
-    y = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
-    width = Math.min(width, CANVAS_SIZE.width - x);
-    height = Math.min(height, CANVAS_SIZE.height - y);
+    y = Math.max(0, Math.min(y, CANVAS_SIZE.height - node.height()));
 
     onChange({
       x,
       y,
-      width,
-      height,
+      fontSize: newFontSize,
+      width: width > 20 ? width : undefined,
     });
   };
 
@@ -108,7 +108,7 @@ function Rectangle({
     } else if (tool === "select") {
       onSelect();
     }
-    // In draw and pan mode, don't do anything on click
+    // TODO: PR #10 - Double-click to enter edit mode
   };
 
   // Determine if object should be draggable based on tool
@@ -118,48 +118,47 @@ function Rectangle({
 
   return (
     <>
-      <Rect
+      <KonvaText
         ref={shapeRef}
         x={object.x}
         y={object.y}
-        width={object.width}
-        height={object.height}
+        text={object.text}
+        fontSize={object.fontSize}
+        fontFamily={object.fontFamily}
+        fontStyle={object.fontStyle || "normal"}
         fill={object.fill}
-        stroke={object.stroke}
-        strokeWidth={object.strokeWidth}
+        width={object.width}
         draggable={isDraggable}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
+        wrap="word"
       />
       {showTransformer && (
         <Transformer
           ref={transformerRef}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 20 || newBox.height < 10) {
               return oldBox;
             }
 
-            // Constrain to canvas bounds
+            // Ensure position is within bounds
             let x = newBox.x;
             let y = newBox.y;
             let width = newBox.width;
             let height = newBox.height;
 
-            // Ensure position is within bounds
             x = Math.max(0, x);
             y = Math.max(0, y);
 
-            // Ensure size doesn't exceed canvas from current position
             const maxWidth = CANVAS_SIZE.width - x;
             const maxHeight = CANVAS_SIZE.height - y;
             width = Math.min(width, maxWidth);
             height = Math.min(height, maxHeight);
 
-            // If any constraint was applied, return adjusted box
             if (
               x !== newBox.x ||
               y !== newBox.y ||
@@ -177,10 +176,11 @@ function Rectangle({
 
             return newBox;
           }}
+          rotateEnabled={false}
         />
       )}
     </>
   );
 }
 
-export default memo(Rectangle);
+export default memo(Text);

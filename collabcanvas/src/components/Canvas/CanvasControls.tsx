@@ -2,7 +2,14 @@
 
 import { memo } from "react";
 
-export type ToolMode = "draw" | "pan" | "select" | "delete";
+export type ToolMode =
+  | "rectangle"
+  | "circle"
+  | "line"
+  | "text"
+  | "pan"
+  | "select"
+  | "delete";
 
 interface CanvasControlsProps {
   scale: number;
@@ -67,49 +74,86 @@ function CanvasControls({
 
       {/* Tool Buttons */}
       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
-        {/* Draw */}
+        {/* Select */}
         <button
-          onClick={() => onSetTool("draw")}
-          className={getToolButtonStyles("draw")}
-          title="Draw Tool - Click & drag to draw rectangles"
+          onClick={() => onSetTool("select")}
+          className={getToolButtonStyles("select")}
+          title="Select Tool (V) - Click to select objects"
         >
-          <span className="text-sm sm:text-base md:text-lg">✏️</span>
+          <span className="text-sm sm:text-base md:text-lg">↖️</span>
           <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Draw
-          </span>
-          <span className="hidden sm:inline lg:hidden whitespace-nowrap text-xs">
-            Draw
+            Select
           </span>
         </button>
         {/* Pan */}
         <button
           onClick={() => onSetTool("pan")}
           className={getToolButtonStyles("pan")}
-          title="Pan Tool - Drag to pan the canvas"
+          title="Pan Tool (H) - Drag to pan the canvas"
         >
           <span className="text-sm sm:text-base md:text-lg">🤚</span>
           <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
             Pan
           </span>
-          <span className="hidden sm:inline lg:hidden whitespace-nowrap text-xs">
-            Pan
-          </span>
         </button>
-        {/* Select */}
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+
+      {/* Shape Tools */}
+      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
+        {/* Rectangle */}
         <button
-          onClick={() => onSetTool("select")}
-          className={getToolButtonStyles("select")}
-          title="Select Tool - Click to select objects"
+          onClick={() => onSetTool("rectangle")}
+          className={getToolButtonStyles("rectangle")}
+          title="Rectangle Tool (R) - Click & drag to draw rectangles"
         >
-          <span className="text-sm sm:text-base md:text-lg">↖️</span>
+          <span className="text-sm sm:text-base md:text-lg">▭</span>
           <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Select
-          </span>
-          <span className="hidden sm:inline lg:hidden whitespace-nowrap text-xs">
-            Select
+            Rectangle
           </span>
         </button>
-        {/* Delete */}
+        {/* Circle */}
+        <button
+          onClick={() => onSetTool("circle")}
+          className={getToolButtonStyles("circle")}
+          title="Circle Tool (C) - Click & drag to draw circles"
+        >
+          <span className="text-sm sm:text-base md:text-lg">⭕</span>
+          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
+            Circle
+          </span>
+        </button>
+        {/* Line */}
+        <button
+          onClick={() => onSetTool("line")}
+          className={getToolButtonStyles("line")}
+          title="Line Tool (L) - Click & drag to draw lines"
+        >
+          <span className="text-sm sm:text-base md:text-lg">📏</span>
+          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
+            Line
+          </span>
+        </button>
+        {/* Text */}
+        <button
+          onClick={() => onSetTool("text")}
+          className={getToolButtonStyles("text")}
+          title="Text Tool (T) - Click to place text"
+        >
+          <span className="text-sm sm:text-base md:text-lg">T</span>
+          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
+            Text
+          </span>
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+
+      {/* Delete Tool */}
+      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
         <button
           onClick={() => onSetTool("delete")}
           className={getToolButtonStyles("delete")}
@@ -117,9 +161,6 @@ function CanvasControls({
         >
           <span className="text-sm sm:text-base md:text-lg">🗑️</span>
           <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Delete
-          </span>
-          <span className="hidden sm:inline lg:hidden whitespace-nowrap text-xs">
             Delete
           </span>
         </button>

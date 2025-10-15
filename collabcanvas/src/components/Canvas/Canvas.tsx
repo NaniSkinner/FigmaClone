@@ -1,13 +1,19 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { Stage, Layer, Rect, Line } from "react-konva";
+import { Stage, Layer, Rect, Line, Circle, Text } from "react-konva";
 import Konva from "konva";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useCanvasStore } from "@/store";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
 import { CanvasObject } from "@/types";
-import { DEFAULT_RECTANGLE_STYLE, CANVAS_SIZE } from "@/lib/constants";
+import {
+  DEFAULT_RECTANGLE_STYLE,
+  DEFAULT_CIRCLE_STYLE,
+  DEFAULT_LINE_STYLE,
+  DEFAULT_TEXT_STYLE,
+  CANVAS_SIZE,
+} from "@/lib/constants";
 import { v4 as uuidv4 } from "uuid";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 
@@ -46,6 +52,14 @@ export default function Canvas({
     width: number;
     height: number;
   } | null>(null);
+  const [newCircle, setNewCircle] = useState<{
+    x: number;
+    y: number;
+    radius: number;
+  } | null>(null);
+  const [newLine, setNewLine] = useState<{
+    points: [number, number, number, number];
+  } | null>(null);
 
   const canvasSize = CANVAS_SIZE;
 
@@ -83,9 +97,9 @@ export default function Canvas({
     };
   }, [selectedObjectId, deleteObject, setSelectedObjectId]);
 
-  // Handle mouse down to start drawing a rectangle or panning
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Don't interfere if clicking on a draggable object (like rectangles) - unless we're in delete mode
+  // Handle mouse down to start drawing a shape or panning
+  const handleMouseDown = async (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Don't interfere if clicking on a draggable object - unless we're in delete mode
     if (e.target.draggable && e.target.draggable() && tool !== "delete") {
       return;
     }
@@ -104,25 +118,63 @@ export default function Canvas({
         setSelectedObjectId(null);
       }
 
+      // Get click position in canvas coordinates
+      const stage = stageRef.current;
+      const point = stage.getPointerPosition();
+      let x = (point.x - position.x) / scale;
+      let y = (point.y - position.y) / scale;
+
+      // Clamp initial coordinates to canvas bounds
+      x = Math.max(0, Math.min(x, canvasSize.width));
+      y = Math.max(0, Math.min(y, canvasSize.height));
+
       // Handle different tool modes
-      if (tool === "draw") {
-        // Draw mode: only draw on white canvas area
+      if (tool === "rectangle") {
+        // Rectangle mode: only draw on white canvas area
         if (clickedOnCanvas) {
-          const stage = stageRef.current;
-          const point = stage.getPointerPosition();
-
-          // Convert screen coordinates to canvas coordinates
-          let x = (point.x - position.x) / scale;
-          let y = (point.y - position.y) / scale;
-
-          // Clamp initial coordinates to canvas bounds
-          x = Math.max(0, Math.min(x, canvasSize.width));
-          y = Math.max(0, Math.min(y, canvasSize.height));
-
           setIsDrawing(true);
           setNewRect({ x, y, width: 0, height: 0 });
         } else if (clickedOnBackground) {
-          // On gray background, allow panning even in draw mode
+          // On gray background, allow panning
+          setIsPanning(true);
+          setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+        }
+      } else if (tool === "circle") {
+        // Circle mode: only draw on white canvas area
+        if (clickedOnCanvas) {
+          setIsDrawing(true);
+          setNewCircle({ x, y, radius: 0 });
+        } else if (clickedOnBackground) {
+          setIsPanning(true);
+          setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+        }
+      } else if (tool === "line") {
+        // Line mode: only draw on white canvas area
+        if (clickedOnCanvas) {
+          setIsDrawing(true);
+          setNewLine({ points: [x, y, x, y] });
+        } else if (clickedOnBackground) {
+          setIsPanning(true);
+          setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+        }
+      } else if (tool === "text") {
+        // Text mode: click to place text
+        if (clickedOnCanvas && userId) {
+          const textObject: CanvasObject = {
+            id: uuidv4(),
+            type: "text",
+            x,
+            y,
+            text: "Enter text",
+            fontSize: DEFAULT_TEXT_STYLE.fontSize,
+            fontFamily: DEFAULT_TEXT_STYLE.fontFamily,
+            fill: DEFAULT_TEXT_STYLE.fill,
+            userId,
+            createdAt: new Date(),
+          };
+          await createObject(textObject);
+          setSelectedObjectId(textObject.id);
+        } else if (clickedOnBackground) {
           setIsPanning(true);
           setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
         }
@@ -132,15 +184,15 @@ export default function Canvas({
         setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
       } else if (tool === "select") {
         // Select mode: just deselect on empty click (already handled above)
-        // Objects will handle their own selection in Rectangle component
+        // Objects will handle their own selection in shape components
       } else if (tool === "delete") {
-        // Delete mode: objects will handle their own deletion in Rectangle component
+        // Delete mode: objects will handle their own deletion
         // Clicking on empty space does nothing
       }
     }
   };
 
-  // Handle mouse move to update rectangle size while drawing or pan canvas
+  // Handle mouse move to update shape size while drawing or pan canvas
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // Don't interfere with object dragging
     if (
@@ -163,8 +215,8 @@ export default function Canvas({
       });
 
       setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
-    } else if (isDrawing && newRect) {
-      // Handle drawing
+    } else if (isDrawing) {
+      // Handle drawing for different shapes
       const stage = stageRef.current;
       const point = stage.getPointerPosition();
 
@@ -176,10 +228,21 @@ export default function Canvas({
       x = Math.max(0, Math.min(x, canvasSize.width));
       y = Math.max(0, Math.min(y, canvasSize.height));
 
-      const width = x - newRect.x;
-      const height = y - newRect.y;
-
-      setNewRect({ ...newRect, width, height });
+      if (newRect) {
+        // Rectangle drawing
+        const width = x - newRect.x;
+        const height = y - newRect.y;
+        setNewRect({ ...newRect, width, height });
+      } else if (newCircle) {
+        // Circle drawing (radius from center)
+        const dx = x - newCircle.x;
+        const dy = y - newCircle.y;
+        const radius = Math.sqrt(dx * dx + dy * dy);
+        setNewCircle({ ...newCircle, radius });
+      } else if (newLine) {
+        // Line drawing (update end point)
+        setNewLine({ points: [newLine.points[0], newLine.points[1], x, y] });
+      }
     }
   };
 
@@ -191,56 +254,121 @@ export default function Canvas({
       return;
     }
 
-    if (!isDrawing || !newRect || !userId) {
+    if (!isDrawing || !userId) {
       setIsDrawing(false);
       setNewRect(null);
+      setNewCircle(null);
+      setNewLine(null);
       return;
     }
 
     setIsDrawing(false);
 
-    // Only create if rectangle is large enough (at least 10x10)
-    if (Math.abs(newRect.width) > 10 && Math.abs(newRect.height) > 10) {
-      // Calculate final position and dimensions
-      let x = newRect.width < 0 ? newRect.x + newRect.width : newRect.x;
-      let y = newRect.height < 0 ? newRect.y + newRect.height : newRect.y;
-      let width = Math.abs(newRect.width);
-      let height = Math.abs(newRect.height);
+    // Create rectangle
+    if (newRect) {
+      // Only create if rectangle is large enough (at least 10x10)
+      if (Math.abs(newRect.width) > 10 && Math.abs(newRect.height) > 10) {
+        // Calculate final position and dimensions
+        let x = newRect.width < 0 ? newRect.x + newRect.width : newRect.x;
+        let y = newRect.height < 0 ? newRect.y + newRect.height : newRect.y;
+        let width = Math.abs(newRect.width);
+        let height = Math.abs(newRect.height);
 
-      // Ensure the rectangle is fully within canvas bounds
-      x = Math.max(0, Math.min(x, canvasSize.width));
-      y = Math.max(0, Math.min(y, canvasSize.height));
-      width = Math.min(width, canvasSize.width - x);
-      height = Math.min(height, canvasSize.height - y);
+        // Ensure the rectangle is fully within canvas bounds
+        x = Math.max(0, Math.min(x, canvasSize.width));
+        y = Math.max(0, Math.min(y, canvasSize.height));
+        width = Math.min(width, canvasSize.width - x);
+        height = Math.min(height, canvasSize.height - y);
 
-      // Final check: only create if the rectangle is within bounds and still large enough
-      if (
-        x >= 0 &&
-        y >= 0 &&
-        x + width <= canvasSize.width &&
-        y + height <= canvasSize.height &&
-        width >= 10 &&
-        height >= 10
-      ) {
-        const finalRect: CanvasObject = {
-          id: uuidv4(),
-          type: "rectangle",
+        // Final check: only create if the rectangle is within bounds and still large enough
+        if (
+          x >= 0 &&
+          y >= 0 &&
+          x + width <= canvasSize.width &&
+          y + height <= canvasSize.height &&
+          width >= 10 &&
+          height >= 10
+        ) {
+          const finalRect: CanvasObject = {
+            id: uuidv4(),
+            type: "rectangle",
+            x,
+            y,
+            width,
+            height,
+            fill: DEFAULT_RECTANGLE_STYLE.fill,
+            stroke: DEFAULT_RECTANGLE_STYLE.stroke,
+            strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
+            userId,
+            createdAt: new Date(),
+          };
+
+          await createObject(finalRect);
+        }
+      }
+      setNewRect(null);
+    }
+
+    // Create circle
+    if (newCircle) {
+      // Only create if circle is large enough (radius at least 5)
+      if (newCircle.radius > 5) {
+        let x = newCircle.x;
+        let y = newCircle.y;
+        let radius = newCircle.radius;
+
+        // Ensure the circle is fully within canvas bounds
+        radius = Math.min(
+          radius,
           x,
           y,
-          width,
-          height,
-          fill: DEFAULT_RECTANGLE_STYLE.fill,
-          stroke: DEFAULT_RECTANGLE_STYLE.stroke,
-          strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
+          canvasSize.width - x,
+          canvasSize.height - y
+        );
+
+        if (radius >= 5) {
+          const finalCircle: CanvasObject = {
+            id: uuidv4(),
+            type: "circle",
+            x,
+            y,
+            radius,
+            fill: DEFAULT_CIRCLE_STYLE.fill,
+            stroke: DEFAULT_CIRCLE_STYLE.stroke,
+            strokeWidth: DEFAULT_CIRCLE_STYLE.strokeWidth,
+            userId,
+            createdAt: new Date(),
+          };
+
+          await createObject(finalCircle);
+        }
+      }
+      setNewCircle(null);
+    }
+
+    // Create line
+    if (newLine) {
+      const [x1, y1, x2, y2] = newLine.points;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      // Only create if line is long enough (at least 10px)
+      if (length > 10) {
+        const finalLine: CanvasObject = {
+          id: uuidv4(),
+          type: "line",
+          points: newLine.points,
+          stroke: DEFAULT_LINE_STYLE.stroke,
+          strokeWidth: DEFAULT_LINE_STYLE.strokeWidth,
           userId,
           createdAt: new Date(),
         };
 
-        await createObject(finalRect);
+        await createObject(finalLine);
       }
+      setNewLine(null);
     }
-
-    setNewRect(null);
   };
 
   // Handle object changes (drag or transform)
@@ -340,7 +468,7 @@ export default function Canvas({
             onDelete={deleteObject}
           />
 
-          {/* Show rectangle being drawn */}
+          {/* Show shape being drawn */}
           {newRect && (
             <Rect
               x={newRect.width < 0 ? newRect.x + newRect.width : newRect.x}
@@ -351,6 +479,27 @@ export default function Canvas({
               stroke={DEFAULT_RECTANGLE_STYLE.stroke}
               strokeWidth={DEFAULT_RECTANGLE_STYLE.strokeWidth}
               opacity={0.7}
+            />
+          )}
+          {newCircle && (
+            <Circle
+              x={newCircle.x}
+              y={newCircle.y}
+              radius={newCircle.radius}
+              fill={DEFAULT_CIRCLE_STYLE.fill}
+              stroke={DEFAULT_CIRCLE_STYLE.stroke}
+              strokeWidth={DEFAULT_CIRCLE_STYLE.strokeWidth}
+              opacity={0.7}
+            />
+          )}
+          {newLine && (
+            <Line
+              points={newLine.points}
+              stroke={DEFAULT_LINE_STYLE.stroke}
+              strokeWidth={DEFAULT_LINE_STYLE.strokeWidth}
+              opacity={0.7}
+              lineCap="round"
+              lineJoin="round"
             />
           )}
         </Layer>

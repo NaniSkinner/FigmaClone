@@ -59,7 +59,7 @@ function HomePage() {
   } = useCanvas();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [tool, setTool] = useState<ToolMode>("draw");
+  const [tool, setTool] = useState<ToolMode>("select");
 
   // Handle logout
   const handleLogout = async () => {
@@ -98,7 +98,9 @@ function HomePage() {
 
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
-    console.log(`[MouseMove] Calling updateCursorPosition with (${e.clientX}, ${e.clientY})`);
+    console.log(
+      `[MouseMove] Calling updateCursorPosition with (${e.clientX}, ${e.clientY})`
+    );
     updateCursorPosition(e.clientX, e.clientY);
   };
 

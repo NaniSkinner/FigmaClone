@@ -16,6 +16,23 @@ export const DEFAULT_RECTANGLE_STYLE = {
   strokeWidth: 3,
 };
 
+export const DEFAULT_CIRCLE_STYLE = {
+  fill: "#7BA05B", // Darker matcha green
+  stroke: "#8B5CF6", // Brighter purple
+  strokeWidth: 3,
+};
+
+export const DEFAULT_LINE_STYLE = {
+  stroke: "#8B5CF6", // Brighter purple
+  strokeWidth: 3,
+};
+
+export const DEFAULT_TEXT_STYLE = {
+  fill: "#1F2937", // Dark gray
+  fontSize: 16,
+  fontFamily: "Arial",
+};
+
 // User colors for cursor and presence (darker, more vibrant colors)
 export const USER_COLORS = [
   "#B91C1C", // Dark red

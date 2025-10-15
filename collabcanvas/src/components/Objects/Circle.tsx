@@ -1,23 +1,23 @@
 "use client";
 
-import { Rect, Transformer } from "react-konva";
+import { Circle as KonvaCircle, Transformer } from "react-konva";
 import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
-import { Rectangle as RectangleType } from "@/types";
+import { Circle as CircleType } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 
-interface RectangleProps {
-  object: RectangleType;
+interface CircleProps {
+  object: CircleType;
   isSelected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
-  onChange: (attrs: Partial<RectangleType>) => void;
+  onChange: (attrs: Partial<CircleType>) => void;
   tool: ToolMode;
   onDelete: () => void;
 }
 
-function Rectangle({
+function Circle({
   object,
   isSelected,
   onSelect,
@@ -25,8 +25,8 @@ function Rectangle({
   onChange,
   tool,
   onDelete,
-}: RectangleProps) {
-  const shapeRef = useRef<Konva.Rect>(null);
+}: CircleProps) {
+  const shapeRef = useRef<Konva.Circle>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
 
   useEffect(() => {
@@ -42,12 +42,11 @@ function Rectangle({
     const node = e.target;
     const x = node.x();
     const y = node.y();
-    const width = object.width;
-    const height = object.height;
+    const radius = object.radius;
 
-    // Clamp position to canvas bounds
-    const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
-    const clampedY = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
+    // Clamp position to canvas bounds (accounting for radius)
+    const clampedX = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
+    const clampedY = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
 
     // Apply clamped position if it differs
     if (x !== clampedX || y !== clampedY) {
@@ -61,11 +60,10 @@ function Rectangle({
     const node = e.target;
     const x = node.x();
     const y = node.y();
-    const width = object.width;
-    const height = object.height;
+    const radius = object.radius;
 
-    const clampedX = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
-    const clampedY = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
+    const clampedX = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
+    const clampedY = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
 
     onDragEnd(clampedX, clampedY);
   };
@@ -77,27 +75,30 @@ function Rectangle({
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
 
-    // Reset scale to 1 and adjust width/height instead
+    // Use average scale to maintain circle shape
+    const avgScale = (scaleX + scaleY) / 2;
+
+    // Reset scale to 1
     node.scaleX(1);
     node.scaleY(1);
 
-    // Calculate new dimensions
+    // Calculate new radius
     let x = node.x();
     let y = node.y();
-    let width = Math.max(5, node.width() * scaleX);
-    let height = Math.max(5, node.height() * scaleY);
+    let radius = Math.max(5, node.radius() * avgScale);
 
-    // Ensure the resized rectangle stays within canvas bounds
-    x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
-    y = Math.max(0, Math.min(y, CANVAS_SIZE.height - height));
-    width = Math.min(width, CANVAS_SIZE.width - x);
-    height = Math.min(height, CANVAS_SIZE.height - y);
+    // Ensure the resized circle stays within canvas bounds
+    x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
+    y = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
+    radius = Math.min(
+      radius,
+      Math.min(CANVAS_SIZE.width - x, CANVAS_SIZE.height - y, x, y)
+    );
 
     onChange({
       x,
       y,
-      width,
-      height,
+      radius,
     });
   };
 
@@ -108,7 +109,6 @@ function Rectangle({
     } else if (tool === "select") {
       onSelect();
     }
-    // In draw and pan mode, don't do anything on click
   };
 
   // Determine if object should be draggable based on tool
@@ -118,12 +118,11 @@ function Rectangle({
 
   return (
     <>
-      <Rect
+      <KonvaCircle
         ref={shapeRef}
         x={object.x}
         y={object.y}
-        width={object.width}
-        height={object.height}
+        radius={object.radius}
         fill={object.fill}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
@@ -139,48 +138,33 @@ function Rectangle({
           ref={transformerRef}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
 
             // Constrain to canvas bounds
-            let x = newBox.x;
-            let y = newBox.y;
-            let width = newBox.width;
-            let height = newBox.height;
+            const radius = Math.min(newBox.width, newBox.height) / 2;
+            let x = newBox.x + newBox.width / 2;
+            let y = newBox.y + newBox.height / 2;
 
-            // Ensure position is within bounds
-            x = Math.max(0, x);
-            y = Math.max(0, y);
-
-            // Ensure size doesn't exceed canvas from current position
-            const maxWidth = CANVAS_SIZE.width - x;
-            const maxHeight = CANVAS_SIZE.height - y;
-            width = Math.min(width, maxWidth);
-            height = Math.min(height, maxHeight);
-
-            // If any constraint was applied, return adjusted box
-            if (
-              x !== newBox.x ||
-              y !== newBox.y ||
-              width !== newBox.width ||
-              height !== newBox.height
-            ) {
-              return {
-                ...newBox,
-                x,
-                y,
-                width,
-                height,
-              };
-            }
+            // Ensure circle stays within bounds
+            x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
+            y = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
 
             return newBox;
           }}
+          // Keep aspect ratio for circles
+          enabledAnchors={[
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+          ]}
+          rotateEnabled={false}
         />
       )}
     </>
   );
 }
 
-export default memo(Rectangle);
+export default memo(Circle);
