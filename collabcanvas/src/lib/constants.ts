@@ -24,7 +24,7 @@ export const DEFAULT_CIRCLE_STYLE = {
 
 export const DEFAULT_LINE_STYLE = {
   stroke: "#8B5CF6", // Brighter purple
-  strokeWidth: 3,
+  strokeWidth: 6,
 };
 
 export const DEFAULT_TEXT_STYLE = {
