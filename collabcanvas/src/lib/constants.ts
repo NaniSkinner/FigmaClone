@@ -29,7 +29,7 @@ export const DEFAULT_LINE_STYLE = {
 
 export const DEFAULT_TEXT_STYLE = {
   fill: "#1F2937", // Dark gray
-  fontSize: 16,
+  fontSize: 32,
   fontFamily: "Arial",
 };
 
