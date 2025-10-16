@@ -6,6 +6,8 @@ import Konva from "konva";
 import { Circle as CircleType } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
+import { useObjectLock } from "@/hooks/useObjectLock";
+import { useUserStore } from "@/store";
 
 interface CircleProps {
   object: CircleType;
@@ -17,6 +19,8 @@ interface CircleProps {
   onChange: (attrs: Partial<CircleType>) => void;
   tool: ToolMode;
   onDelete: () => void;
+  userId: string | null;
+  canvasId: string;
 }
 
 function Circle({
@@ -29,9 +33,24 @@ function Circle({
   onChange,
   tool,
   onDelete,
+  userId,
+  canvasId,
 }: CircleProps) {
   const shapeRef = useRef<Konva.Circle>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { currentUser } = useUserStore();
+  const { acquireLock, releaseLock, stopRenew } = useObjectLock(
+    canvasId,
+    currentUser
+      ? { id: currentUser.id, name: currentUser.name, color: currentUser.color }
+      : null
+  );
+
+  // Check if object is locked by another user
+  const lockActiveByOther =
+    object.lock &&
+    object.lock.userId !== userId &&
+    new Date(object.lock.expiresAt) > new Date();
 
   useEffect(() => {
     if (isSelected && transformerRef.current && shapeRef.current) {
@@ -41,8 +60,15 @@ function Circle({
     }
   }, [isSelected]);
 
-  // Handle drag start
-  const handleDragStart = () => {
+  // Handle drag start - acquire edit lock
+  const handleDragStart = async () => {
+    const got = await acquireLock(object.id, "edit");
+    if (!got) {
+      // Failed to acquire lock, stop drag
+      stopRenew();
+      shapeRef.current?.stopDrag();
+      return;
+    }
     onDragStart?.();
   };
 
@@ -67,7 +93,7 @@ function Circle({
     onDragMove?.(clampedX, clampedY);
   };
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragEnd = async (e: Konva.KonvaEventObject<DragEvent>) => {
     // Final clamp on drag end for safety
     const node = e.target;
     const x = node.x();
@@ -78,9 +104,21 @@ function Circle({
     const clampedY = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
 
     onDragEnd(clampedX, clampedY);
+
+    // Release lock after drag
+    await releaseLock(object.id);
   };
 
-  const handleTransformEnd = () => {
+  const handleTransformStart = async () => {
+    const got = await acquireLock(object.id, "edit");
+    if (!got) {
+      // Failed to acquire lock
+      stopRenew();
+      return;
+    }
+  };
+
+  const handleTransformEnd = async () => {
     const node = shapeRef.current;
     if (!node) return;
 
@@ -114,22 +152,31 @@ function Circle({
       radius,
       rotation,
     });
+
+    // Release lock after transform
+    await releaseLock(object.id);
   };
 
   // Handle click based on tool mode
-  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleClick = async (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
+      // Try to acquire selection lock
+      await acquireLock(object.id, "select");
       onSelect(e.evt.shiftKey);
     }
   };
 
-  // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select" && object.locked !== true;
-  // Show transformer only in select mode when selected and not locked
+  // Determine if object should be draggable based on tool and lock status
+  const isDraggable =
+    tool === "select" && object.locked !== true && !lockActiveByOther;
+  // Show transformer only in select mode when selected and not locked by another user
   const showTransformer =
-    isSelected && tool === "select" && object.locked !== true;
+    isSelected &&
+    tool === "select" &&
+    object.locked !== true &&
+    !lockActiveByOther;
 
   return (
     <>
@@ -148,6 +195,7 @@ function Circle({
         onClick={handleClick}
         onTap={handleClick}
         onDragEnd={handleDragEnd}
+        onTransformStart={handleTransformStart}
         onTransformEnd={handleTransformEnd}
       />
       {showTransformer && (

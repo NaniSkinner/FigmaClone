@@ -6,6 +6,8 @@ import Konva from "konva";
 import { Line as LineType } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
+import { useObjectLock } from "@/hooks/useObjectLock";
+import { useUserStore } from "@/store";
 
 interface LineProps {
   object: LineType;
@@ -17,6 +19,8 @@ interface LineProps {
   onChange: (attrs: Partial<LineType>) => void;
   tool: ToolMode;
   onDelete: () => void;
+  userId: string | null;
+  canvasId: string;
 }
 
 function Line({
@@ -29,9 +33,24 @@ function Line({
   onChange,
   tool,
   onDelete,
+  userId,
+  canvasId,
 }: LineProps) {
   const shapeRef = useRef<Konva.Line>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { currentUser } = useUserStore();
+  const { acquireLock, releaseLock, stopRenew } = useObjectLock(
+    canvasId,
+    currentUser
+      ? { id: currentUser.id, name: currentUser.name, color: currentUser.color }
+      : null
+  );
+
+  // Check if object is locked by another user
+  const lockActiveByOther =
+    object.lock &&
+    object.lock.userId !== userId &&
+    new Date(object.lock.expiresAt) > new Date();
 
   useEffect(() => {
     if (isSelected && transformerRef.current && shapeRef.current) {
@@ -41,8 +60,15 @@ function Line({
     }
   }, [isSelected]);
 
-  // Handle drag start
-  const handleDragStart = () => {
+  // Handle drag start - acquire edit lock
+  const handleDragStart = async () => {
+    const got = await acquireLock(object.id, "edit");
+    if (!got) {
+      // Failed to acquire lock, stop drag
+      stopRenew();
+      shapeRef.current?.stopDrag();
+      return;
+    }
     onDragStart?.();
   };
 
@@ -87,7 +113,7 @@ function Line({
     onDragMove?.(newPoints);
   };
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragEnd = async (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
     const x = node.x();
     const y = node.y();
@@ -111,26 +137,49 @@ function Line({
     node.y(0);
 
     onDragEnd(newPoints);
+
+    // Release lock after drag
+    await releaseLock(object.id);
   };
 
-  const handleTransformEnd = () => {
+  const handleTransformStart = async () => {
+    const got = await acquireLock(object.id, "edit");
+    if (!got) {
+      // Failed to acquire lock
+      stopRenew();
+      return;
+    }
+  };
+
+  const handleTransformEnd = async () => {
     const node = shapeRef.current;
     if (!node) return;
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
     const rotation = node.rotation();
+    const x = node.x();
+    const y = node.y();
 
-    // Reset scale
-    node.scaleX(1);
-    node.scaleY(1);
+    // Get the current points
+    const points = object.points;
 
-    // Calculate new points with scale applied
+    // Calculate the center of the line
+    const centerX = (points[0] + points[2]) / 2;
+    const centerY = (points[1] + points[3]) / 2;
+
+    // Calculate scaled deltas from center
+    const dx1 = (points[0] - centerX) * scaleX;
+    const dy1 = (points[1] - centerY) * scaleY;
+    const dx2 = (points[2] - centerX) * scaleX;
+    const dy2 = (points[3] - centerY) * scaleY;
+
+    // Calculate new absolute points including position offset
     const newPoints: [number, number, number, number] = [
-      object.points[0] * scaleX,
-      object.points[1] * scaleY,
-      object.points[2] * scaleX,
-      object.points[3] * scaleY,
+      centerX + dx1 + x,
+      centerY + dy1 + y,
+      centerX + dx2 + x,
+      centerY + dy2 + y,
     ];
 
     // Clamp points to canvas bounds
@@ -139,26 +188,41 @@ function Line({
     newPoints[2] = Math.max(0, Math.min(newPoints[2], CANVAS_SIZE.width));
     newPoints[3] = Math.max(0, Math.min(newPoints[3], CANVAS_SIZE.height));
 
+    // Reset transforms
+    node.scaleX(1);
+    node.scaleY(1);
+    node.x(0);
+    node.y(0);
+
     onChange({
       points: newPoints,
       rotation,
     });
+
+    // Release lock after transform
+    await releaseLock(object.id);
   };
 
   // Handle click based on tool mode
-  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleClick = async (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
+      // Try to acquire selection lock
+      await acquireLock(object.id, "select");
       onSelect(e.evt.shiftKey);
     }
   };
 
-  // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select" && object.locked !== true;
-  // Show transformer only in select mode when selected and not locked
+  // Determine if object should be draggable based on tool and lock status
+  const isDraggable =
+    tool === "select" && object.locked !== true && !lockActiveByOther;
+  // Show transformer only in select mode when selected and not locked by another user
   const showTransformer =
-    isSelected && tool === "select" && object.locked !== true;
+    isSelected &&
+    tool === "select" &&
+    object.locked !== true &&
+    !lockActiveByOther;
 
   return (
     <>
@@ -167,6 +231,7 @@ function Line({
         points={object.points}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        hitStrokeWidth={Math.max(20, object.strokeWidth * 3)}
         rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}
@@ -174,6 +239,7 @@ function Line({
         onClick={handleClick}
         onTap={handleClick}
         onDragEnd={handleDragEnd}
+        onTransformStart={handleTransformStart}
         onTransformEnd={handleTransformEnd}
         lineCap="round"
         lineJoin="round"

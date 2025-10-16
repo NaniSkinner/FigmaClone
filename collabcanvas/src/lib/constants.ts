@@ -52,3 +52,8 @@ export const CURSOR_UPDATE_THROTTLE = 50; // 20 FPS
 export const OBJECT_UPDATE_THROTTLE = 100; // 10 FPS
 export const PRESENCE_TIMEOUT = 60000; // 60 seconds - users offline longer than this are removed (with 10s heartbeat, gives 6x buffer)
 export const PRESENCE_CLEANUP_INTERVAL = 15000; // 15 seconds - how often to check for stale presence
+
+// Object lock settings for collaborative editing
+export const LOCK_SELECTION_TTL_SEC = 10; // Brief "highlight only" hold - expires if user goes idle
+export const LOCK_EDIT_TTL_SEC = 20; // Longer while actively editing (drag, resize, transform)
+export const LOCK_RENEW_INTERVAL_MS = 5000; // How often to renew lock while actively editing
