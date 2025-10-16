@@ -12,6 +12,7 @@ import Canvas from "@/components/Canvas/Canvas";
 import CanvasControls, { ToolMode } from "@/components/Canvas/CanvasControls";
 import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
+import LayerPanel from "@/components/Layers/LayerPanel";
 
 export default function Home() {
   return (
@@ -152,6 +153,9 @@ function HomePage() {
           onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
           onSetTool={setTool}
         />
+
+        {/* Layer Panel */}
+        <LayerPanel canvasId={canvasId} userId={user?.id || null} />
 
         {/* Main Canvas */}
         {dimensions.width > 0 && (

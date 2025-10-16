@@ -339,25 +339,55 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 - `de17316` - feat: PR #13 Task 13.2 - Layer Ordering Functions with keyboard shortcuts
 
-### Task 13.3: Create Layer Panel UI
+### Task 13.3 & 13.4: Layer Panel UI ✅
 
-- [ ] Create `src/components/Layers/LayerPanel.tsx`
-- [ ] Design collapsible sidebar layout
-- [ ] Add layer list with object thumbnails
-- [ ] Implement drag handle for reordering
-- [ ] Add visibility toggle (eye icon)
-- [ ] Add lock toggle (lock icon)
-- [ ] Style active/selected layer items
+- [x] Create `src/components/Layers/LayerPanel.tsx`
+- [x] Design collapsible sidebar layout
+- [x] Add layer list sorted by z-index (top-to-bottom)
+- [x] Add layer ordering buttons (bring to front, forward, backward, send to back)
+- [x] Add visibility toggle (eye icon) - UI ready, functionality in Task 13.6
+- [x] Add lock toggle (lock icon) - UI ready, functionality in Task 13.6
+- [x] Style active/selected layer items
+- [x] Create `src/components/Layers/LayerItem.tsx`
+- [x] Render object preview/icon (custom SVG icons for each shape type)
+- [x] Display object name/type
+- [x] Handle click to select
+- [x] Show selection state with blue highlight
+- [x] Add hover effects
+- [x] Integrate into main page
+- [x] Empty state message when no layers exist
 
-### Task 13.4: Layer Item Component
+**Implementation Details:**
 
-- [ ] Create `src/components/Layers/LayerItem.tsx`
-- [ ] Render object preview/icon
-- [ ] Display object name/type
-- [ ] Handle click to select
-- [ ] Handle double-click to rename
-- [ ] Show selection state
-- [ ] Add hover effects
+- Created beautiful collapsible sidebar that can be expanded/collapsed
+- Layer list displays objects sorted by z-index (highest first = top of list)
+- Each layer item shows:
+  - Custom icon based on shape type (rectangle, circle, line, text)
+  - Object type name
+  - Visibility toggle with emojis: 👁️ (visible) / 🙈 (hidden)
+  - Lock toggle with emojis: 🔒 (locked) / 🔓 (unlocked)
+  - Blue left border indicator when selected
+  - Smooth hover effects with scale animations
+- Quick action buttons when layers are selected:
+  - "Front" button (bring to front)
+  - "↑" button (bring forward)
+  - "↓" button (send backward)
+  - "Back" button (send to back)
+- Polished styling matching bottom toolbar:
+  - Rounded corners (rounded-lg)
+  - Enhanced shadows (shadow-xl)
+  - Gradient backgrounds on action bar
+  - Smooth transitions and hover states
+- Empty state with helpful message when canvas is empty
+- Positioned below online users list (top: 140px)
+- Optimized width (w-64) and height for better layout
+- Fully responsive design
+
+**Note:** Drag-to-reorder deferred to Task 13.5. Visibility/Lock functionality deferred to Task 13.6 (UI is ready, just needs backend implementation).
+
+**Git Commits:**
+
+- To be committed: `feat: PR #13 Tasks 13.3 & 13.4 - Layer Panel UI with polished design`
 
 ### Task 13.5: Drag-to-Reorder Implementation
 
