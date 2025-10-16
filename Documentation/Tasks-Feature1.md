@@ -512,8 +512,8 @@ Complete layer management system with z-indexing, layer ordering, visual layer p
 ## PR #14: Productivity Features ✅ COMPLETED
 
 **Status:** All core tasks complete
-**Git Commits:** TBD
-**Lines Changed:** 400+ insertions across 3 files
+**Git Commits:** 55321bc
+**Lines Changed:** 495 insertions, 60 deletions across 4 files
 
 **Summary:**
 Complete productivity features including duplicate system, copy/paste functionality, and comprehensive keyboard shortcuts for tools and view controls. All features tested and working with real-time multi-user sync.
@@ -630,6 +630,7 @@ Complete productivity features including duplicate system, copy/paste functional
 ### Complete Keyboard Shortcuts Reference
 
 **Tool Selection Shortcuts** (Single Key):
+
 - **V** - Select tool
 - **H** - Pan tool
 - **R** - Rectangle tool
@@ -638,23 +639,27 @@ Complete productivity features including duplicate system, copy/paste functional
 - **T** - Text tool
 
 **Selection & Editing Shortcuts**:
+
 - **Ctrl/Cmd+A** - Select all objects
 - **Escape** - Clear selection
 - **Delete** / **Backspace** - Delete selected objects
 - **Ctrl/Cmd+D** - Duplicate selected objects (10px offset)
 
 **Copy/Paste Shortcuts**:
+
 - **Ctrl/Cmd+C** - Copy selected objects to clipboard
 - **Ctrl/Cmd+X** - Cut selected objects (copy + delete)
 - **Ctrl/Cmd+V** - Paste objects from clipboard (20px offset)
 
 **Layer Management Shortcuts**:
+
 - **Ctrl/Cmd+Shift+]** - Bring selected to front
 - **Ctrl/Cmd+Shift+[** - Send selected to back
 - **Ctrl/Cmd+]** - Bring selected forward (one layer)
 - **Ctrl/Cmd+[** - Send selected backward (one layer)
 
 **View Control Shortcuts**:
+
 - **Ctrl/Cmd+0** - Reset zoom to default
 - **Ctrl/Cmd+1** - Fit canvas to screen
 - **Ctrl/Cmd++** or **Ctrl/Cmd+=** - Zoom in
@@ -662,7 +667,7 @@ Complete productivity features including duplicate system, copy/paste functional
 
 **Git Commits:**
 
-- TBD - feat: PR #14 - Productivity Features (duplicate, copy/paste, keyboard shortcuts)
+- `55321bc` - feat: PR #14 - Productivity Features (duplicate, copy/paste, keyboard shortcuts)
 
 ---
 
