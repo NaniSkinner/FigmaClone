@@ -319,6 +319,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [x] Test single and multi-object layer reordering
 
 **Implementation Details:**
+
 - Created comprehensive `useLayerManagement` hook with all layer ordering functions
 - `bringToFront()` - Moves selected objects to highest z-index (maintains relative order)
 - `sendToBack()` - Moves selected objects to lowest z-index (shifts other objects up)
@@ -328,13 +329,15 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - Smart layer swapping: Forward/backward operations skip already-selected objects
 
 **Keyboard Shortcuts:**
+
 - **Cmd/Ctrl + Shift + ]** → Bring to Front
 - **Cmd/Ctrl + Shift + [** → Send to Back
 - **Cmd/Ctrl + ]** → Bring Forward (one layer)
 - **Cmd/Ctrl + [** → Send Backward (one layer)
 
 **Git Commits:**
-- To be committed: `feat: PR #13 Task 13.2 - Layer Ordering Functions with keyboard shortcuts`
+
+- `de17316` - feat: PR #13 Task 13.2 - Layer Ordering Functions with keyboard shortcuts
 
 ### Task 13.3: Create Layer Panel UI
 
