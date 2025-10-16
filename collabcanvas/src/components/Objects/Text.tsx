@@ -15,6 +15,7 @@ interface TextProps {
   onChange: (attrs: Partial<TextType>) => void;
   tool: ToolMode;
   onDelete: () => void;
+  onDoubleClick: () => void;
 }
 
 function Text({
@@ -25,6 +26,7 @@ function Text({
   onChange,
   tool,
   onDelete,
+  onDoubleClick,
 }: TextProps) {
   const shapeRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -108,7 +110,13 @@ function Text({
     } else if (tool === "select") {
       onSelect();
     }
-    // TODO: PR #10 - Double-click to enter edit mode
+  };
+
+  // Handle double-click to enter edit mode
+  const handleDoubleClick = () => {
+    if (tool === "select") {
+      onDoubleClick();
+    }
   };
 
   // Determine if object should be draggable based on tool
@@ -132,6 +140,8 @@ function Text({
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}
+        onDblClick={handleDoubleClick}
+        onDblTap={handleDoubleClick}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
         wrap="word"

@@ -6,7 +6,9 @@ import Konva from "konva";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useCanvasStore } from "@/store";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
-import { CanvasObject } from "@/types";
+import TextEditor from "@/components/Objects/TextEditor";
+import TextFormatToolbar from "@/components/UI/TextFormatToolbar";
+import { CanvasObject, Text as TextType } from "@/types";
 import {
   DEFAULT_RECTANGLE_STYLE,
   DEFAULT_CIRCLE_STYLE,
@@ -60,6 +62,7 @@ export default function Canvas({
   const [newLine, setNewLine] = useState<{
     points: [number, number, number, number];
   } | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   const canvasSize = CANVAS_SIZE;
 
@@ -411,6 +414,36 @@ export default function Canvas({
     );
   }
 
+  // Handle text double-click for editing
+  const handleTextDoubleClick = (textId: string) => {
+    setEditingTextId(textId);
+  };
+
+  // Handle text save
+  const handleTextSave = async (newText: string) => {
+    if (editingTextId) {
+      // Update locally first for immediate feedback
+      updateObject(editingTextId, { text: newText });
+      // Then sync to Firestore
+      await updateObjectInFirestore(editingTextId, { text: newText });
+    }
+  };
+
+  // Handle text format change
+  const handleTextFormatChange = async (updates: Partial<TextType>) => {
+    if (editingTextId) {
+      // Update locally first for immediate feedback
+      updateObject(editingTextId, updates);
+      // Then sync to Firestore
+      await updateObjectInFirestore(editingTextId, updates);
+    }
+  };
+
+  // Get the text object being edited
+  const editingTextObject = editingTextId
+    ? (objects.get(editingTextId) as TextType)
+    : null;
+
   // Convert objects Map to array for rendering
   const objectsArray = Array.from(objects.values());
 
@@ -466,6 +499,7 @@ export default function Canvas({
             onObjectChange={handleObjectChange}
             tool={tool}
             onDelete={deleteObject}
+            onTextDoubleClick={handleTextDoubleClick}
           />
 
           {/* Show shape being drawn */}
@@ -504,6 +538,25 @@ export default function Canvas({
           )}
         </Layer>
       </Stage>
+
+      {/* Text Editor Overlay */}
+      {editingTextObject && editingTextId && (
+        <>
+          <TextEditor
+            textObject={editingTextObject}
+            stageScale={scale}
+            stagePosition={position}
+            onSave={handleTextSave}
+            onClose={() => setEditingTextId(null)}
+          />
+          <TextFormatToolbar
+            textObject={editingTextObject}
+            stageScale={scale}
+            stagePosition={position}
+            onFormatChange={handleTextFormatChange}
+          />
+        </>
+      )}
     </div>
   );
 }

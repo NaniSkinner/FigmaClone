@@ -15,6 +15,7 @@ interface ObjectRendererProps {
   onObjectChange: (id: string, attrs: Partial<CanvasObject>) => void;
   tool: ToolMode;
   onDelete: (id: string) => void;
+  onTextDoubleClick?: (id: string) => void;
 }
 
 function ObjectRenderer({
@@ -24,6 +25,7 @@ function ObjectRenderer({
   onObjectChange,
   tool,
   onDelete,
+  onTextDoubleClick,
 }: ObjectRendererProps) {
   return (
     <>
@@ -86,6 +88,7 @@ function ObjectRenderer({
                 onChange={(attrs) => onObjectChange(obj.id, attrs)}
                 tool={tool}
                 onDelete={onDeleteHandler}
+                onDoubleClick={() => onTextDoubleClick?.(obj.id)}
               />
             );
 
