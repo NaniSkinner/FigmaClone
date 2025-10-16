@@ -1,7 +1,7 @@
 // Canvas constants
 export const CANVAS_SIZE = {
-  width: 2000,
-  height: 2000,
+  width: 8000,
+  height: 8000,
 };
 
 export const ZOOM_LIMITS = {
