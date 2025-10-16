@@ -50,4 +50,5 @@ export const USER_COLORS = [
 // Real-time sync settings
 export const CURSOR_UPDATE_THROTTLE = 50; // 20 FPS
 export const OBJECT_UPDATE_THROTTLE = 100; // 10 FPS
-export const PRESENCE_TIMEOUT = 30000; // 30 seconds
+export const PRESENCE_TIMEOUT = 60000; // 60 seconds - users offline longer than this are removed (with 10s heartbeat, gives 6x buffer)
+export const PRESENCE_CLEANUP_INTERVAL = 15000; // 15 seconds - how often to check for stale presence

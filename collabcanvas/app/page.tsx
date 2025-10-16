@@ -13,6 +13,7 @@ import CanvasControls, { ToolMode } from "@/components/Canvas/CanvasControls";
 import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
 import LayerPanel from "@/components/Layers/LayerPanel";
+import { cleanupStalePresence } from "@/lib/cleanupPresence";
 
 export default function Home() {
   return (
@@ -97,6 +98,16 @@ function HomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions.width, dimensions.height]); // Only run when dimensions change, not when scale changes
+
+  // Expose cleanup function to browser console for manual cleanup
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).cleanupStalePresence = cleanupStalePresence;
+      console.log(
+        "💡 Tip: Run cleanupStalePresence() in console to manually clean stale presence documents"
+      );
+    }
+  }, []);
 
   // Keyboard shortcuts for tools and view controls
   useEffect(() => {

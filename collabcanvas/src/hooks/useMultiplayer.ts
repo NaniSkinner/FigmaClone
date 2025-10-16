@@ -12,7 +12,11 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserPresence } from "@/types";
-import { CURSOR_UPDATE_THROTTLE } from "@/lib/constants";
+import {
+  CURSOR_UPDATE_THROTTLE,
+  PRESENCE_TIMEOUT,
+  PRESENCE_CLEANUP_INTERVAL,
+} from "@/lib/constants";
 
 export const useMultiplayer = (
   canvasId: string,
@@ -159,25 +163,39 @@ export const useMultiplayer = (
     const unsubscribe = onSnapshot(presenceQuery, (snapshot) => {
       const users = new Map<string, UserPresence>();
       const currentUserIds = new Set<string>();
+      const now = Date.now();
 
       snapshot.forEach((doc) => {
         const data = doc.data();
 
         // Don't include current user in the list
         if (doc.id !== userId) {
-          const userPresence: UserPresence = {
-            userId: doc.id,
-            cursor: data.cursor || { x: 0, y: 0 },
-            lastSeen: data.lastSeen?.toDate() || new Date(),
-            selectedObjectIds: data.selectedObjectIds || [],
-            user: {
-              id: doc.id,
-              name: data.name || "Anonymous",
-              color: data.color || "#999",
-            },
-          };
-          users.set(doc.id, userPresence);
-          currentUserIds.add(doc.id);
+          const lastSeenDate = data.lastSeen?.toDate() || new Date(0);
+          const timeSinceLastSeen = now - lastSeenDate.getTime();
+
+          // Only include users who have been active within PRESENCE_TIMEOUT
+          if (timeSinceLastSeen <= PRESENCE_TIMEOUT) {
+            const userPresence: UserPresence = {
+              userId: doc.id,
+              cursor: data.cursor || { x: 0, y: 0 },
+              lastSeen: lastSeenDate,
+              selectedObjectIds: data.selectedObjectIds || [],
+              user: {
+                id: doc.id,
+                name: data.name || "Anonymous",
+                color: data.color || "#999",
+              },
+            };
+            users.set(doc.id, userPresence);
+            currentUserIds.add(doc.id);
+          } else {
+            // User is stale (>30 seconds old), log for debugging
+            console.log(
+              `[Presence] Filtering out stale user: ${
+                data.name
+              } (last seen ${Math.round(timeSinceLastSeen / 1000)}s ago)`
+            );
+          }
         }
       });
 
@@ -213,6 +231,57 @@ export const useMultiplayer = (
 
     return () => unsubscribe();
   }, [userId, onUserJoined, onUserLeft]);
+
+  // Periodic cleanup of stale presence documents
+  useEffect(() => {
+    if (!userId) return;
+
+    const cleanupInterval = setInterval(async () => {
+      try {
+        const presenceQuery = query(collection(db, "presence"));
+        const { getDocs } = await import("firebase/firestore");
+        const snapshot = await getDocs(presenceQuery);
+        const now = Date.now();
+        const staleDocIds: string[] = [];
+
+        snapshot.forEach((doc) => {
+          // NEVER delete current user's presence, even if stale
+          if (doc.id === userId) {
+            return;
+          }
+
+          const data = doc.data();
+          const lastSeenDate = data.lastSeen?.toDate() || new Date(0);
+          const timeSinceLastSeen = now - lastSeenDate.getTime();
+
+          // Mark documents older than PRESENCE_TIMEOUT for deletion
+          if (timeSinceLastSeen > PRESENCE_TIMEOUT) {
+            staleDocIds.push(doc.id);
+          }
+        });
+
+        // Delete stale documents
+        if (staleDocIds.length > 0) {
+          console.log(
+            `[Presence Cleanup] Removing ${staleDocIds.length} stale presence documents:`,
+            staleDocIds
+          );
+
+          await Promise.all(
+            staleDocIds.map((id) => deleteDoc(doc(db, "presence", id)))
+          );
+
+          console.log(
+            `[Presence Cleanup] Successfully cleaned up stale presence`
+          );
+        }
+      } catch (error) {
+        console.error("[Presence Cleanup] Error during cleanup:", error);
+      }
+    }, PRESENCE_CLEANUP_INTERVAL);
+
+    return () => clearInterval(cleanupInterval);
+  }, [userId]);
 
   return {
     onlineUsers,
