@@ -69,6 +69,7 @@ export default function Canvas({
     string,
     { x: number; y: number }
   > | null>(null);
+  const [clipboard, setClipboard] = useState<CanvasObject[]>([]);
 
   const canvasSize = CANVAS_SIZE;
 
@@ -83,6 +84,9 @@ export default function Canvas({
     setIsSelecting,
     setSelectedObjectIds,
     getNextZIndex,
+    duplicateObjects,
+    copyObjects,
+    pasteObjects,
   } = useCanvasStore();
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, userId);
@@ -134,6 +138,117 @@ export default function Canvas({
         return;
       }
 
+      // Ctrl/Cmd+D: Duplicate selected objects
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "d" &&
+        selectedObjectIds.size > 0 &&
+        userId
+      ) {
+        e.preventDefault();
+        // Duplicate all selected objects
+        const duplicates = duplicateObjects(
+          Array.from(selectedObjectIds),
+          userId
+        );
+
+        // Sync duplicates to Firestore
+        duplicates.forEach((duplicate) => {
+          createObject(duplicate);
+        });
+
+        // Select the newly duplicated objects
+        setSelectedObjectIds(new Set(duplicates.map((d) => d.id)));
+        return;
+      }
+
+      // Ctrl/Cmd+C: Copy selected objects
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "c" &&
+        selectedObjectIds.size > 0
+      ) {
+        e.preventDefault();
+        // Copy selected objects to internal clipboard
+        const copies = copyObjects(Array.from(selectedObjectIds));
+        setClipboard(copies);
+
+        // Also try to use browser clipboard API for cross-tab support
+        try {
+          navigator.clipboard.writeText(JSON.stringify(copies));
+        } catch (err) {
+          console.warn("Failed to write to clipboard:", err);
+        }
+        return;
+      }
+
+      // Ctrl/Cmd+X: Cut selected objects
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "x" &&
+        selectedObjectIds.size > 0
+      ) {
+        e.preventDefault();
+        // Copy to clipboard first
+        const copies = copyObjects(Array.from(selectedObjectIds));
+        setClipboard(copies);
+
+        // Try to use browser clipboard API
+        try {
+          navigator.clipboard.writeText(JSON.stringify(copies));
+        } catch (err) {
+          console.warn("Failed to write to clipboard:", err);
+        }
+
+        // Delete selected objects
+        selectedObjectIds.forEach((id) => {
+          deleteObject(id);
+        });
+        clearSelection();
+        return;
+      }
+
+      // Ctrl/Cmd+V: Paste objects from clipboard
+      if ((e.ctrlKey || e.metaKey) && e.key === "v" && userId) {
+        e.preventDefault();
+        
+        // Try internal clipboard first
+        if (clipboard.length > 0) {
+          const pasted = pasteObjects(clipboard, userId, 20, 20);
+
+          // Sync pasted objects to Firestore
+          pasted.forEach((obj) => {
+            createObject(obj);
+          });
+
+          // Select the newly pasted objects
+          setSelectedObjectIds(new Set(pasted.map((o) => o.id)));
+        } else {
+          // Try browser clipboard as fallback
+          try {
+            navigator.clipboard.readText().then((text) => {
+              try {
+                const parsedObjects = JSON.parse(text) as CanvasObject[];
+                if (Array.isArray(parsedObjects) && parsedObjects.length > 0) {
+                  const pasted = pasteObjects(parsedObjects, userId, 20, 20);
+
+                  pasted.forEach((obj) => {
+                    createObject(obj);
+                  });
+
+                  setSelectedObjectIds(new Set(pasted.map((o) => o.id)));
+                }
+              } catch (parseErr) {
+                console.warn("Clipboard does not contain valid objects");
+              }
+            });
+          } catch (err) {
+            console.warn("Failed to read from clipboard:", err);
+          }
+        }
+        return;
+      }
+
       // Layer ordering shortcuts (only if objects are selected)
       if (selectedObjectIds.size > 0 && (e.ctrlKey || e.metaKey)) {
         // Ctrl/Cmd + Shift + ] : Bring to Front
@@ -178,6 +293,13 @@ export default function Canvas({
     sendToBack,
     bringForward,
     sendBackward,
+    duplicateObjects,
+    copyObjects,
+    pasteObjects,
+    clipboard,
+    userId,
+    createObject,
+    setSelectedObjectIds,
   ]);
 
   // Handle mouse down to start drawing a shape or panning

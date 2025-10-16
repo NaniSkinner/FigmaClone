@@ -97,6 +97,80 @@ function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions.width, dimensions.height]); // Only run when dimensions change, not when scale changes
 
+  // Keyboard shortcuts for tools and view controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Tool shortcuts (single keys)
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case "v":
+            e.preventDefault();
+            setTool("select");
+            return;
+          case "h":
+            e.preventDefault();
+            setTool("pan");
+            return;
+          case "r":
+            e.preventDefault();
+            setTool("rectangle");
+            return;
+          case "c":
+            e.preventDefault();
+            setTool("circle");
+            return;
+          case "l":
+            e.preventDefault();
+            setTool("line");
+            return;
+          case "t":
+            e.preventDefault();
+            setTool("text");
+            return;
+        }
+      }
+
+      // View shortcuts (Ctrl/Cmd + key)
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case "0":
+            e.preventDefault();
+            resetZoom(dimensions.width, dimensions.height);
+            return;
+          case "=":
+          case "+":
+            e.preventDefault();
+            zoomIn();
+            return;
+          case "-":
+          case "_":
+            e.preventDefault();
+            zoomOut();
+            return;
+          case "1":
+            e.preventDefault();
+            fitToScreen(dimensions.width, dimensions.height);
+            return;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dimensions, resetZoom, zoomIn, zoomOut, fitToScreen]);
+
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
     console.log(
