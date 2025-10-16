@@ -294,6 +294,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [x] Successful build and testing
 
 **Implementation Details:**
+
 - Added `zIndex: number` to BaseCanvasObject interface
 - Created `getMaxZIndex()` and `getNextZIndex()` helper functions in canvasStore
 - All shape creation (rectangle, circle, line, text) auto-assigns zIndex
@@ -302,7 +303,8 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - Backward compatible with legacy objects without zIndex
 
 **Git Commits:**
-- To be committed: `feat: PR #13 Task 13.1 - Add Z-Index Support for layer management`
+
+- `551b305` - feat: PR #13 Task 13.1 - Add Z-Index Support for layer management
 
 ### Task 13.2: Layer Ordering Functions
 
