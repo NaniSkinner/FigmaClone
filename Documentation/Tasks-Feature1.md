@@ -387,7 +387,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 **Git Commits:**
 
-- To be committed: `feat: PR #13 Tasks 13.3 & 13.4 - Layer Panel UI with polished design`
+- `506e412` - feat: PR #13 Tasks 13.3 & 13.4 - Layer Panel UI with polished design
 
 ### Task 13.5: Drag-to-Reorder Implementation
 
