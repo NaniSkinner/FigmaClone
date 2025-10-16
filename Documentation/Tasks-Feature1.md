@@ -427,7 +427,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 **Git Commits:**
 
-- To be committed: `feat: PR #13 Task 13.6 - Visibility & Lock System implementation`
+- `675e167` - feat: PR #13 Task 13.6 - Visibility & Lock System with full locking functionality
 
 ### Task 13.7: Testing & Integration
 
