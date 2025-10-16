@@ -951,6 +951,8 @@ export default function Canvas({
             tool={tool}
             onDelete={deleteObject}
             onTextDoubleClick={handleTextDoubleClick}
+            userId={userId}
+            canvasId={canvasId}
           />
 
           {/* Show shape being drawn */}

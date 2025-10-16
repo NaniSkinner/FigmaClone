@@ -6,6 +6,15 @@ export interface Point {
 // Shape type enum
 export type ShapeType = "rectangle" | "circle" | "line" | "text";
 
+// Object lock for collaborative editing
+export interface ObjectLock {
+  userId: string;
+  userName?: string;
+  userColor?: string;
+  acquiredAt?: Date; // server timestamp
+  expiresAt: Date; // absolute expiry time (short TTL)
+}
+
 // Base interface for common properties
 interface BaseCanvasObject {
   id: string;
@@ -15,6 +24,7 @@ interface BaseCanvasObject {
   zIndex: number; // Layer order (higher = on top)
   visible?: boolean; // Visibility state (default: true)
   locked?: boolean; // Lock state (default: false)
+  lock?: ObjectLock; // Soft lock for collaborative editing
 }
 
 // Rectangle shape

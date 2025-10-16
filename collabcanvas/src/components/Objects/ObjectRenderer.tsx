@@ -22,6 +22,8 @@ interface ObjectRendererProps {
   tool: ToolMode;
   onDelete: (id: string) => void;
   onTextDoubleClick?: (id: string) => void;
+  userId: string | null;
+  canvasId: string;
 }
 
 function ObjectRenderer({
@@ -35,6 +37,8 @@ function ObjectRenderer({
   tool,
   onDelete,
   onTextDoubleClick,
+  userId,
+  canvasId,
 }: ObjectRendererProps) {
   const { addToSelection, clearSelection, toggleSelection } = useCanvasStore();
 
@@ -109,6 +113,8 @@ function ObjectRenderer({
                     }
                     tool={tool}
                     onDelete={onDeleteHandler}
+                    userId={userId}
+                    canvasId={canvasId}
                   />
                   {/* Render selection badges for other users */}
                   {selectingUsers.map((user) => (
@@ -146,6 +152,8 @@ function ObjectRenderer({
                     }
                     tool={tool}
                     onDelete={onDeleteHandler}
+                    userId={userId}
+                    canvasId={canvasId}
                   />
                   {/* Render selection badges for other users */}
                   {selectingUsers.map((user) => (
@@ -183,6 +191,8 @@ function ObjectRenderer({
                     }
                     tool={tool}
                     onDelete={onDeleteHandler}
+                    userId={userId}
+                    canvasId={canvasId}
                   />
                   {/* Render selection badges for other users */}
                   {selectingUsers.map((user) => (
@@ -223,6 +233,8 @@ function ObjectRenderer({
                     onDoubleClick={() =>
                       !isLocked && onTextDoubleClick?.(obj.id)
                     }
+                    userId={userId}
+                    canvasId={canvasId}
                   />
                   {/* Render selection badges for other users */}
                   {selectingUsers.map((user) => (
