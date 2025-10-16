@@ -119,6 +119,7 @@ function Line({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Reset scale
     node.scaleX(1);
@@ -140,6 +141,7 @@ function Line({
 
     onChange({
       points: newPoints,
+      rotation,
     });
   };
 
@@ -164,6 +166,7 @@ function Line({
         points={object.points}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -177,14 +180,22 @@ function Line({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
+            
+            // Maximum size constraints
+            if (newBox.width > CANVAS_SIZE.width || newBox.height > CANVAS_SIZE.height) {
+              return oldBox;
+            }
+            
             return newBox;
           }}
-          rotateEnabled={false}
         />
       )}
     </>

@@ -88,6 +88,7 @@ function Rectangle({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Reset scale to 1 and adjust width/height instead
     node.scaleX(1);
@@ -96,8 +97,8 @@ function Rectangle({
     // Calculate new dimensions
     let x = node.x();
     let y = node.y();
-    let width = Math.max(5, node.width() * scaleX);
-    let height = Math.max(5, node.height() * scaleY);
+    let width = Math.max(10, node.width() * scaleX);
+    let height = Math.max(10, node.height() * scaleY);
 
     // Ensure the resized rectangle stays within canvas bounds
     x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
@@ -110,6 +111,7 @@ function Rectangle({
       y,
       width,
       height,
+      rotation,
     });
   };
 
@@ -139,6 +141,7 @@ function Rectangle({
         fill={object.fill}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -150,42 +153,31 @@ function Rectangle({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          enabledAnchors={[
+            'top-left',
+            'top-center',
+            'top-right',
+            'middle-right',
+            'middle-left',
+            'bottom-left',
+            'bottom-center',
+            'bottom-right',
+          ]}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
 
-            // Constrain to canvas bounds
-            let x = newBox.x;
-            let y = newBox.y;
-            let width = newBox.width;
-            let height = newBox.height;
-
-            // Ensure position is within bounds
-            x = Math.max(0, x);
-            y = Math.max(0, y);
-
-            // Ensure size doesn't exceed canvas from current position
-            const maxWidth = CANVAS_SIZE.width - x;
-            const maxHeight = CANVAS_SIZE.height - y;
-            width = Math.min(width, maxWidth);
-            height = Math.min(height, maxHeight);
-
-            // If any constraint was applied, return adjusted box
-            if (
-              x !== newBox.x ||
-              y !== newBox.y ||
-              width !== newBox.width ||
-              height !== newBox.height
-            ) {
-              return {
-                ...newBox,
-                x,
-                y,
-                width,
-                height,
-              };
+            // Maximum size constraints
+            const maxWidth = CANVAS_SIZE.width;
+            const maxHeight = CANVAS_SIZE.height;
+            
+            if (newBox.width > maxWidth || newBox.height > maxHeight) {
+              return oldBox;
             }
 
             return newBox;

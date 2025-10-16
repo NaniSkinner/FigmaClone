@@ -86,6 +86,7 @@ function Circle({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Use average scale to maintain circle shape
     const avgScale = (scaleX + scaleY) / 2;
@@ -97,7 +98,7 @@ function Circle({
     // Calculate new radius
     let x = node.x();
     let y = node.y();
-    let radius = Math.max(5, node.radius() * avgScale);
+    let radius = Math.max(10, node.radius() * avgScale);
 
     // Ensure the resized circle stays within canvas bounds
     x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
@@ -111,6 +112,7 @@ function Circle({
       x,
       y,
       radius,
+      rotation,
     });
   };
 
@@ -138,6 +140,7 @@ function Circle({
         fill={object.fill}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -149,20 +152,21 @@ function Circle({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
-            if (newBox.width < 10 || newBox.height < 10) {
+            if (newBox.width < 20 || newBox.height < 20) {
               return oldBox;
             }
 
-            // Constrain to canvas bounds
-            const radius = Math.min(newBox.width, newBox.height) / 2;
-            let x = newBox.x + newBox.width / 2;
-            let y = newBox.y + newBox.height / 2;
-
-            // Ensure circle stays within bounds
-            x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
-            y = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
+            // Maximum size constraints
+            const maxSize = Math.min(CANVAS_SIZE.width, CANVAS_SIZE.height);
+            
+            if (newBox.width > maxSize || newBox.height > maxSize) {
+              return oldBox;
+            }
 
             return newBox;
           }}
@@ -173,7 +177,6 @@ function Circle({
             "bottom-left",
             "bottom-right",
           ]}
-          rotateEnabled={false}
         />
       )}
     </>

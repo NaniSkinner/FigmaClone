@@ -90,6 +90,7 @@ function Text({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Reset scale to 1
     node.scaleX(1);
@@ -112,6 +113,7 @@ function Text({
       y,
       fontSize: newFontSize,
       width: width > 20 ? width : undefined,
+      rotation,
     });
   };
 
@@ -148,6 +150,7 @@ function Text({
         fontStyle={object.fontStyle || "normal"}
         fill={object.fill}
         width={object.width}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -162,44 +165,25 @@ function Text({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (newBox.width < 20 || newBox.height < 10) {
               return oldBox;
             }
 
-            // Ensure position is within bounds
-            let x = newBox.x;
-            let y = newBox.y;
-            let width = newBox.width;
-            let height = newBox.height;
-
-            x = Math.max(0, x);
-            y = Math.max(0, y);
-
-            const maxWidth = CANVAS_SIZE.width - x;
-            const maxHeight = CANVAS_SIZE.height - y;
-            width = Math.min(width, maxWidth);
-            height = Math.min(height, maxHeight);
-
+            // Maximum size constraints
             if (
-              x !== newBox.x ||
-              y !== newBox.y ||
-              width !== newBox.width ||
-              height !== newBox.height
+              newBox.width > CANVAS_SIZE.width ||
+              newBox.height > CANVAS_SIZE.height
             ) {
-              return {
-                ...newBox,
-                x,
-                y,
-                width,
-                height,
-              };
+              return oldBox;
             }
 
             return newBox;
           }}
-          rotateEnabled={false}
         />
       )}
     </>
