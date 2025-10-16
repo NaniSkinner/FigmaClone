@@ -3,14 +3,16 @@
 import { Text as KonvaText, Transformer } from "react-konva";
 import { useRef, useEffect, memo } from "react";
 import Konva from "konva";
-import { Text as TextType } from "@/types";
+import type { Text as TextType } from "@/types/canvas";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 
 interface TextProps {
   object: TextType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onChange: (attrs: Partial<TextType>) => void;
   tool: ToolMode;
@@ -22,6 +24,8 @@ function Text({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -38,6 +42,11 @@ function Text({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -56,6 +65,9 @@ function Text({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Notify group drag
+    onDragMove?.(clampedX, clampedY);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -78,6 +90,7 @@ function Text({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Reset scale to 1
     node.scaleX(1);
@@ -89,7 +102,7 @@ function Text({
     // Get new dimensions
     let x = node.x();
     let y = node.y();
-    let width = node.width() * scaleX;
+    const width = node.width() * scaleX;
 
     // Ensure the text stays within canvas bounds
     x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));
@@ -100,15 +113,16 @@ function Text({
       y,
       fontSize: newFontSize,
       width: width > 20 ? width : undefined,
+      rotation,
     });
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
   };
 
@@ -120,9 +134,10 @@ function Text({
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -136,7 +151,9 @@ function Text({
         fontStyle={object.fontStyle || "normal"}
         fill={object.fill}
         width={object.width}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}
@@ -149,44 +166,25 @@ function Text({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (newBox.width < 20 || newBox.height < 10) {
               return oldBox;
             }
 
-            // Ensure position is within bounds
-            let x = newBox.x;
-            let y = newBox.y;
-            let width = newBox.width;
-            let height = newBox.height;
-
-            x = Math.max(0, x);
-            y = Math.max(0, y);
-
-            const maxWidth = CANVAS_SIZE.width - x;
-            const maxHeight = CANVAS_SIZE.height - y;
-            width = Math.min(width, maxWidth);
-            height = Math.min(height, maxHeight);
-
+            // Maximum size constraints
             if (
-              x !== newBox.x ||
-              y !== newBox.y ||
-              width !== newBox.width ||
-              height !== newBox.height
+              newBox.width > CANVAS_SIZE.width ||
+              newBox.height > CANVAS_SIZE.height
             ) {
-              return {
-                ...newBox,
-                x,
-                y,
-                width,
-                height,
-              };
+              return oldBox;
             }
 
             return newBox;
           }}
-          rotateEnabled={false}
         />
       )}
     </>

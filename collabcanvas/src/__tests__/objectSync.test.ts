@@ -149,19 +149,27 @@ describe("Object Synchronization Tests", () => {
     it("should handle object selection", () => {
       const { result } = renderHook(() => useCanvasStore());
 
-      expect(result.current.selectedObjectId).toBeNull();
+      expect(result.current.selectedObjectIds.size).toBe(0);
 
       act(() => {
-        result.current.setSelectedObjectId("rect-1");
+        result.current.addToSelection("rect-1");
       });
 
-      expect(result.current.selectedObjectId).toBe("rect-1");
+      expect(result.current.selectedObjectIds.has("rect-1")).toBe(true);
+      expect(result.current.selectedObjectIds.size).toBe(1);
 
       act(() => {
-        result.current.setSelectedObjectId(null);
+        result.current.addToSelection("rect-2");
       });
 
-      expect(result.current.selectedObjectId).toBeNull();
+      expect(result.current.selectedObjectIds.has("rect-2")).toBe(true);
+      expect(result.current.selectedObjectIds.size).toBe(2);
+
+      act(() => {
+        result.current.clearSelection();
+      });
+
+      expect(result.current.selectedObjectIds.size).toBe(0);
     });
 
     it("should maintain object count under load", () => {

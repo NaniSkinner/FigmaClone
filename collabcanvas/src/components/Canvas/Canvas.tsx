@@ -4,8 +4,10 @@ import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Line, Circle, Text } from "react-konva";
 import Konva from "konva";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useLayerManagement } from "@/hooks/useLayerManagement";
 import { useCanvasStore } from "@/store";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
+import SelectionBox from "@/components/Canvas/SelectionBox";
 import TextEditor from "@/components/Objects/TextEditor";
 import TextFormatToolbar from "@/components/UI/TextFormatToolbar";
 import { CanvasObject, Text as TextType } from "@/types";
@@ -63,13 +65,29 @@ export default function Canvas({
     points: [number, number, number, number];
   } | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [groupDragStart, setGroupDragStart] = useState<Map<
+    string,
+    { x: number; y: number }
+  > | null>(null);
 
   const canvasSize = CANVAS_SIZE;
 
-  const { objects, selectedObjectId, setSelectedObjectId, updateObject } =
-    useCanvasStore();
+  const {
+    objects,
+    selectedObjectIds,
+    clearSelection,
+    updateObject,
+    selectionBox,
+    setSelectionBox,
+    isSelecting,
+    setIsSelecting,
+    setSelectedObjectIds,
+    getNextZIndex,
+  } = useCanvasStore();
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, userId);
+  const { bringToFront, sendToBack, bringForward, sendBackward } =
+    useLayerManagement(canvasId, userId);
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -84,13 +102,67 @@ export default function Canvas({
     };
   }, [handleWheel]);
 
-  // Add keyboard event listener for delete
+  // Add keyboard event listener for shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedObjectId) {
+      // Ctrl/Cmd+A: Select all objects
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
-        deleteObject(selectedObjectId);
-        setSelectedObjectId(null);
+        const { selectAll } = useCanvasStore.getState();
+        selectAll();
+        return;
+      }
+
+      // Escape: Clear selection
+      if (e.key === "Escape") {
+        e.preventDefault();
+        clearSelection();
+        return;
+      }
+
+      // Delete/Backspace: Delete selected objects
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        selectedObjectIds.size > 0
+      ) {
+        e.preventDefault();
+        // Delete all selected objects
+        selectedObjectIds.forEach((id) => {
+          deleteObject(id);
+        });
+        clearSelection();
+        return;
+      }
+
+      // Layer ordering shortcuts (only if objects are selected)
+      if (selectedObjectIds.size > 0 && (e.ctrlKey || e.metaKey)) {
+        // Ctrl/Cmd + Shift + ] : Bring to Front
+        if (e.shiftKey && e.key === "]") {
+          e.preventDefault();
+          bringToFront();
+          return;
+        }
+
+        // Ctrl/Cmd + Shift + [ : Send to Back
+        if (e.shiftKey && e.key === "[") {
+          e.preventDefault();
+          sendToBack();
+          return;
+        }
+
+        // Ctrl/Cmd + ] : Bring Forward
+        if (!e.shiftKey && e.key === "]") {
+          e.preventDefault();
+          bringForward();
+          return;
+        }
+
+        // Ctrl/Cmd + [ : Send Backward
+        if (!e.shiftKey && e.key === "[") {
+          e.preventDefault();
+          sendBackward();
+          return;
+        }
       }
     };
 
@@ -98,7 +170,15 @@ export default function Canvas({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedObjectId, deleteObject, setSelectedObjectId]);
+  }, [
+    selectedObjectIds,
+    deleteObject,
+    clearSelection,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  ]);
 
   // Handle mouse down to start drawing a shape or panning
   const handleMouseDown = async (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -118,7 +198,7 @@ export default function Canvas({
     if (clickedOnEmpty) {
       // Deselect when clicking on empty space (except in delete mode)
       if (tool !== "delete") {
-        setSelectedObjectId(null);
+        clearSelection();
       }
 
       // Get click position in canvas coordinates
@@ -174,9 +254,9 @@ export default function Canvas({
             fill: DEFAULT_TEXT_STYLE.fill,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
           await createObject(textObject);
-          setSelectedObjectId(textObject.id);
         } else if (clickedOnBackground) {
           setIsPanning(true);
           setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
@@ -186,8 +266,19 @@ export default function Canvas({
         setIsPanning(true);
         setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
       } else if (tool === "select") {
-        // Select mode: just deselect on empty click (already handled above)
-        // Objects will handle their own selection in shape components
+        // Select mode: Start drag selection on canvas
+        if (clickedOnCanvas) {
+          setIsSelecting(true);
+          setSelectionBox({
+            startX: x,
+            startY: y,
+            currentX: x,
+            currentY: y,
+          });
+        } else if (clickedOnBackground) {
+          setIsPanning(true);
+          setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+        }
       } else if (tool === "delete") {
         // Delete mode: objects will handle their own deletion
         // Clicking on empty space does nothing
@@ -218,6 +309,24 @@ export default function Canvas({
       });
 
       setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
+    } else if (isSelecting && selectionBox) {
+      // Handle selection box drag
+      const stage = stageRef.current;
+      const point = stage.getPointerPosition();
+
+      // Convert screen coordinates to canvas coordinates
+      let x = (point.x - position.x) / scale;
+      let y = (point.y - position.y) / scale;
+
+      // Clamp coordinates to canvas bounds
+      x = Math.max(0, Math.min(x, canvasSize.width));
+      y = Math.max(0, Math.min(y, canvasSize.height));
+
+      setSelectionBox({
+        ...selectionBox,
+        currentX: x,
+        currentY: y,
+      });
     } else if (isDrawing) {
       // Handle drawing for different shapes
       const stage = stageRef.current;
@@ -249,11 +358,94 @@ export default function Canvas({
     }
   };
 
+  // Helper function to check if object intersects with selection box
+  const objectIntersectsBox = (
+    obj: CanvasObject,
+    boxX: number,
+    boxY: number,
+    boxWidth: number,
+    boxHeight: number
+  ): boolean => {
+    switch (obj.type) {
+      case "rectangle": {
+        // Check if rectangles intersect
+        return !(
+          obj.x > boxX + boxWidth ||
+          obj.x + obj.width < boxX ||
+          obj.y > boxY + boxHeight ||
+          obj.y + obj.height < boxY
+        );
+      }
+      case "circle": {
+        // Check if circle intersects with box
+        // Find closest point on box to circle center
+        const closestX = Math.max(boxX, Math.min(obj.x, boxX + boxWidth));
+        const closestY = Math.max(boxY, Math.min(obj.y, boxY + boxHeight));
+        const dx = obj.x - closestX;
+        const dy = obj.y - closestY;
+        return dx * dx + dy * dy <= obj.radius * obj.radius;
+      }
+      case "line": {
+        // Check if line intersects with box
+        const [x1, y1, x2, y2] = obj.points;
+        // Check if either endpoint is inside box
+        const point1Inside =
+          x1 >= boxX &&
+          x1 <= boxX + boxWidth &&
+          y1 >= boxY &&
+          y1 <= boxY + boxHeight;
+        const point2Inside =
+          x2 >= boxX &&
+          x2 <= boxX + boxWidth &&
+          y2 >= boxY &&
+          y2 <= boxY + boxHeight;
+        return point1Inside || point2Inside;
+      }
+      case "text": {
+        // Check if text box intersects with selection box
+        const textWidth = obj.width || 100; // Default width if not set
+        const textHeight = obj.fontSize * 1.2; // Approximate height
+        return !(
+          obj.x > boxX + boxWidth ||
+          obj.x + textWidth < boxX ||
+          obj.y > boxY + boxHeight ||
+          obj.y + textHeight < boxY
+        );
+      }
+      default:
+        return false;
+    }
+  };
+
   // Handle mouse up to finish drawing or panning
   const handleMouseUp = async () => {
     if (isPanning) {
       setIsPanning(false);
       setPanStart(null);
+      return;
+    }
+
+    // Handle selection box completion
+    if (isSelecting && selectionBox) {
+      setIsSelecting(false);
+
+      // Calculate selection box bounds
+      const boxX = Math.min(selectionBox.startX, selectionBox.currentX);
+      const boxY = Math.min(selectionBox.startY, selectionBox.currentY);
+      const boxWidth = Math.abs(selectionBox.currentX - selectionBox.startX);
+      const boxHeight = Math.abs(selectionBox.currentY - selectionBox.startY);
+
+      // Find all objects that intersect with selection box
+      const selectedIds = new Set<string>();
+      objects.forEach((obj) => {
+        if (objectIntersectsBox(obj, boxX, boxY, boxWidth, boxHeight)) {
+          selectedIds.add(obj.id);
+        }
+      });
+
+      // Update selection
+      setSelectedObjectIds(selectedIds);
+      setSelectionBox(null);
       return;
     }
 
@@ -304,6 +496,7 @@ export default function Canvas({
             strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
 
           await createObject(finalRect);
@@ -316,8 +509,8 @@ export default function Canvas({
     if (newCircle) {
       // Only create if circle is large enough (radius at least 5)
       if (newCircle.radius > 5) {
-        let x = newCircle.x;
-        let y = newCircle.y;
+        const x = newCircle.x;
+        const y = newCircle.y;
         let radius = newCircle.radius;
 
         // Ensure the circle is fully within canvas bounds
@@ -341,6 +534,7 @@ export default function Canvas({
             strokeWidth: DEFAULT_CIRCLE_STYLE.strokeWidth,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
 
           await createObject(finalCircle);
@@ -366,12 +560,107 @@ export default function Canvas({
           strokeWidth: DEFAULT_LINE_STYLE.strokeWidth,
           userId,
           createdAt: new Date(),
+          zIndex: getNextZIndex(),
         };
 
         await createObject(finalLine);
       }
       setNewLine(null);
     }
+  };
+
+  // Handle group drag start
+  const handleGroupDragStart = (draggedObjectId: string) => {
+    // Only enable group drag if multiple objects are selected
+    if (selectedObjectIds.size > 1 && selectedObjectIds.has(draggedObjectId)) {
+      const startPositions = new Map<string, { x: number; y: number }>();
+
+      selectedObjectIds.forEach((id) => {
+        const obj = objects.get(id);
+        if (obj) {
+          if (
+            obj.type === "rectangle" ||
+            obj.type === "circle" ||
+            obj.type === "text"
+          ) {
+            startPositions.set(id, { x: obj.x, y: obj.y });
+          } else if (obj.type === "line") {
+            // For lines, store the first point as reference
+            startPositions.set(id, { x: obj.points[0], y: obj.points[1] });
+          }
+        }
+      });
+
+      setGroupDragStart(startPositions);
+    }
+  };
+
+  // Handle group drag move
+  const handleGroupDragMove = (
+    draggedObjectId: string,
+    newX: number,
+    newY: number
+  ) => {
+    if (!groupDragStart || !groupDragStart.has(draggedObjectId)) return;
+
+    const startPos = groupDragStart.get(draggedObjectId)!;
+    const dx = newX - startPos.x;
+    const dy = newY - startPos.y;
+
+    // Apply the same offset to all selected objects
+    selectedObjectIds.forEach((id) => {
+      if (id === draggedObjectId) return; // Skip the dragged one, it's handled by Konva
+
+      const startPosition = groupDragStart.get(id);
+      if (!startPosition) return;
+
+      const obj = objects.get(id);
+      if (!obj) return;
+
+      if (
+        obj.type === "rectangle" ||
+        obj.type === "circle" ||
+        obj.type === "text"
+      ) {
+        updateObject(id, {
+          x: startPosition.x + dx,
+          y: startPosition.y + dy,
+        });
+      } else if (obj.type === "line") {
+        const [x1, y1, x2, y2] = obj.points;
+        updateObject(id, {
+          points: [
+            startPosition.x + dx,
+            startPosition.y + dy,
+            x2 - x1 + startPosition.x + dx,
+            y2 - y1 + startPosition.y + dy,
+          ] as [number, number, number, number],
+        });
+      }
+    });
+  };
+
+  // Handle group drag end
+  const handleGroupDragEnd = () => {
+    if (!groupDragStart) return;
+
+    // Sync all moved objects to Firestore (throttled updates)
+    selectedObjectIds.forEach((id) => {
+      const obj = objects.get(id);
+      if (!obj) return;
+
+      if (
+        obj.type === "rectangle" ||
+        obj.type === "circle" ||
+        obj.type === "text"
+      ) {
+        updateObjectInFirestore(id, { x: obj.x, y: obj.y });
+      } else if (obj.type === "line") {
+        updateObjectInFirestore(id, { points: obj.points });
+      }
+    });
+
+    setGroupDragStart(null);
   };
 
   // Handle object changes (drag or transform)
@@ -494,9 +783,11 @@ export default function Canvas({
           {/* Render all objects */}
           <ObjectRenderer
             objects={objectsArray}
-            selectedId={selectedObjectId}
-            onSelect={setSelectedObjectId}
+            selectedIds={selectedObjectIds}
             onObjectChange={handleObjectChange}
+            onGroupDragStart={handleGroupDragStart}
+            onGroupDragMove={handleGroupDragMove}
+            onGroupDragEnd={handleGroupDragEnd}
             tool={tool}
             onDelete={deleteObject}
             onTextDoubleClick={handleTextDoubleClick}
@@ -536,6 +827,9 @@ export default function Canvas({
               lineJoin="round"
             />
           )}
+
+          {/* Show selection box */}
+          {selectionBox && <SelectionBox selectionBox={selectionBox} />}
         </Layer>
       </Stage>
 

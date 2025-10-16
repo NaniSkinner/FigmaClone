@@ -10,7 +10,9 @@ import { ToolMode } from "@/components/Canvas/CanvasControls";
 interface LineProps {
   object: LineType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (points: [number, number, number, number]) => void;
   onDragEnd: (points: [number, number, number, number]) => void;
   onChange: (attrs: Partial<LineType>) => void;
   tool: ToolMode;
@@ -21,6 +23,8 @@ function Line({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -36,6 +40,11 @@ function Line({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -67,6 +76,15 @@ function Line({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Calculate new absolute positions for group drag
+    const newPoints: [number, number, number, number] = [
+      points[0] + clampedX,
+      points[1] + clampedY,
+      points[2] + clampedX,
+      points[3] + clampedY,
+    ];
+    onDragMove?.(newPoints);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -101,6 +119,7 @@ function Line({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Reset scale
     node.scaleX(1);
@@ -122,22 +141,24 @@ function Line({
 
     onChange({
       points: newPoints,
+      rotation,
     });
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -146,7 +167,9 @@ function Line({
         points={object.points}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}
@@ -158,14 +181,25 @@ function Line({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
+
+            // Maximum size constraints
+            if (
+              newBox.width > CANVAS_SIZE.width ||
+              newBox.height > CANVAS_SIZE.height
+            ) {
+              return oldBox;
+            }
+
             return newBox;
           }}
-          rotateEnabled={false}
         />
       )}
     </>

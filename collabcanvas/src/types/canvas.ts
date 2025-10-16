@@ -12,6 +12,9 @@ interface BaseCanvasObject {
   userId: string;
   createdAt: Date;
   updatedAt?: Date;
+  zIndex: number; // Layer order (higher = on top)
+  visible?: boolean; // Visibility state (default: true)
+  locked?: boolean; // Lock state (default: false)
 }
 
 // Rectangle shape
@@ -24,6 +27,7 @@ export interface Rectangle extends BaseCanvasObject {
   fill: string;
   stroke: string;
   strokeWidth: number;
+  rotation?: number; // in degrees
 }
 
 // Circle shape
@@ -35,6 +39,7 @@ export interface Circle extends BaseCanvasObject {
   fill: string;
   stroke: string;
   strokeWidth: number;
+  rotation?: number; // in degrees
 }
 
 // Line shape
@@ -43,6 +48,7 @@ export interface Line extends BaseCanvasObject {
   points: [number, number, number, number]; // [x1, y1, x2, y2]
   stroke: string;
   strokeWidth: number;
+  rotation?: number; // in degrees
 }
 
 // Text object
@@ -56,6 +62,7 @@ export interface Text extends BaseCanvasObject {
   fontStyle?: "normal" | "bold" | "italic" | "bold italic";
   fill: string;
   width?: number; // auto-width initially
+  rotation?: number; // in degrees
 }
 
 // Union type for all canvas objects
@@ -72,4 +79,12 @@ export interface Viewport {
   x: number;
   y: number;
   scale: number;
+}
+
+// Selection box for drag-to-select
+export interface SelectionBox {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
 }

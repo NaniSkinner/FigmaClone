@@ -10,7 +10,9 @@ import { ToolMode } from "@/components/Canvas/CanvasControls";
 interface CircleProps {
   object: CircleType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onChange: (attrs: Partial<CircleType>) => void;
   tool: ToolMode;
@@ -21,6 +23,8 @@ function Circle({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -36,6 +40,11 @@ function Circle({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -53,6 +62,9 @@ function Circle({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Notify group drag
+    onDragMove?.(clampedX, clampedY);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -74,6 +86,7 @@ function Circle({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
+    const rotation = node.rotation();
 
     // Use average scale to maintain circle shape
     const avgScale = (scaleX + scaleY) / 2;
@@ -85,7 +98,7 @@ function Circle({
     // Calculate new radius
     let x = node.x();
     let y = node.y();
-    let radius = Math.max(5, node.radius() * avgScale);
+    let radius = Math.max(10, node.radius() * avgScale);
 
     // Ensure the resized circle stays within canvas bounds
     x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
@@ -99,22 +112,24 @@ function Circle({
       x,
       y,
       radius,
+      rotation,
     });
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -126,7 +141,9 @@ function Circle({
         fill={object.fill}
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
+        rotation={object.rotation || 0}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}
@@ -136,20 +153,21 @@ function Circle({
       {showTransformer && (
         <Transformer
           ref={transformerRef}
+          rotateEnabled={true}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
-            if (newBox.width < 10 || newBox.height < 10) {
+            if (newBox.width < 20 || newBox.height < 20) {
               return oldBox;
             }
 
-            // Constrain to canvas bounds
-            const radius = Math.min(newBox.width, newBox.height) / 2;
-            let x = newBox.x + newBox.width / 2;
-            let y = newBox.y + newBox.height / 2;
+            // Maximum size constraints
+            const maxSize = Math.min(CANVAS_SIZE.width, CANVAS_SIZE.height);
 
-            // Ensure circle stays within bounds
-            x = Math.max(radius, Math.min(x, CANVAS_SIZE.width - radius));
-            y = Math.max(radius, Math.min(y, CANVAS_SIZE.height - radius));
+            if (newBox.width > maxSize || newBox.height > maxSize) {
+              return oldBox;
+            }
 
             return newBox;
           }}
@@ -160,7 +178,6 @@ function Circle({
             "bottom-left",
             "bottom-right",
           ]}
-          rotateEnabled={false}
         />
       )}
     </>
