@@ -10,7 +10,9 @@ import { ToolMode } from "@/components/Canvas/CanvasControls";
 interface RectangleProps {
   object: RectangleType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onChange: (attrs: Partial<RectangleType>) => void;
   tool: ToolMode;
@@ -21,6 +23,8 @@ function Rectangle({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -36,6 +40,11 @@ function Rectangle({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -54,6 +63,9 @@ function Rectangle({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Notify group drag
+    onDragMove?.(clampedX, clampedY);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -102,11 +114,11 @@ function Rectangle({
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
     // In draw and pan mode, don't do anything on click
   };
@@ -128,6 +140,7 @@ function Rectangle({
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}

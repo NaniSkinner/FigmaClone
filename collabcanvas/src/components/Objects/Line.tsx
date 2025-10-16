@@ -10,7 +10,9 @@ import { ToolMode } from "@/components/Canvas/CanvasControls";
 interface LineProps {
   object: LineType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (points: [number, number, number, number]) => void;
   onDragEnd: (points: [number, number, number, number]) => void;
   onChange: (attrs: Partial<LineType>) => void;
   tool: ToolMode;
@@ -21,6 +23,8 @@ function Line({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -36,6 +40,11 @@ function Line({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -67,6 +76,15 @@ function Line({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Calculate new absolute positions for group drag
+    const newPoints: [number, number, number, number] = [
+      points[0] + clampedX,
+      points[1] + clampedY,
+      points[2] + clampedX,
+      points[3] + clampedY,
+    ];
+    onDragMove?.(newPoints);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -126,11 +144,11 @@ function Line({
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
   };
 
@@ -147,6 +165,7 @@ function Line({
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}

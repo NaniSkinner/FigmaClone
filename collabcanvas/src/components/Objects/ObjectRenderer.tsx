@@ -7,12 +7,15 @@ import Circle from "./Circle";
 import Line from "./Line";
 import Text from "./Text";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
+import { useCanvasStore } from "@/store";
 
 interface ObjectRendererProps {
   objects: CanvasObject[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  selectedIds: Set<string>;
   onObjectChange: (id: string, attrs: Partial<CanvasObject>) => void;
+  onGroupDragStart: (id: string) => void;
+  onGroupDragMove: (id: string, x: number, y: number) => void;
+  onGroupDragEnd: () => void;
   tool: ToolMode;
   onDelete: (id: string) => void;
   onTextDoubleClick?: (id: string) => void;
@@ -20,19 +23,37 @@ interface ObjectRendererProps {
 
 function ObjectRenderer({
   objects,
-  selectedId,
-  onSelect,
+  selectedIds,
   onObjectChange,
+  onGroupDragStart,
+  onGroupDragMove,
+  onGroupDragEnd,
   tool,
   onDelete,
   onTextDoubleClick,
 }: ObjectRendererProps) {
+  const { addToSelection, clearSelection, toggleSelection } = useCanvasStore();
+
+  const handleSelect = (id: string, shiftKey: boolean) => {
+    if (shiftKey) {
+      // Shift+Click: Toggle selection
+      toggleSelection(id);
+    } else {
+      // Regular click: Select only this object
+      clearSelection();
+      addToSelection(id);
+    }
+  };
+
   return (
     <>
       {objects.map((obj) => {
-        const isSelected = obj.id === selectedId;
-        const onSelectHandler = () => onSelect(obj.id);
+        const isSelected = selectedIds.has(obj.id);
+        const onSelectHandler = (shiftKey: boolean = false) =>
+          handleSelect(obj.id, shiftKey);
         const onDeleteHandler = () => onDelete(obj.id);
+
+        const isMultiSelected = selectedIds.size > 1 && isSelected;
 
         switch (obj.type) {
           case "rectangle":
@@ -42,7 +63,14 @@ function ObjectRenderer({
                 object={obj}
                 isSelected={isSelected}
                 onSelect={onSelectHandler}
-                onDragEnd={(x, y) => onObjectChange(obj.id, { x, y })}
+                onDragStart={() => onGroupDragStart(obj.id)}
+                onDragMove={(x, y) =>
+                  isMultiSelected && onGroupDragMove(obj.id, x, y)
+                }
+                onDragEnd={(x, y) => {
+                  onObjectChange(obj.id, { x, y });
+                  if (isMultiSelected) onGroupDragEnd();
+                }}
                 onChange={(attrs) => onObjectChange(obj.id, attrs)}
                 tool={tool}
                 onDelete={onDeleteHandler}
@@ -56,7 +84,14 @@ function ObjectRenderer({
                 object={obj}
                 isSelected={isSelected}
                 onSelect={onSelectHandler}
-                onDragEnd={(x, y) => onObjectChange(obj.id, { x, y })}
+                onDragStart={() => onGroupDragStart(obj.id)}
+                onDragMove={(x, y) =>
+                  isMultiSelected && onGroupDragMove(obj.id, x, y)
+                }
+                onDragEnd={(x, y) => {
+                  onObjectChange(obj.id, { x, y });
+                  if (isMultiSelected) onGroupDragEnd();
+                }}
                 onChange={(attrs) => onObjectChange(obj.id, attrs)}
                 tool={tool}
                 onDelete={onDeleteHandler}
@@ -70,7 +105,15 @@ function ObjectRenderer({
                 object={obj}
                 isSelected={isSelected}
                 onSelect={onSelectHandler}
-                onDragEnd={(points) => onObjectChange(obj.id, { points })}
+                onDragStart={() => onGroupDragStart(obj.id)}
+                onDragMove={(points) =>
+                  isMultiSelected &&
+                  onGroupDragMove(obj.id, points[0], points[1])
+                }
+                onDragEnd={(points) => {
+                  onObjectChange(obj.id, { points });
+                  if (isMultiSelected) onGroupDragEnd();
+                }}
                 onChange={(attrs) => onObjectChange(obj.id, attrs)}
                 tool={tool}
                 onDelete={onDeleteHandler}
@@ -84,7 +127,14 @@ function ObjectRenderer({
                 object={obj}
                 isSelected={isSelected}
                 onSelect={onSelectHandler}
-                onDragEnd={(x, y) => onObjectChange(obj.id, { x, y })}
+                onDragStart={() => onGroupDragStart(obj.id)}
+                onDragMove={(x, y) =>
+                  isMultiSelected && onGroupDragMove(obj.id, x, y)
+                }
+                onDragEnd={(x, y) => {
+                  onObjectChange(obj.id, { x, y });
+                  if (isMultiSelected) onGroupDragEnd();
+                }}
                 onChange={(attrs) => onObjectChange(obj.id, attrs)}
                 tool={tool}
                 onDelete={onDeleteHandler}

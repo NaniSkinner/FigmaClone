@@ -10,7 +10,9 @@ import { ToolMode } from "@/components/Canvas/CanvasControls";
 interface CircleProps {
   object: CircleType;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onDragStart?: () => void;
+  onDragMove?: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onChange: (attrs: Partial<CircleType>) => void;
   tool: ToolMode;
@@ -21,6 +23,8 @@ function Circle({
   object,
   isSelected,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
   onChange,
   tool,
@@ -36,6 +40,11 @@ function Circle({
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Handle drag start
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
 
   // Handle drag move - enforce boundaries in real-time
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -53,6 +62,9 @@ function Circle({
       node.x(clampedX);
       node.y(clampedY);
     }
+
+    // Notify group drag
+    onDragMove?.(clampedX, clampedY);
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -103,11 +115,11 @@ function Circle({
   };
 
   // Handle click based on tool mode
-  const handleClick = () => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
       onDelete();
     } else if (tool === "select") {
-      onSelect();
+      onSelect(e.evt.shiftKey);
     }
   };
 
@@ -127,6 +139,7 @@ function Circle({
         stroke={object.stroke}
         strokeWidth={object.strokeWidth}
         draggable={isDraggable}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onClick={handleClick}
         onTap={handleClick}

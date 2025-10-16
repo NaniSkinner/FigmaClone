@@ -73,3 +73,11 @@ export interface Viewport {
   y: number;
   scale: number;
 }
+
+// Selection box for drag-to-select
+export interface SelectionBox {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
