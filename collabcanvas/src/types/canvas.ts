@@ -13,6 +13,8 @@ interface BaseCanvasObject {
   createdAt: Date;
   updatedAt?: Date;
   zIndex: number; // Layer order (higher = on top)
+  visible?: boolean; // Visibility state (default: true)
+  locked?: boolean; // Lock state (default: false)
 }
 
 // Rectangle shape

@@ -50,105 +50,133 @@ function ObjectRenderer({
 
   return (
     <>
-      {sortedObjects.map((obj) => {
-        const isSelected = selectedIds.has(obj.id);
-        const onSelectHandler = (shiftKey: boolean = false) =>
-          handleSelect(obj.id, shiftKey);
-        const onDeleteHandler = () => onDelete(obj.id);
+      {sortedObjects
+        .filter((obj) => obj.visible !== false) // Filter out invisible objects
+        .map((obj) => {
+          const isSelected = selectedIds.has(obj.id);
+          const onSelectHandler = (shiftKey: boolean = false) =>
+            handleSelect(obj.id, shiftKey);
+          const onDeleteHandler = () => onDelete(obj.id);
 
-        const isMultiSelected = selectedIds.size > 1 && isSelected;
+          const isMultiSelected = selectedIds.size > 1 && isSelected;
 
-        switch (obj.type) {
-          case "rectangle":
-            return (
-              <Rectangle
-                key={obj.id}
-                object={obj}
-                isSelected={isSelected}
-                onSelect={onSelectHandler}
-                onDragStart={() => onGroupDragStart(obj.id)}
-                onDragMove={(x, y) =>
-                  isMultiSelected && onGroupDragMove(obj.id, x, y)
-                }
-                onDragEnd={(x, y) => {
-                  onObjectChange(obj.id, { x, y });
-                  if (isMultiSelected) onGroupDragEnd();
-                }}
-                onChange={(attrs) => onObjectChange(obj.id, attrs)}
-                tool={tool}
-                onDelete={onDeleteHandler}
-              />
-            );
+          // Disable interactions for locked objects
+          const isLocked = obj.locked === true;
 
-          case "circle":
-            return (
-              <Circle
-                key={obj.id}
-                object={obj}
-                isSelected={isSelected}
-                onSelect={onSelectHandler}
-                onDragStart={() => onGroupDragStart(obj.id)}
-                onDragMove={(x, y) =>
-                  isMultiSelected && onGroupDragMove(obj.id, x, y)
-                }
-                onDragEnd={(x, y) => {
-                  onObjectChange(obj.id, { x, y });
-                  if (isMultiSelected) onGroupDragEnd();
-                }}
-                onChange={(attrs) => onObjectChange(obj.id, attrs)}
-                tool={tool}
-                onDelete={onDeleteHandler}
-              />
-            );
+          switch (obj.type) {
+            case "rectangle":
+              return (
+                <Rectangle
+                  key={obj.id}
+                  object={obj}
+                  isSelected={isSelected}
+                  onSelect={onSelectHandler}
+                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                  onDragMove={(x, y) =>
+                    !isLocked &&
+                    isMultiSelected &&
+                    onGroupDragMove(obj.id, x, y)
+                  }
+                  onDragEnd={(x, y) => {
+                    if (!isLocked) {
+                      onObjectChange(obj.id, { x, y });
+                      if (isMultiSelected) onGroupDragEnd();
+                    }
+                  }}
+                  onChange={(attrs) =>
+                    !isLocked && onObjectChange(obj.id, attrs)
+                  }
+                  tool={tool}
+                  onDelete={onDeleteHandler}
+                />
+              );
 
-          case "line":
-            return (
-              <Line
-                key={obj.id}
-                object={obj}
-                isSelected={isSelected}
-                onSelect={onSelectHandler}
-                onDragStart={() => onGroupDragStart(obj.id)}
-                onDragMove={(points) =>
-                  isMultiSelected &&
-                  onGroupDragMove(obj.id, points[0], points[1])
-                }
-                onDragEnd={(points) => {
-                  onObjectChange(obj.id, { points });
-                  if (isMultiSelected) onGroupDragEnd();
-                }}
-                onChange={(attrs) => onObjectChange(obj.id, attrs)}
-                tool={tool}
-                onDelete={onDeleteHandler}
-              />
-            );
+            case "circle":
+              return (
+                <Circle
+                  key={obj.id}
+                  object={obj}
+                  isSelected={isSelected}
+                  onSelect={onSelectHandler}
+                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                  onDragMove={(x, y) =>
+                    !isLocked &&
+                    isMultiSelected &&
+                    onGroupDragMove(obj.id, x, y)
+                  }
+                  onDragEnd={(x, y) => {
+                    if (!isLocked) {
+                      onObjectChange(obj.id, { x, y });
+                      if (isMultiSelected) onGroupDragEnd();
+                    }
+                  }}
+                  onChange={(attrs) =>
+                    !isLocked && onObjectChange(obj.id, attrs)
+                  }
+                  tool={tool}
+                  onDelete={onDeleteHandler}
+                />
+              );
 
-          case "text":
-            return (
-              <Text
-                key={obj.id}
-                object={obj}
-                isSelected={isSelected}
-                onSelect={onSelectHandler}
-                onDragStart={() => onGroupDragStart(obj.id)}
-                onDragMove={(x, y) =>
-                  isMultiSelected && onGroupDragMove(obj.id, x, y)
-                }
-                onDragEnd={(x, y) => {
-                  onObjectChange(obj.id, { x, y });
-                  if (isMultiSelected) onGroupDragEnd();
-                }}
-                onChange={(attrs) => onObjectChange(obj.id, attrs)}
-                tool={tool}
-                onDelete={onDeleteHandler}
-                onDoubleClick={() => onTextDoubleClick?.(obj.id)}
-              />
-            );
+            case "line":
+              return (
+                <Line
+                  key={obj.id}
+                  object={obj}
+                  isSelected={isSelected}
+                  onSelect={onSelectHandler}
+                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                  onDragMove={(points) =>
+                    !isLocked &&
+                    isMultiSelected &&
+                    onGroupDragMove(obj.id, points[0], points[1])
+                  }
+                  onDragEnd={(points) => {
+                    if (!isLocked) {
+                      onObjectChange(obj.id, { points });
+                      if (isMultiSelected) onGroupDragEnd();
+                    }
+                  }}
+                  onChange={(attrs) =>
+                    !isLocked && onObjectChange(obj.id, attrs)
+                  }
+                  tool={tool}
+                  onDelete={onDeleteHandler}
+                />
+              );
 
-          default:
-            return null;
-        }
-      })}
+            case "text":
+              return (
+                <Text
+                  key={obj.id}
+                  object={obj}
+                  isSelected={isSelected}
+                  onSelect={onSelectHandler}
+                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                  onDragMove={(x, y) =>
+                    !isLocked &&
+                    isMultiSelected &&
+                    onGroupDragMove(obj.id, x, y)
+                  }
+                  onDragEnd={(x, y) => {
+                    if (!isLocked) {
+                      onObjectChange(obj.id, { x, y });
+                      if (isMultiSelected) onGroupDragEnd();
+                    }
+                  }}
+                  onChange={(attrs) =>
+                    !isLocked && onObjectChange(obj.id, attrs)
+                  }
+                  tool={tool}
+                  onDelete={onDeleteHandler}
+                  onDoubleClick={() => !isLocked && onTextDoubleClick?.(obj.id)}
+                />
+              );
+
+            default:
+              return null;
+          }
+        })}
     </>
   );
 }

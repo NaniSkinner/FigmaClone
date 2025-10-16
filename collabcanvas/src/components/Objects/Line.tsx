@@ -155,9 +155,10 @@ function Line({
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -188,12 +189,15 @@ function Line({
             if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
-            
+
             // Maximum size constraints
-            if (newBox.width > CANVAS_SIZE.width || newBox.height > CANVAS_SIZE.height) {
+            if (
+              newBox.width > CANVAS_SIZE.width ||
+              newBox.height > CANVAS_SIZE.height
+            ) {
               return oldBox;
             }
-            
+
             return newBox;
           }}
         />

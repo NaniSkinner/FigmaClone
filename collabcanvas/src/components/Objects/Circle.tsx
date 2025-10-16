@@ -126,9 +126,10 @@ function Circle({
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -163,7 +164,7 @@ function Circle({
 
             // Maximum size constraints
             const maxSize = Math.min(CANVAS_SIZE.width, CANVAS_SIZE.height);
-            
+
             if (newBox.width > maxSize || newBox.height > maxSize) {
               return oldBox;
             }

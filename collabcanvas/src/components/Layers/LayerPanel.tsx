@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCanvasStore } from "@/store";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import LayerItem from "./LayerItem";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
 
@@ -16,6 +17,7 @@ export default function LayerPanel({ canvasId, userId }: LayerPanelProps) {
     useCanvasStore();
   const { bringToFront, sendToBack, bringForward, sendBackward } =
     useLayerManagement(canvasId, userId);
+  const { updateObjectInFirestore } = useRealtimeSync(canvasId, userId);
 
   // Sort objects by zIndex (highest first for top-to-bottom display)
   const sortedObjects = Array.from(objects.values()).sort(
@@ -29,13 +31,11 @@ export default function LayerPanel({ canvasId, userId }: LayerPanelProps) {
   };
 
   const handleVisibilityToggle = (id: string, visible: boolean) => {
-    // TODO: Implement visibility toggle in PR #13 Task 13.6
-    console.log(`Toggle visibility for ${id}: ${visible}`);
+    updateObjectInFirestore(id, { visible });
   };
 
   const handleLockToggle = (id: string, locked: boolean) => {
-    // TODO: Implement lock toggle in PR #13 Task 13.6
-    console.log(`Toggle lock for ${id}: ${locked}`);
+    updateObjectInFirestore(id, { locked });
   };
 
   return (

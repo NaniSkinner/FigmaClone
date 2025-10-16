@@ -398,14 +398,36 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Animate layer reordering
 - [ ] Sync new order to Firestore
 
-### Task 13.6: Visibility & Lock System
+### Task 13.6: Visibility & Lock System ✅
 
-- [ ] Add visible and locked properties to objects
-- [ ] Update rendering to skip invisible objects
-- [ ] Prevent selection of locked objects
-- [ ] Update UI to show locked state
-- [ ] Handle locked objects in group selection
-- [ ] Sync visibility/lock state
+- [x] Add visible and locked properties to objects
+- [x] Update rendering to skip invisible objects
+- [x] Prevent selection/editing of locked objects
+- [x] Update UI to show locked state (emojis update automatically)
+- [x] Handle locked objects in all interactions
+- [x] Sync visibility/lock state to Firestore
+
+**Implementation Details:**
+
+- Added `visible?: boolean` and `locked?: boolean` properties to BaseCanvasObject
+- LayerItem now reads object's actual visibility/lock state from Firestore
+- LayerPanel updates Firestore when toggles are clicked
+- ObjectRenderer filters out invisible objects (visible !== false)
+- Locked objects cannot be:
+  - Dragged or moved
+  - Resized or transformed
+  - Edited (text objects can't be double-clicked)
+  - Deleted
+  - Modified in any way
+- Emoji indicators automatically reflect state:
+  - 👁️ = Visible, 🙈 = Hidden
+  - 🔓 = Unlocked, 🔒 = Locked
+- All state changes sync in real-time across all users
+- Backward compatible: defaults to visible=true, locked=false if undefined
+
+**Git Commits:**
+
+- To be committed: `feat: PR #13 Task 13.6 - Visibility & Lock System implementation`
 
 ### Task 13.7: Testing & Integration
 

@@ -126,9 +126,10 @@ function Rectangle({
   };
 
   // Determine if object should be draggable based on tool
-  const isDraggable = tool === "select";
-  // Show transformer only in select mode when selected
-  const showTransformer = isSelected && tool === "select";
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected and not locked
+  const showTransformer =
+    isSelected && tool === "select" && object.locked !== true;
 
   return (
     <>
@@ -155,14 +156,14 @@ function Rectangle({
           ref={transformerRef}
           rotateEnabled={true}
           enabledAnchors={[
-            'top-left',
-            'top-center',
-            'top-right',
-            'middle-right',
-            'middle-left',
-            'bottom-left',
-            'bottom-center',
-            'bottom-right',
+            "top-left",
+            "top-center",
+            "top-right",
+            "middle-right",
+            "middle-left",
+            "bottom-left",
+            "bottom-center",
+            "bottom-right",
           ]}
           rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
           rotationSnapTolerance={5}
@@ -175,7 +176,7 @@ function Rectangle({
             // Maximum size constraints
             const maxWidth = CANVAS_SIZE.width;
             const maxHeight = CANVAS_SIZE.height;
-            
+
             if (newBox.width > maxWidth || newBox.height > maxHeight) {
               return oldBox;
             }

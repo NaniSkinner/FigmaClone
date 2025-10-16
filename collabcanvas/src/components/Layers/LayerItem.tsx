@@ -1,14 +1,13 @@
 "use client";
 
 import { CanvasObject } from "@/types";
-import { useState } from "react";
 
 interface LayerItemProps {
   object: CanvasObject;
   isSelected: boolean;
   onSelect: (id: string) => void;
-  onVisibilityToggle?: (id: string, visible: boolean) => void;
-  onLockToggle?: (id: string, locked: boolean) => void;
+  onVisibilityToggle: (id: string, visible: boolean) => void;
+  onLockToggle: (id: string, locked: boolean) => void;
 }
 
 export default function LayerItem({
@@ -18,8 +17,9 @@ export default function LayerItem({
   onVisibilityToggle,
   onLockToggle,
 }: LayerItemProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isLocked, setIsLocked] = useState(false);
+  // Use object's actual visibility and lock state (default to true/false)
+  const isVisible = object.visible !== false; // Default to visible if undefined
+  const isLocked = object.locked === true; // Default to unlocked if undefined
 
   // Get icon based on object type
   const getObjectIcon = () => {
@@ -116,15 +116,13 @@ export default function LayerItem({
   const handleVisibilityToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newVisible = !isVisible;
-    setIsVisible(newVisible);
-    onVisibilityToggle?.(object.id, newVisible);
+    onVisibilityToggle(object.id, newVisible);
   };
 
   const handleLockToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newLocked = !isLocked;
-    setIsLocked(newLocked);
-    onLockToggle?.(object.id, newLocked);
+    onLockToggle(object.id, newLocked);
   };
 
   return (
