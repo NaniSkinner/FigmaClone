@@ -33,6 +33,10 @@ interface CanvasStore {
   removeObject: (id: string) => void;
   setObjects: (objects: CanvasObject[]) => void;
   clearObjects: () => void;
+
+  // Z-index management
+  getNextZIndex: () => number;
+  getMaxZIndex: () => number;
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -103,7 +107,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
       if (!existing) return state;
 
       const newMap = new Map(state.objects);
-      newMap.set(id, { ...existing, ...updates });
+      newMap.set(id, { ...existing, ...updates } as CanvasObject);
       return { objects: newMap };
     }),
 
@@ -121,4 +125,21 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set({ objects: new Map(objects.map((obj) => [obj.id, obj])) }),
 
   clearObjects: () => set({ objects: new Map(), selectedObjectIds: new Set() }),
+
+  // Z-index management
+  getMaxZIndex: () => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    let maxZ = 0;
+    state.objects.forEach((obj: CanvasObject) => {
+      if (obj.zIndex > maxZ) {
+        maxZ = obj.zIndex;
+      }
+    });
+    return maxZ;
+  },
+
+  getNextZIndex: (): number => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    return state.getMaxZIndex() + 1;
+  },
 }));

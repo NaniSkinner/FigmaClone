@@ -279,16 +279,30 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ---
 
-## PR #13: Layer Management System
+## PR #13: Layer Management System (IN PROGRESS)
 
-### Task 13.1: Add Z-Index Support
+### Task 13.1: Add Z-Index Support ✅
 
-- [ ] Update all objects with zIndex property
-- [ ] Modify object creation to assign zIndex
-- [ ] Update ObjectRenderer to sort by zIndex
-- [ ] Handle z-index conflicts (same value)
-- [ ] Implement auto-increment for new objects
-- [ ] Sync z-index changes to Firestore
+- [x] Update all objects with zIndex property
+- [x] Modify object creation to assign zIndex
+- [x] Update ObjectRenderer to sort by zIndex
+- [x] Handle z-index conflicts (auto-increment prevents conflicts)
+- [x] Implement auto-increment for new objects
+- [x] Sync z-index changes to Firestore
+- [x] Add legacy object support (defaults to zIndex 0)
+- [x] Fix all TypeScript and ESLint errors
+- [x] Successful build and testing
+
+**Implementation Details:**
+- Added `zIndex: number` to BaseCanvasObject interface
+- Created `getMaxZIndex()` and `getNextZIndex()` helper functions in canvasStore
+- All shape creation (rectangle, circle, line, text) auto-assigns zIndex
+- ObjectRenderer sorts objects by zIndex before rendering (lower = bottom, higher = top)
+- Firestore sync automatically handles zIndex property
+- Backward compatible with legacy objects without zIndex
+
+**Git Commits:**
+- To be committed: `feat: PR #13 Task 13.1 - Add Z-Index Support for layer management`
 
 ### Task 13.2: Layer Ordering Functions
 

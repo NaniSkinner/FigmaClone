@@ -81,6 +81,7 @@ export default function Canvas({
     isSelecting,
     setIsSelecting,
     setSelectedObjectIds,
+    getNextZIndex,
   } = useCanvasStore();
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, userId);
@@ -210,6 +211,7 @@ export default function Canvas({
             fill: DEFAULT_TEXT_STYLE.fill,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
           await createObject(textObject);
         } else if (clickedOnBackground) {
@@ -451,6 +453,7 @@ export default function Canvas({
             strokeWidth: DEFAULT_RECTANGLE_STYLE.strokeWidth,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
 
           await createObject(finalRect);
@@ -463,8 +466,8 @@ export default function Canvas({
     if (newCircle) {
       // Only create if circle is large enough (radius at least 5)
       if (newCircle.radius > 5) {
-        let x = newCircle.x;
-        let y = newCircle.y;
+        const x = newCircle.x;
+        const y = newCircle.y;
         let radius = newCircle.radius;
 
         // Ensure the circle is fully within canvas bounds
@@ -488,6 +491,7 @@ export default function Canvas({
             strokeWidth: DEFAULT_CIRCLE_STYLE.strokeWidth,
             userId,
             createdAt: new Date(),
+            zIndex: getNextZIndex(),
           };
 
           await createObject(finalCircle);
@@ -513,6 +517,7 @@ export default function Canvas({
           strokeWidth: DEFAULT_LINE_STYLE.strokeWidth,
           userId,
           createdAt: new Date(),
+          zIndex: getNextZIndex(),
         };
 
         await createObject(finalLine);
@@ -593,11 +598,10 @@ export default function Canvas({
   };
 
   // Handle group drag end
-  const handleGroupDragEnd = async () => {
+  const handleGroupDragEnd = () => {
     if (!groupDragStart) return;
 
-    // Sync all moved objects to Firestore
-    const updatePromises: Promise<void>[] = [];
+    // Sync all moved objects to Firestore (throttled updates)
     selectedObjectIds.forEach((id) => {
       const obj = objects.get(id);
       if (!obj) return;
@@ -607,17 +611,12 @@ export default function Canvas({
         obj.type === "circle" ||
         obj.type === "text"
       ) {
-        updatePromises.push(
-          updateObjectInFirestore(id, { x: obj.x, y: obj.y })
-        );
+        updateObjectInFirestore(id, { x: obj.x, y: obj.y });
       } else if (obj.type === "line") {
-        updatePromises.push(
-          updateObjectInFirestore(id, { points: obj.points })
-        );
+        updateObjectInFirestore(id, { points: obj.points });
       }
     });
 
-    await Promise.all(updatePromises);
     setGroupDragStart(null);
   };
 

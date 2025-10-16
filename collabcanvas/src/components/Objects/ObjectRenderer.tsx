@@ -45,9 +45,12 @@ function ObjectRenderer({
     }
   };
 
+  // Sort objects by zIndex (lower zIndex renders first, higher zIndex on top)
+  const sortedObjects = [...objects].sort((a, b) => a.zIndex - b.zIndex);
+
   return (
     <>
-      {objects.map((obj) => {
+      {sortedObjects.map((obj) => {
         const isSelected = selectedIds.has(obj.id);
         const onSelectHandler = (shiftKey: boolean = false) =>
           handleSelect(obj.id, shiftKey);

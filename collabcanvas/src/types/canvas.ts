@@ -12,6 +12,7 @@ interface BaseCanvasObject {
   userId: string;
   createdAt: Date;
   updatedAt?: Date;
+  zIndex: number; // Layer order (higher = on top)
 }
 
 // Rectangle shape

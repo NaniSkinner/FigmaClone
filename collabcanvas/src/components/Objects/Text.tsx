@@ -102,7 +102,7 @@ function Text({
     // Get new dimensions
     let x = node.x();
     let y = node.y();
-    let width = node.width() * scaleX;
+    const width = node.width() * scaleX;
 
     // Ensure the text stays within canvas bounds
     x = Math.max(0, Math.min(x, CANVAS_SIZE.width - width));

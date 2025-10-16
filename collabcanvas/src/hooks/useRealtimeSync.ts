@@ -31,6 +31,11 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
       snapshot.docChanges().forEach((change) => {
         const data = change.doc.data() as CanvasObject;
 
+        // Handle legacy objects without zIndex (assign a default value)
+        if (data.zIndex === undefined) {
+          data.zIndex = 0;
+        }
+
         if (change.type === "added") {
           addObject(data);
         } else if (change.type === "modified") {

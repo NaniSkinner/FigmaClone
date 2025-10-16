@@ -32,11 +32,11 @@ export default function TextFormatToolbar({
   const isItalic = textObject.fontStyle?.includes("italic");
 
   const toggleBold = () => {
-    let newStyle = textObject.fontStyle || "normal";
+    let newStyle: TextType["fontStyle"] = textObject.fontStyle || "normal";
     if (isBold) {
       // Remove bold
-      newStyle = newStyle.replace("bold", "").trim();
-      if (newStyle === "") newStyle = "normal";
+      const cleaned = newStyle.replace("bold", "").trim();
+      newStyle = (cleaned === "" ? "normal" : cleaned) as TextType["fontStyle"];
     } else {
       // Add bold
       if (newStyle === "normal") {
@@ -45,15 +45,15 @@ export default function TextFormatToolbar({
         newStyle = "bold italic";
       }
     }
-    onFormatChange({ fontStyle: newStyle as TextType["fontStyle"] });
+    onFormatChange({ fontStyle: newStyle });
   };
 
   const toggleItalic = () => {
-    let newStyle = textObject.fontStyle || "normal";
+    let newStyle: TextType["fontStyle"] = textObject.fontStyle || "normal";
     if (isItalic) {
       // Remove italic
-      newStyle = newStyle.replace("italic", "").trim();
-      if (newStyle === "") newStyle = "normal";
+      const cleaned = newStyle.replace("italic", "").trim();
+      newStyle = (cleaned === "" ? "normal" : cleaned) as TextType["fontStyle"];
     } else {
       // Add italic
       if (newStyle === "normal") {
@@ -62,7 +62,7 @@ export default function TextFormatToolbar({
         newStyle = "bold italic";
       }
     }
-    onFormatChange({ fontStyle: newStyle as TextType["fontStyle"] });
+    onFormatChange({ fontStyle: newStyle });
   };
 
   return (
