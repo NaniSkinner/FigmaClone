@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Line, Circle, Text } from "react-konva";
 import Konva from "konva";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useLayerManagement } from "@/hooks/useLayerManagement";
 import { useCanvasStore } from "@/store";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
 import SelectionBox from "@/components/Canvas/SelectionBox";
@@ -85,6 +86,8 @@ export default function Canvas({
   } = useCanvasStore();
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, userId);
+  const { bringToFront, sendToBack, bringForward, sendBackward } =
+    useLayerManagement(canvasId, userId);
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -128,6 +131,38 @@ export default function Canvas({
           deleteObject(id);
         });
         clearSelection();
+        return;
+      }
+
+      // Layer ordering shortcuts (only if objects are selected)
+      if (selectedObjectIds.size > 0 && (e.ctrlKey || e.metaKey)) {
+        // Ctrl/Cmd + Shift + ] : Bring to Front
+        if (e.shiftKey && e.key === "]") {
+          e.preventDefault();
+          bringToFront();
+          return;
+        }
+
+        // Ctrl/Cmd + Shift + [ : Send to Back
+        if (e.shiftKey && e.key === "[") {
+          e.preventDefault();
+          sendToBack();
+          return;
+        }
+
+        // Ctrl/Cmd + ] : Bring Forward
+        if (!e.shiftKey && e.key === "]") {
+          e.preventDefault();
+          bringForward();
+          return;
+        }
+
+        // Ctrl/Cmd + [ : Send Backward
+        if (!e.shiftKey && e.key === "[") {
+          e.preventDefault();
+          sendBackward();
+          return;
+        }
       }
     };
 
@@ -135,7 +170,15 @@ export default function Canvas({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedObjectIds, deleteObject, clearSelection]);
+  }, [
+    selectedObjectIds,
+    deleteObject,
+    clearSelection,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  ]);
 
   // Handle mouse down to start drawing a shape or panning
   const handleMouseDown = async (e: Konva.KonvaEventObject<MouseEvent>) => {

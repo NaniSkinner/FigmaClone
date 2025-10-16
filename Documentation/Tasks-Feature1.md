@@ -306,15 +306,35 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 - `551b305` - feat: PR #13 Task 13.1 - Add Z-Index Support for layer management
 
-### Task 13.2: Layer Ordering Functions
+### Task 13.2: Layer Ordering Functions ✅
 
-- [ ] Create `src/hooks/useLayerManagement.ts`
-- [ ] Implement bringToFront function
-- [ ] Implement sendToBack function
-- [ ] Implement bringForward function
-- [ ] Implement sendBackward function
-- [ ] Handle multi-select layer operations
-- [ ] Add keyboard shortcuts for layer operations
+- [x] Create `src/hooks/useLayerManagement.ts`
+- [x] Implement bringToFront function
+- [x] Implement sendToBack function
+- [x] Implement bringForward function
+- [x] Implement sendBackward function
+- [x] Handle multi-select layer operations
+- [x] Add keyboard shortcuts for layer operations
+- [x] Integrate with Canvas component
+- [x] Test single and multi-object layer reordering
+
+**Implementation Details:**
+- Created comprehensive `useLayerManagement` hook with all layer ordering functions
+- `bringToFront()` - Moves selected objects to highest z-index (maintains relative order)
+- `sendToBack()` - Moves selected objects to lowest z-index (shifts other objects up)
+- `bringForward()` - Moves objects up one layer (swaps z-index with object above)
+- `sendBackward()` - Moves objects down one layer (swaps z-index with object below)
+- Multi-select support: All functions work with single or multiple selected objects
+- Smart layer swapping: Forward/backward operations skip already-selected objects
+
+**Keyboard Shortcuts:**
+- **Cmd/Ctrl + Shift + ]** → Bring to Front
+- **Cmd/Ctrl + Shift + [** → Send to Back
+- **Cmd/Ctrl + ]** → Bring Forward (one layer)
+- **Cmd/Ctrl + [** → Send Backward (one layer)
+
+**Git Commits:**
+- To be committed: `feat: PR #13 Task 13.2 - Layer Ordering Functions with keyboard shortcuts`
 
 ### Task 13.3: Create Layer Panel UI
 
