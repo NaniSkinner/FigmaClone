@@ -162,7 +162,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 11.3: Create Selection Box Component
 
-
 - [ ] Create `src/components/Canvas/SelectionBox.tsx`
 - [ ] Render semi-transparent blue rectangle
 - [ ] Update position during drag
@@ -171,7 +170,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Z-index above objects but below cursors
 
 ### Task 11.4: Implement Drag Selection
-
 
 - [ ] Update Canvas.tsx mouseDown handler for selection start
 - [ ] Track mouse position during selection drag
@@ -183,7 +181,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 11.5: Group Operations
 
-
 - [ ] Implement group move (all selected objects)
 - [ ] Update delete to handle multiple objects
 - [ ] Calculate group bounding box
@@ -192,7 +189,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Sync group operations to Firestore
 
 ### Task 11.6: Keyboard Shortcuts
-
 
 - [ ] Implement Ctrl/Cmd+A (select all)
 - [ ] Add Escape key (deselect all)
@@ -214,9 +210,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ## PR #12: Complete Transform Operations
 
-
 ### Task 12.1: Enhance Rectangle Resize
-
 
 - [ ] Update `src/components/Objects/Rectangle.tsx`
 - [ ] Configure 8-point transformer
@@ -227,7 +221,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 12.2: Implement Circle Resize
 
-
 - [ ] Update Circle.tsx transformer config
 - [ ] Map scale to radius changes
 - [ ] Maintain circle aspect ratio always
@@ -236,7 +229,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Update intersection for resized circles
 
 ### Task 12.3: Implement Line Resize
-
 
 - [ ] Create custom line transformer
 - [ ] Add endpoint drag handles
@@ -247,7 +239,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 12.4: Implement Text Resize
 
-
 - [ ] Update Text.tsx with resize capability
 - [ ] Scale font size proportionally
 - [ ] Maintain text aspect ratio
@@ -256,7 +247,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Preserve text formatting
 
 ### Task 12.5: Add Rotation System
-
 
 - [ ] Add rotation handle to transformer
 - [ ] Calculate rotation angle from mouse position
@@ -268,7 +258,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 12.6: Multi-Select Transform
 
-
 - [ ] Create group transformer component
 - [ ] Calculate group bounding box
 - [ ] Apply transforms to all selected objects
@@ -277,7 +266,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Update all objects in single Firestore batch
 
 ### Task 12.7: Transform Constraints
-
 
 - [ ] Prevent objects leaving canvas during transform
 - [ ] Implement smart snapping (optional)
@@ -290,9 +278,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ## PR #13: Layer Management System
 
-
 ### Task 13.1: Add Z-Index Support
-
 
 - [ ] Update all objects with zIndex property
 - [ ] Modify object creation to assign zIndex
@@ -302,7 +288,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Sync z-index changes to Firestore
 
 ### Task 13.2: Layer Ordering Functions
-
 
 - [ ] Create `src/hooks/useLayerManagement.ts`
 - [ ] Implement bringToFront function
@@ -314,7 +299,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 13.3: Create Layer Panel UI
 
-
 - [ ] Create `src/components/Layers/LayerPanel.tsx`
 - [ ] Design collapsible sidebar layout
 - [ ] Add layer list with object thumbnails
@@ -324,7 +308,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Style active/selected layer items
 
 ### Task 13.4: Layer Item Component
-
 
 - [ ] Create `src/components/Layers/LayerItem.tsx`
 - [ ] Render object preview/icon
@@ -336,7 +319,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 13.5: Drag-to-Reorder Implementation
 
-
 - [ ] Add drag-and-drop library or custom implementation
 - [ ] Handle drag start/end events
 - [ ] Update z-index during drag
@@ -345,7 +327,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Sync new order to Firestore
 
 ### Task 13.6: Visibility & Lock System
-
 
 - [ ] Add visible and locked properties to objects
 - [ ] Update rendering to skip invisible objects
@@ -367,9 +348,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ## PR #14: Productivity Features
 
-
 ### Task 14.1: Implement Duplicate System
-
 
 - [ ] Create duplicate function in canvasStore
 - [ ] Generate new UUIDs for duplicates
@@ -382,7 +361,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 14.2: Copy/Paste System
 
-
 - [ ] Implement copy to clipboard (Ctrl+C)
 - [ ] Store objects as JSON in clipboard
 - [ ] Implement paste from clipboard (Ctrl+V)
@@ -394,7 +372,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 ### Task 14.3: Keyboard Shortcuts Manager
 
-
 - [ ] Create `src/hooks/useKeyboardShortcuts.ts`
 - [ ] Set up global keyboard event listener
 - [ ] Implement shortcut registry system
@@ -404,7 +381,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Create shortcut documentation
 
 ### Task 14.4: Tool Shortcuts Implementation
-
 
 - [ ] V - Select tool
 - [ ] H - Pan tool
@@ -416,7 +392,6 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 - [ ] Space bar for temporary pan
 
 ### Task 14.5: Operation Shortcuts Implementation
-
 
 - [ ] Delete/Backspace - Delete selected
 - [ ] Ctrl+D - Duplicate
