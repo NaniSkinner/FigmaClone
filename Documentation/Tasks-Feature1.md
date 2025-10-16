@@ -208,7 +208,7 @@ This task list breaks down the PRD requirements into actionable tasks with clear
 
 **Git Commits:**
 
-- TBD - feat: PR #11 - Multi-Selection System with drag-to-select and keyboard shortcuts
+- `61792ee` - feat: PR #11 - Multi-Selection System with drag-to-select and group operations
 
 ---
 
