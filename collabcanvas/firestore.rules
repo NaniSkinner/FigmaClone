@@ -19,7 +19,7 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Presence collection - for real-time cursor tracking
+    // Presence collection - for real-time cursor tracking and selection
     // Users can read all presence data but only write their own
     match /presence/{userId} {
       allow read: if isAuthenticated();
@@ -32,12 +32,14 @@ service cloud.firestore {
         && request.resource.data.cursor.x is number
         && request.resource.data.cursor.y is number;
 
-      // Allow update with partial data (for cursor position updates)
+      // Allow update with partial data (for cursor position and selection updates)
       allow update: if isOwner(userId)
         && (!request.resource.data.keys().hasAny(['cursor']) ||
             (request.resource.data.cursor.keys().hasAll(['x', 'y'])
              && request.resource.data.cursor.x is number
-             && request.resource.data.cursor.y is number));
+             && request.resource.data.cursor.y is number))
+        && (!request.resource.data.keys().hasAny(['selectedObjectIds']) ||
+            request.resource.data.selectedObjectIds is list);
     }
 
     // Canvas collections - collaborative canvas objects

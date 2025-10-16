@@ -31,6 +31,9 @@ interface CanvasProps {
   setPosition: (position: { x: number; y: number }) => void;
   handleWheel: (e: WheelEvent) => void;
   tool: ToolMode;
+  setTool: (tool: ToolMode) => void;
+  onlineUsers: Map<string, any>; // UserPresence from useMultiplayer
+  updateSelectedObjects: (selectedObjectIds: string[]) => void;
 }
 
 export default function Canvas({
@@ -43,6 +46,9 @@ export default function Canvas({
   setPosition,
   handleWheel,
   tool,
+  setTool,
+  onlineUsers,
+  updateSelectedObjects,
 }: CanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -87,11 +93,18 @@ export default function Canvas({
     duplicateObjects,
     copyObjects,
     pasteObjects,
+    addToSelection,
   } = useCanvasStore();
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, userId);
   const { bringToFront, sendToBack, bringForward, sendBackward } =
     useLayerManagement(canvasId, userId);
+
+  // Sync selection to presence (real-time selection visibility)
+  useEffect(() => {
+    const selectedArray = Array.from(selectedObjectIds);
+    updateSelectedObjects(selectedArray);
+  }, [selectedObjectIds, updateSelectedObjects]);
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -211,7 +224,7 @@ export default function Canvas({
       // Ctrl/Cmd+V: Paste objects from clipboard
       if ((e.ctrlKey || e.metaKey) && e.key === "v" && userId) {
         e.preventDefault();
-        
+
         // Try internal clipboard first
         if (clipboard.length > 0) {
           const pasted = pasteObjects(clipboard, userId, 20, 20);
@@ -365,8 +378,9 @@ export default function Canvas({
       } else if (tool === "text") {
         // Text mode: click to place text
         if (clickedOnCanvas && userId) {
+          const newId = uuidv4();
           const textObject: CanvasObject = {
-            id: uuidv4(),
+            id: newId,
             type: "text",
             x,
             y,
@@ -379,6 +393,11 @@ export default function Canvas({
             zIndex: getNextZIndex(),
           };
           await createObject(textObject);
+
+          // Auto-select the newly created object and switch to select mode
+          clearSelection();
+          addToSelection(newId);
+          setTool("select");
         } else if (clickedOnBackground) {
           setIsPanning(true);
           setPanStart({ x: e.evt.clientX, y: e.evt.clientY });
@@ -606,8 +625,9 @@ export default function Canvas({
           width >= 10 &&
           height >= 10
         ) {
+          const newId = uuidv4();
           const finalRect: CanvasObject = {
-            id: uuidv4(),
+            id: newId,
             type: "rectangle",
             x,
             y,
@@ -622,6 +642,11 @@ export default function Canvas({
           };
 
           await createObject(finalRect);
+
+          // Auto-select the newly created object and switch to select mode
+          clearSelection();
+          addToSelection(newId);
+          setTool("select");
         }
       }
       setNewRect(null);
@@ -645,8 +670,9 @@ export default function Canvas({
         );
 
         if (radius >= 5) {
+          const newId = uuidv4();
           const finalCircle: CanvasObject = {
-            id: uuidv4(),
+            id: newId,
             type: "circle",
             x,
             y,
@@ -660,6 +686,11 @@ export default function Canvas({
           };
 
           await createObject(finalCircle);
+
+          // Auto-select the newly created object and switch to select mode
+          clearSelection();
+          addToSelection(newId);
+          setTool("select");
         }
       }
       setNewCircle(null);
@@ -674,8 +705,9 @@ export default function Canvas({
 
       // Only create if line is long enough (at least 10px)
       if (length > 10) {
+        const newId = uuidv4();
         const finalLine: CanvasObject = {
-          id: uuidv4(),
+          id: newId,
           type: "line",
           points: newLine.points,
           stroke: DEFAULT_LINE_STYLE.stroke,
@@ -686,6 +718,11 @@ export default function Canvas({
         };
 
         await createObject(finalLine);
+
+        // Auto-select the newly created object and switch to select mode
+        clearSelection();
+        addToSelection(newId);
+        setTool("select");
       }
       setNewLine(null);
     }
@@ -906,6 +943,7 @@ export default function Canvas({
           <ObjectRenderer
             objects={objectsArray}
             selectedIds={selectedObjectIds}
+            onlineUsers={onlineUsers}
             onObjectChange={handleObjectChange}
             onGroupDragStart={handleGroupDragStart}
             onGroupDragMove={handleGroupDragMove}

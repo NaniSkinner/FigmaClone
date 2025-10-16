@@ -1,17 +1,20 @@
 "use client";
 
 import { memo } from "react";
-import { CanvasObject } from "@/types";
+import { Group } from "react-konva";
+import { CanvasObject, UserPresence } from "@/types";
 import Rectangle from "./Rectangle";
 import Circle from "./Circle";
 import Line from "./Line";
 import Text from "./Text";
+import SelectionBadge from "@/components/Canvas/SelectionBadge";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useCanvasStore } from "@/store";
 
 interface ObjectRendererProps {
   objects: CanvasObject[];
   selectedIds: Set<string>;
+  onlineUsers: Map<string, UserPresence>;
   onObjectChange: (id: string, attrs: Partial<CanvasObject>) => void;
   onGroupDragStart: (id: string) => void;
   onGroupDragMove: (id: string, x: number, y: number) => void;
@@ -24,6 +27,7 @@ interface ObjectRendererProps {
 function ObjectRenderer({
   objects,
   selectedIds,
+  onlineUsers,
   onObjectChange,
   onGroupDragStart,
   onGroupDragMove,
@@ -45,6 +49,20 @@ function ObjectRenderer({
     }
   };
 
+  // Helper function to find users who have selected a specific object
+  const getUsersSelectingObject = (objectId: string): UserPresence[] => {
+    const users: UserPresence[] = [];
+    onlineUsers.forEach((presence) => {
+      if (
+        presence.selectedObjectIds &&
+        presence.selectedObjectIds.includes(objectId)
+      ) {
+        users.push(presence);
+      }
+    });
+    return users;
+  };
+
   // Sort objects by zIndex (lower zIndex renders first, higher zIndex on top)
   const sortedObjects = [...objects].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -63,114 +81,159 @@ function ObjectRenderer({
           // Disable interactions for locked objects
           const isLocked = obj.locked === true;
 
+          // Get users who have selected this object
+          const selectingUsers = getUsersSelectingObject(obj.id);
+
           switch (obj.type) {
             case "rectangle":
               return (
-                <Rectangle
-                  key={obj.id}
-                  object={obj}
-                  isSelected={isSelected}
-                  onSelect={onSelectHandler}
-                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
-                  onDragMove={(x, y) =>
-                    !isLocked &&
-                    isMultiSelected &&
-                    onGroupDragMove(obj.id, x, y)
-                  }
-                  onDragEnd={(x, y) => {
-                    if (!isLocked) {
-                      onObjectChange(obj.id, { x, y });
-                      if (isMultiSelected) onGroupDragEnd();
+                <Group key={obj.id}>
+                  <Rectangle
+                    object={obj}
+                    isSelected={isSelected}
+                    onSelect={onSelectHandler}
+                    onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                    onDragMove={(x, y) =>
+                      !isLocked &&
+                      isMultiSelected &&
+                      onGroupDragMove(obj.id, x, y)
                     }
-                  }}
-                  onChange={(attrs) =>
-                    !isLocked && onObjectChange(obj.id, attrs)
-                  }
-                  tool={tool}
-                  onDelete={onDeleteHandler}
-                />
+                    onDragEnd={(x, y) => {
+                      if (!isLocked) {
+                        onObjectChange(obj.id, { x, y });
+                        if (isMultiSelected) onGroupDragEnd();
+                      }
+                    }}
+                    onChange={(attrs) =>
+                      !isLocked && onObjectChange(obj.id, attrs)
+                    }
+                    tool={tool}
+                    onDelete={onDeleteHandler}
+                  />
+                  {/* Render selection badges for other users */}
+                  {selectingUsers.map((user) => (
+                    <SelectionBadge
+                      key={`${obj.id}-${user.userId}`}
+                      object={obj}
+                      userName={user.user.name}
+                      userColor={user.user.color}
+                    />
+                  ))}
+                </Group>
               );
 
             case "circle":
               return (
-                <Circle
-                  key={obj.id}
-                  object={obj}
-                  isSelected={isSelected}
-                  onSelect={onSelectHandler}
-                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
-                  onDragMove={(x, y) =>
-                    !isLocked &&
-                    isMultiSelected &&
-                    onGroupDragMove(obj.id, x, y)
-                  }
-                  onDragEnd={(x, y) => {
-                    if (!isLocked) {
-                      onObjectChange(obj.id, { x, y });
-                      if (isMultiSelected) onGroupDragEnd();
+                <Group key={obj.id}>
+                  <Circle
+                    object={obj}
+                    isSelected={isSelected}
+                    onSelect={onSelectHandler}
+                    onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                    onDragMove={(x, y) =>
+                      !isLocked &&
+                      isMultiSelected &&
+                      onGroupDragMove(obj.id, x, y)
                     }
-                  }}
-                  onChange={(attrs) =>
-                    !isLocked && onObjectChange(obj.id, attrs)
-                  }
-                  tool={tool}
-                  onDelete={onDeleteHandler}
-                />
+                    onDragEnd={(x, y) => {
+                      if (!isLocked) {
+                        onObjectChange(obj.id, { x, y });
+                        if (isMultiSelected) onGroupDragEnd();
+                      }
+                    }}
+                    onChange={(attrs) =>
+                      !isLocked && onObjectChange(obj.id, attrs)
+                    }
+                    tool={tool}
+                    onDelete={onDeleteHandler}
+                  />
+                  {/* Render selection badges for other users */}
+                  {selectingUsers.map((user) => (
+                    <SelectionBadge
+                      key={`${obj.id}-${user.userId}`}
+                      object={obj}
+                      userName={user.user.name}
+                      userColor={user.user.color}
+                    />
+                  ))}
+                </Group>
               );
 
             case "line":
               return (
-                <Line
-                  key={obj.id}
-                  object={obj}
-                  isSelected={isSelected}
-                  onSelect={onSelectHandler}
-                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
-                  onDragMove={(points) =>
-                    !isLocked &&
-                    isMultiSelected &&
-                    onGroupDragMove(obj.id, points[0], points[1])
-                  }
-                  onDragEnd={(points) => {
-                    if (!isLocked) {
-                      onObjectChange(obj.id, { points });
-                      if (isMultiSelected) onGroupDragEnd();
+                <Group key={obj.id}>
+                  <Line
+                    object={obj}
+                    isSelected={isSelected}
+                    onSelect={onSelectHandler}
+                    onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                    onDragMove={(points) =>
+                      !isLocked &&
+                      isMultiSelected &&
+                      onGroupDragMove(obj.id, points[0], points[1])
                     }
-                  }}
-                  onChange={(attrs) =>
-                    !isLocked && onObjectChange(obj.id, attrs)
-                  }
-                  tool={tool}
-                  onDelete={onDeleteHandler}
-                />
+                    onDragEnd={(points) => {
+                      if (!isLocked) {
+                        onObjectChange(obj.id, { points });
+                        if (isMultiSelected) onGroupDragEnd();
+                      }
+                    }}
+                    onChange={(attrs) =>
+                      !isLocked && onObjectChange(obj.id, attrs)
+                    }
+                    tool={tool}
+                    onDelete={onDeleteHandler}
+                  />
+                  {/* Render selection badges for other users */}
+                  {selectingUsers.map((user) => (
+                    <SelectionBadge
+                      key={`${obj.id}-${user.userId}`}
+                      object={obj}
+                      userName={user.user.name}
+                      userColor={user.user.color}
+                    />
+                  ))}
+                </Group>
               );
 
             case "text":
               return (
-                <Text
-                  key={obj.id}
-                  object={obj}
-                  isSelected={isSelected}
-                  onSelect={onSelectHandler}
-                  onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
-                  onDragMove={(x, y) =>
-                    !isLocked &&
-                    isMultiSelected &&
-                    onGroupDragMove(obj.id, x, y)
-                  }
-                  onDragEnd={(x, y) => {
-                    if (!isLocked) {
-                      onObjectChange(obj.id, { x, y });
-                      if (isMultiSelected) onGroupDragEnd();
+                <Group key={obj.id}>
+                  <Text
+                    object={obj}
+                    isSelected={isSelected}
+                    onSelect={onSelectHandler}
+                    onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                    onDragMove={(x, y) =>
+                      !isLocked &&
+                      isMultiSelected &&
+                      onGroupDragMove(obj.id, x, y)
                     }
-                  }}
-                  onChange={(attrs) =>
-                    !isLocked && onObjectChange(obj.id, attrs)
-                  }
-                  tool={tool}
-                  onDelete={onDeleteHandler}
-                  onDoubleClick={() => !isLocked && onTextDoubleClick?.(obj.id)}
-                />
+                    onDragEnd={(x, y) => {
+                      if (!isLocked) {
+                        onObjectChange(obj.id, { x, y });
+                        if (isMultiSelected) onGroupDragEnd();
+                      }
+                    }}
+                    onChange={(attrs) =>
+                      !isLocked && onObjectChange(obj.id, attrs)
+                    }
+                    tool={tool}
+                    onDelete={onDeleteHandler}
+                    onDoubleClick={() =>
+                      !isLocked && onTextDoubleClick?.(obj.id)
+                    }
+                  />
+                  {/* Render selection badges for other users */}
+                  {selectingUsers.map((user) => (
+                    <SelectionBadge
+                      key={`${obj.id}-${user.userId}`}
+                      object={obj}
+                      userName={user.user.name}
+                      userColor={user.user.color}
+                    />
+                  ))}
+                </Group>
               );
 
             default:
