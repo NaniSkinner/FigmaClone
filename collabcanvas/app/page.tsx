@@ -42,12 +42,13 @@ function HomePage() {
     [addToast]
   );
 
-  const { onlineUsers, updateCursorPosition } = useMultiplayer(
-    canvasId,
-    user?.id || null,
-    handleUserJoined,
-    handleUserLeft
-  );
+  const { onlineUsers, updateCursorPosition, updateSelectedObjects } =
+    useMultiplayer(
+      canvasId,
+      user?.id || null,
+      handleUserJoined,
+      handleUserLeft
+    );
   const {
     scale,
     position,
@@ -243,6 +244,9 @@ function HomePage() {
             setPosition={setPosition}
             handleWheel={handleWheel}
             tool={tool}
+            setTool={setTool}
+            onlineUsers={onlineUsers}
+            updateSelectedObjects={updateSelectedObjects}
           />
         )}
       </div>

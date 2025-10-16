@@ -12,4 +12,5 @@ export interface UserPresence {
   user: User;
   cursor: { x: number; y: number };
   lastSeen: Date;
+  selectedObjectIds?: string[]; // Real-time selection tracking
 }

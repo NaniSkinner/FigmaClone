@@ -65,6 +65,36 @@ export const useMultiplayer = (
     [userId]
   );
 
+  // Update selected objects in Firestore (merged with presence)
+  const updateSelectedObjects = useCallback(
+    (selectedObjectIds: string[]) => {
+      if (!userId) return;
+
+      console.log("[Selection] Updating selection in presence:", {
+        userId,
+        selectedCount: selectedObjectIds.length,
+        selectedIds: selectedObjectIds,
+      });
+
+      const presenceRef = doc(db, "presence", userId);
+      setDoc(
+        presenceRef,
+        {
+          selectedObjectIds,
+          lastSeen: serverTimestamp(),
+        },
+        { merge: true }
+      )
+        .then(() => {
+          console.log("[Selection] Successfully updated selection in presence");
+        })
+        .catch((error) => {
+          console.error("[Selection] Error updating selection:", error);
+        });
+    },
+    [userId]
+  );
+
   // Set user as present when component mounts
   useEffect(() => {
     if (!userId) return;
@@ -139,6 +169,7 @@ export const useMultiplayer = (
             userId: doc.id,
             cursor: data.cursor || { x: 0, y: 0 },
             lastSeen: data.lastSeen?.toDate() || new Date(),
+            selectedObjectIds: data.selectedObjectIds || [],
             user: {
               id: doc.id,
               name: data.name || "Anonymous",
@@ -186,5 +217,6 @@ export const useMultiplayer = (
   return {
     onlineUsers,
     updateCursorPosition,
+    updateSelectedObjects,
   };
 };
