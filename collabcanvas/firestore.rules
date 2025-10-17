@@ -13,22 +13,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Helper functions for object locking
-    function hasLock(d) {
-      return d.lock is map
-             && d.lock.userId is string
-             && d.lock.expiresAt is timestamp;
+    // Helper function to check if user is a super admin
+    // Super admins have full control over all resources
+    function isAdmin() {
+      return isAuthenticated() && request.auth.uid == 'DiRAbITONAekBKXvXvblN8fUnuF3';
     }
 
-    function lockExpired(d) {
-      return !hasLock(d) || d.lock.expiresAt <= request.time;
-    }
-
-    function lockHeldByMe(d) {
-      return hasLock(d) 
-             && d.lock.userId == request.auth.uid 
-             && d.lock.expiresAt > request.time;
-    }
 
     // Users collection - users can read all, but only write their own
     match /users/{userId} {
@@ -40,26 +30,30 @@ service cloud.firestore {
     // Users can read all presence data but only write their own
     match /presence/{userId} {
       allow read: if isAuthenticated();
-      allow delete: if isOwner(userId);
+      
+      // Allow delete if owner OR if stale (older than 60 seconds) OR if admin
+      allow delete: if isAdmin() || isOwner(userId) || 
+        (isAuthenticated() && resource.data.lastSeen < request.time - duration.value(60, 's'));
 
-      // Allow create with full validation
-      allow create: if isOwner(userId)
+      // Allow create with full validation (admins bypass validation)
+      allow create: if isAdmin() || (isOwner(userId)
         && request.resource.data.keys().hasAll(['userId', 'lastSeen', 'cursor'])
         && request.resource.data.cursor.keys().hasAll(['x', 'y'])
         && request.resource.data.cursor.x is number
-        && request.resource.data.cursor.y is number;
+        && request.resource.data.cursor.y is number);
 
       // Allow update with partial data (for cursor position and selection updates)
-      allow update: if isOwner(userId)
+      allow update: if isAdmin() || (isOwner(userId)
         && (!request.resource.data.keys().hasAny(['cursor']) ||
             (request.resource.data.cursor.keys().hasAll(['x', 'y'])
              && request.resource.data.cursor.x is number
              && request.resource.data.cursor.y is number))
         && (!request.resource.data.keys().hasAny(['selectedObjectIds']) ||
-            request.resource.data.selectedObjectIds is list);
+            request.resource.data.selectedObjectIds is list));
     }
 
-    // Canvas collections - collaborative canvas objects with lock semantics
+    // Canvas collections - collaborative canvas objects
+    // Locks are advisory only (client-side indicators), not enforced by security rules
     match /canvas/{canvasId}/objects/{objectId} {
       allow read: if isAuthenticated();
 
@@ -69,35 +63,11 @@ service cloud.firestore {
         && request.resource.data.id is string
         && request.resource.data.type is string;
 
-      // Update/Delete with lock semantics
-      allow update, delete: if isAuthenticated() && (
-        // 1) Can modify if no active lock or I hold the lock
-        lockExpired(resource.data) || lockHeldByMe(resource.data)
-        ||
-        // 2) Can acquire or extend my lock
-        (
-          request.resource.data.lock is map
-          &&
-          (
-            // Acquire new lock: previous lock missing/expired; new lock belongs to me and expires soon
-            (lockExpired(resource.data)
-              && request.resource.data.lock.userId == request.auth.uid
-              && request.resource.data.lock.expiresAt is timestamp
-              && request.resource.data.lock.expiresAt > request.time
-              && request.resource.data.lock.expiresAt <= request.time + duration.value(30, 's'))
-            ||
-            // Extend/refresh my lock: I already hold it; new expiry still soon
-            (lockHeldByMe(resource.data)
-              && request.resource.data.lock.userId == request.auth.uid
-              && request.resource.data.lock.expiresAt is timestamp
-              && request.resource.data.lock.expiresAt > request.time
-              && request.resource.data.lock.expiresAt <= request.time + duration.value(30, 's'))
-          )
-        )
-        ||
-        // 3) Can release my lock (remove lock field)
-        (!('lock' in request.resource.data) && lockHeldByMe(resource.data))
-      );
+      // Update allowed for any authenticated user (soft locks only)
+      allow update: if isAuthenticated();
+
+      // Delete allowed for any authenticated user
+      allow delete: if isAuthenticated();
     }
   }
 }

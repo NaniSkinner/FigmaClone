@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { CanvasObject, Point, SelectionBox } from "@/types";
+import { AIOperation } from "@/types/ai";
 
 interface CanvasStore {
   canvasId: string | null;
@@ -11,6 +12,11 @@ interface CanvasStore {
   selectedObjectIds: Set<string>;
   selectionBox: SelectionBox | null;
   isSelecting: boolean;
+
+  // AI-specific state
+  lastAICommand: string | null;
+  aiOperationHistory: AIOperation[];
+  isAIProcessing: boolean;
 
   setCanvasId: (id: string) => void;
   setScale: (scale: number) => void;
@@ -49,6 +55,14 @@ interface CanvasStore {
     offsetX?: number,
     offsetY?: number
   ) => CanvasObject[];
+
+  // AI-specific methods
+  setLastAICommand: (command: string | null) => void;
+  setIsAIProcessing: (isProcessing: boolean) => void;
+  storeAIOperation: (operation: AIOperation) => void;
+  batchCreateObjects: (objects: CanvasObject[]) => void;
+  findObjectsByType: (type: string) => CanvasObject[];
+  getObjectsByDescription: (desc: string) => CanvasObject[];
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -59,6 +73,11 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   selectedObjectIds: new Set(),
   selectionBox: null,
   isSelecting: false,
+
+  // AI state
+  lastAICommand: null,
+  aiOperationHistory: [],
+  isAIProcessing: false,
 
   setCanvasId: (id) => set({ canvasId: id }),
 
@@ -289,5 +308,44 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     });
 
     return pastedObjects;
+  },
+
+  // AI-specific methods
+  setLastAICommand: (command) => set({ lastAICommand: command }),
+
+  setIsAIProcessing: (isProcessing) => set({ isAIProcessing: isProcessing }),
+
+  storeAIOperation: (operation) =>
+    set((state) => ({
+      aiOperationHistory: [...state.aiOperationHistory, operation].slice(-50), // Keep last 50 operations
+    })),
+
+  batchCreateObjects: (objects) =>
+    set((state) => {
+      const newMap = new Map(state.objects);
+      objects.forEach((obj) => {
+        newMap.set(obj.id, obj);
+      });
+      return { objects: newMap };
+    }),
+
+  findObjectsByType: (type) => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    return Array.from(state.objects.values()).filter(
+      (obj) => obj.type === type
+    );
+  },
+
+  getObjectsByDescription: (desc) => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    const lowerDesc = desc.toLowerCase();
+
+    // Simple text matching for now
+    return Array.from(state.objects.values()).filter((obj) => {
+      if (obj.type === "text") {
+        return obj.text.toLowerCase().includes(lowerDesc);
+      }
+      return false;
+    });
   },
 }));

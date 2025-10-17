@@ -2,27 +2,31 @@
 
 import { useState } from "react";
 import { useCanvasStore } from "@/store";
-import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import LayerItem from "./LayerItem";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
+import { CanvasObject } from "@/types";
 
 interface LayerPanelProps {
   canvasId: string;
   userId: string | null;
+  updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void;
 }
 
-export default function LayerPanel({ canvasId, userId }: LayerPanelProps) {
+export default function LayerPanel({
+  canvasId,
+  userId,
+  updateObjectInFirestore,
+}: LayerPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { objects, selectedObjectIds, addToSelection, clearSelection } =
     useCanvasStore();
   const { bringToFront, sendToBack, bringForward, sendBackward } =
-    useLayerManagement(canvasId, userId);
-  const { updateObjectInFirestore } = useRealtimeSync(canvasId, userId);
+    useLayerManagement(updateObjectInFirestore);
 
   // Sort objects by zIndex (highest first for top-to-bottom display)
-  const sortedObjects = Array.from(objects.values()).sort(
-    (a, b) => b.zIndex - a.zIndex
-  );
+  const sortedObjects = Array.from(objects.values())
+    .filter((obj) => obj && obj.type) // Filter out invalid objects
+    .sort((a, b) => b.zIndex - a.zIndex);
 
   const handleLayerSelect = (id: string) => {
     // Click to select single layer

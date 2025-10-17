@@ -13,6 +13,8 @@ import CanvasControls, { ToolMode } from "@/components/Canvas/CanvasControls";
 import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
 import LayerPanel from "@/components/Layers/LayerPanel";
+import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { cleanupStalePresence } from "@/lib/cleanupPresence";
 
 export default function Home() {
@@ -27,6 +29,10 @@ function HomePage() {
   const { user, logout } = useAuth();
   const { addToast } = useToast();
   const canvasId = "default-canvas";
+
+  // Single shared realtime sync instance (prevents duplicate listeners)
+  const { createObject, updateObjectInFirestore, deleteObject } =
+    useRealtimeSync(canvasId, user?.id || null);
 
   // Toast callbacks for user join/leave events
   const handleUserJoined = useCallback(
@@ -185,9 +191,6 @@ function HomePage() {
 
   // Track mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
-    console.log(
-      `[MouseMove] Calling updateCursorPosition with (${e.clientX}, ${e.clientY})`
-    );
     updateCursorPosition(e.clientX, e.clientY);
   };
 
@@ -230,6 +233,9 @@ function HomePage() {
         {/* Show online users list */}
         <OnlineUsers onlineUsers={onlineUsers} currentUserName={user?.name} />
 
+        {/* Canvas State Panel (AI Feature) */}
+        <CanvasStatePanel />
+
         {/* Canvas Controls */}
         <CanvasControls
           scale={scale}
@@ -241,7 +247,11 @@ function HomePage() {
         />
 
         {/* Layer Panel */}
-        <LayerPanel canvasId={canvasId} userId={user?.id || null} />
+        <LayerPanel
+          canvasId={canvasId}
+          userId={user?.id || null}
+          updateObjectInFirestore={updateObjectInFirestore}
+        />
 
         {/* Main Canvas */}
         {dimensions.width > 0 && (
@@ -258,6 +268,9 @@ function HomePage() {
             setTool={setTool}
             onlineUsers={onlineUsers}
             updateSelectedObjects={updateSelectedObjects}
+            createObject={createObject}
+            updateObjectInFirestore={updateObjectInFirestore}
+            deleteObject={deleteObject}
           />
         )}
       </div>

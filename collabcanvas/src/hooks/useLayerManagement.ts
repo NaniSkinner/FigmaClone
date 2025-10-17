@@ -2,15 +2,16 @@
 
 import { useCallback } from "react";
 import { useCanvasStore } from "@/store";
-import { useRealtimeSync } from "./useRealtimeSync";
+import { CanvasObject } from "@/types";
 
 /**
  * Hook for managing object layer ordering (z-index operations)
  * Provides functions to reorder objects: bring to front, send to back, etc.
  */
-export const useLayerManagement = (canvasId: string, userId: string | null) => {
+export const useLayerManagement = (
+  updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void
+) => {
   const { objects, selectedObjectIds, getMaxZIndex } = useCanvasStore();
-  const { updateObjectInFirestore } = useRealtimeSync(canvasId, userId);
 
   /**
    * Bring selected object(s) to the very front (highest z-index)
@@ -88,7 +89,7 @@ export const useLayerManagement = (canvasId: string, userId: string | null) => {
 
     // For each selected object, try to swap with the object above it
     const selectedIds = Array.from(selectedObjectIds);
-    
+
     // Process from top to bottom to avoid conflicts
     selectedIds
       .map((id) => ({
@@ -137,7 +138,7 @@ export const useLayerManagement = (canvasId: string, userId: string | null) => {
 
     // For each selected object, try to swap with the object below it
     const selectedIds = Array.from(selectedObjectIds);
-    
+
     // Process from bottom to top to avoid conflicts
     selectedIds
       .map((id) => ({
@@ -174,4 +175,3 @@ export const useLayerManagement = (canvasId: string, userId: string | null) => {
     sendBackward,
   };
 };
-

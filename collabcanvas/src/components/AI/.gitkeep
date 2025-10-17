@@ -1,0 +1,8 @@
+# AI Components Directory
+
+This directory will contain AI-related React components:
+- AIChatPanel.tsx (Task 8)
+- CanvasStatePanel.tsx (Task 3)
+
+To be implemented in Phase 2 and Phase 4.
+

@@ -8,6 +8,7 @@ import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useObjectLock } from "@/hooks/useObjectLock";
 import { useUserStore } from "@/store";
+import { useToast } from "@/contexts/ToastContext";
 
 interface TextProps {
   object: TextType;
@@ -41,6 +42,7 @@ function Text({
   const shapeRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { currentUser } = useUserStore();
+  const { addToast } = useToast();
   const { acquireLock, releaseLock, stopRenew } = useObjectLock(
     canvasId,
     currentUser
@@ -62,16 +64,17 @@ function Text({
     }
   }, [isSelected]);
 
-  // Handle drag start - acquire edit lock
+  // Handle drag start - acquire edit lock (advisory only)
   const handleDragStart = async () => {
     const got = await acquireLock(object.id, "edit");
-    if (!got) {
-      // Failed to acquire lock, stop drag
-      stopRenew();
-      shapeRef.current?.stopDrag();
-      return;
+    if (!got && lockActiveByOther) {
+      // Show warning but allow operation
+      addToast(
+        `${object.lock?.userName || "Another user"} is editing this`,
+        "warning"
+      );
     }
-    onDragStart?.();
+    onDragStart?.(); // Always proceed
   };
 
   // Handle drag move - enforce boundaries in real-time
@@ -115,11 +118,14 @@ function Text({
 
   const handleTransformStart = async () => {
     const got = await acquireLock(object.id, "edit");
-    if (!got) {
-      // Failed to acquire lock
-      stopRenew();
-      return;
+    if (!got && lockActiveByOther) {
+      // Show warning but allow operation
+      addToast(
+        `${object.lock?.userName || "Another user"} is editing this`,
+        "warning"
+      );
     }
+    // Always proceed with transform
   };
 
   const handleTransformEnd = async () => {
@@ -161,6 +167,7 @@ function Text({
   // Handle click based on tool mode
   const handleClick = async (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
+      // Don't acquire lock when deleting - just delete immediately
       onDelete();
     } else if (tool === "select") {
       // Try to acquire selection lock
@@ -176,15 +183,16 @@ function Text({
     }
   };
 
-  // Determine if object should be draggable based on tool and lock status
-  const isDraggable =
-    tool === "select" && object.locked !== true && !lockActiveByOther;
-  // Show transformer only in select mode when selected and not locked by another user
+  // Determine if object should be draggable based on tool (locks are advisory only)
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected
   const showTransformer =
-    isSelected &&
-    tool === "select" &&
-    object.locked !== true &&
-    !lockActiveByOther;
+    isSelected && tool === "select" && object.locked !== true;
+
+  // Visual lock indicators
+  const lockBorderColor = lockActiveByOther ? object.lock?.userColor : null;
+  const effectiveStroke = lockBorderColor || undefined;
+  const effectiveStrokeWidth = lockBorderColor ? 2 : 0;
 
   return (
     <>
@@ -199,6 +207,8 @@ function Text({
         fill={object.fill}
         width={object.width}
         rotation={object.rotation || 0}
+        stroke={effectiveStroke}
+        strokeWidth={effectiveStrokeWidth}
         draggable={isDraggable}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}

@@ -48,8 +48,6 @@ export const useMultiplayer = (
 
       lastUpdateTimeRef.current = now;
 
-      console.log(`[Cursor] Updating position for user ${userId}:`, { x, y });
-
       const presenceRef = doc(db, "presence", userId);
       setDoc(
         presenceRef,
@@ -58,13 +56,9 @@ export const useMultiplayer = (
           lastSeen: serverTimestamp(),
         },
         { merge: true }
-      )
-        .then(() => {
-          console.log(`[Cursor] Successfully updated cursor to (${x}, ${y})`);
-        })
-        .catch((error) => {
-          console.error("[Cursor] Error updating cursor position:", error);
-        });
+      ).catch((error) => {
+        console.error("[Cursor] Error updating cursor position:", error);
+      });
     },
     [userId]
   );
@@ -88,13 +82,9 @@ export const useMultiplayer = (
           lastSeen: serverTimestamp(),
         },
         { merge: true }
-      )
-        .then(() => {
-          console.log("[Selection] Successfully updated selection in presence");
-        })
-        .catch((error) => {
-          console.error("[Selection] Error updating selection:", error);
-        });
+      ).catch((error) => {
+        console.error("[Selection] Error updating selection:", error);
+      });
     },
     [userId]
   );

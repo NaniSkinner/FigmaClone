@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Line, Circle, Text } from "react-konva";
 import Konva from "konva";
-import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
 import { useCanvasStore } from "@/store";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
@@ -34,6 +33,9 @@ interface CanvasProps {
   setTool: (tool: ToolMode) => void;
   onlineUsers: Map<string, any>; // UserPresence from useMultiplayer
   updateSelectedObjects: (selectedObjectIds: string[]) => void;
+  createObject: (object: CanvasObject) => Promise<void>;
+  updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void;
+  deleteObject: (id: string) => Promise<void>;
 }
 
 export default function Canvas({
@@ -49,6 +51,9 @@ export default function Canvas({
   setTool,
   onlineUsers,
   updateSelectedObjects,
+  createObject,
+  updateObjectInFirestore,
+  deleteObject,
 }: CanvasProps) {
   const stageRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -95,10 +100,8 @@ export default function Canvas({
     pasteObjects,
     addToSelection,
   } = useCanvasStore();
-  const { createObject, updateObjectInFirestore, deleteObject } =
-    useRealtimeSync(canvasId, userId);
   const { bringToFront, sendToBack, bringForward, sendBackward } =
-    useLayerManagement(canvasId, userId);
+    useLayerManagement(updateObjectInFirestore);
 
   // Sync selection to presence (real-time selection visibility)
   useEffect(() => {

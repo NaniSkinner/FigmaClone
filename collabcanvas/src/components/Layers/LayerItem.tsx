@@ -17,6 +17,11 @@ export default function LayerItem({
   onVisibilityToggle,
   onLockToggle,
 }: LayerItemProps) {
+  // Early return if object is invalid
+  if (!object || !object.id || !object.type) {
+    return null;
+  }
+
   // Use object's actual visibility and lock state (default to true/false)
   const isVisible = object.visible !== false; // Default to visible if undefined
   const isLocked = object.locked === true; // Default to unlocked if undefined
@@ -109,6 +114,10 @@ export default function LayerItem({
 
   // Get display name for object
   const getObjectName = () => {
+    // Defensive check for undefined object or type
+    if (!object || !object.type) {
+      return "Unknown";
+    }
     const typeName = object.type.charAt(0).toUpperCase() + object.type.slice(1);
     return `${typeName}`;
   };

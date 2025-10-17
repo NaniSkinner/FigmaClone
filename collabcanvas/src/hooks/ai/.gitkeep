@@ -1,0 +1,8 @@
+# AI Hooks Directory
+
+This directory will contain AI-related custom hooks:
+- useCanvasContext.ts (Task 2)
+- useAIAgent.ts (future)
+
+To be implemented in Phase 2.
+

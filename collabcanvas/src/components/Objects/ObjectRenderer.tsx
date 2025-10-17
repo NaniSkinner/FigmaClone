@@ -82,11 +82,11 @@ function ObjectRenderer({
 
           const isMultiSelected = selectedIds.size > 1 && isSelected;
 
-          // Disable interactions for locked objects
-          const isLocked = obj.locked === true;
-
           // Get users who have selected this object
           const selectingUsers = getUsersSelectingObject(obj.id);
+
+          // Check if permanently locked (different from soft locks)
+          const isLocked = obj.locked === true;
 
           switch (obj.type) {
             case "rectangle":

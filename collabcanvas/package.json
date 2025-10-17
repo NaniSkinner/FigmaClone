@@ -9,12 +9,17 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:ai": "jest src/__tests__/ai --coverage",
+    "test:integration": "RUN_INTEGRATION_TESTS=true jest src/__tests__/integration",
+    "test:coverage": "jest --coverage",
+    "test:performance": "jest src/__tests__/integration/performance.test.ts"
   },
   "dependencies": {
     "firebase": "^12.4.0",
     "konva": "^10.0.2",
     "next": "15.5.5",
+    "openai": "^6.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-konva": "^19.0.10",

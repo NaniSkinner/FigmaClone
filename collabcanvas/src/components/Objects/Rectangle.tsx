@@ -8,6 +8,7 @@ import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useObjectLock } from "@/hooks/useObjectLock";
 import { useUserStore } from "@/store";
+import { useToast } from "@/contexts/ToastContext";
 
 interface RectangleProps {
   object: RectangleType;
@@ -39,6 +40,7 @@ function Rectangle({
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { currentUser } = useUserStore();
+  const { addToast } = useToast();
   const { acquireLock, releaseLock, stopRenew } = useObjectLock(
     canvasId,
     currentUser
@@ -60,16 +62,14 @@ function Rectangle({
     }
   }, [isSelected]);
 
-  // Handle drag start - acquire edit lock
+  // Handle drag start - acquire edit lock (advisory only)
   const handleDragStart = async () => {
     const got = await acquireLock(object.id, "edit");
-    if (!got) {
-      // Failed to acquire lock, stop drag
-      stopRenew();
-      shapeRef.current?.stopDrag();
-      return;
+    if (!got && lockActiveByOther) {
+      // Show warning but allow operation
+      addToast(`${object.lock?.userName || 'Another user'} is editing this`, 'warning');
     }
-    onDragStart?.();
+    onDragStart?.(); // Always proceed
   };
 
   // Handle drag move - enforce boundaries in real-time
@@ -113,11 +113,11 @@ function Rectangle({
 
   const handleTransformStart = async () => {
     const got = await acquireLock(object.id, "edit");
-    if (!got) {
-      // Failed to acquire lock
-      stopRenew();
-      return;
+    if (!got && lockActiveByOther) {
+      // Show warning but allow operation
+      addToast(`${object.lock?.userName || 'Another user'} is editing this`, 'warning');
     }
+    // Always proceed with transform
   };
 
   const handleTransformEnd = async () => {
@@ -159,6 +159,7 @@ function Rectangle({
   // Handle click based on tool mode
   const handleClick = async (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "delete") {
+      // Don't acquire lock when deleting - just delete immediately
       onDelete();
     } else if (tool === "select") {
       // Try to acquire selection lock
@@ -168,15 +169,16 @@ function Rectangle({
     // In draw and pan mode, don't do anything on click
   };
 
-  // Determine if object should be draggable based on tool and lock status
-  const isDraggable =
-    tool === "select" && object.locked !== true && !lockActiveByOther;
-  // Show transformer only in select mode when selected and not locked by another user
+  // Determine if object should be draggable based on tool (locks are advisory only)
+  const isDraggable = tool === "select" && object.locked !== true;
+  // Show transformer only in select mode when selected
   const showTransformer =
-    isSelected &&
-    tool === "select" &&
-    object.locked !== true &&
-    !lockActiveByOther;
+    isSelected && tool === "select" && object.locked !== true;
+
+  // Visual lock indicators
+  const lockBorderColor = lockActiveByOther ? object.lock?.userColor : null;
+  const effectiveStroke = lockBorderColor || object.stroke;
+  const effectiveStrokeWidth = lockBorderColor ? 3 : object.strokeWidth;
 
   return (
     <>
@@ -187,8 +189,8 @@ function Rectangle({
         width={object.width}
         height={object.height}
         fill={object.fill}
-        stroke={object.stroke}
-        strokeWidth={object.strokeWidth}
+        stroke={effectiveStroke}
+        strokeWidth={effectiveStrokeWidth}
         rotation={object.rotation || 0}
         draggable={isDraggable}
         onDragStart={handleDragStart}

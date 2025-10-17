@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import {
   collection,
   doc,
@@ -20,6 +20,9 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
   const { addObject, updateObject, removeObject, setObjects } =
     useCanvasStore();
 
+  // Track objects being deleted to prevent re-adding from snapshot
+  const deletingObjects = useRef<Set<string>>(new Set());
+
   // Subscribe to object changes from Firestore
   useEffect(() => {
     if (!canvasId) return;
@@ -37,10 +40,18 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
         }
 
         if (change.type === "added") {
-          addObject(data);
+          // Don't re-add objects that are being deleted
+          if (!deletingObjects.current.has(data.id)) {
+            addObject(data);
+          }
         } else if (change.type === "modified") {
-          updateObject(data.id, data);
+          // Don't update objects that are being deleted
+          if (!deletingObjects.current.has(data.id)) {
+            updateObject(data.id, data);
+          }
         } else if (change.type === "removed") {
+          // Remove from deletingObjects set once confirmed deleted
+          deletingObjects.current.delete(data.id);
           removeObject(data.id);
         }
       });
@@ -88,10 +99,38 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
     async (id: string) => {
       if (!canvasId) return;
 
-      const objectRef = doc(db, `canvas/${canvasId}/objects`, id);
-      await deleteDoc(objectRef);
+      // Mark as deleting to prevent re-adding from snapshot
+      deletingObjects.current.add(id);
+
+      // Remove from local state immediately for responsive UX
+      removeObject(id);
+
+      try {
+        const objectRef = doc(db, `canvas/${canvasId}/objects`, id);
+
+        // First, try to remove any lock on the object to ensure deletion succeeds
+        // This handles edge cases where locks might prevent deletion
+        try {
+          await setDoc(objectRef, { lock: null }, { merge: true });
+        } catch (lockError) {
+          console.warn(
+            "Could not release lock before deletion (non-fatal):",
+            lockError
+          );
+          // Continue with deletion anyway - Firestore rules should allow deletion by lock owner
+        }
+
+        // Now delete the object
+        await deleteDoc(objectRef);
+        console.log(`Successfully deleted object ${id}`);
+      } catch (error) {
+        console.error("Error deleting object:", error);
+        // Remove from deletingObjects set on error
+        deletingObjects.current.delete(id);
+        // Note: object already removed from local state, Firestore sync will fix if needed
+      }
     },
-    [canvasId]
+    [canvasId, removeObject]
   );
 
   return {
