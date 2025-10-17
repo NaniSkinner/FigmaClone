@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 
 export type ToolMode =
   | "rectangle"
@@ -37,6 +37,7 @@ function CanvasControls({
   canRedo = false,
 }: CanvasControlsProps) {
   const zoomPercentage = Math.round(scale * 100);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Helper to get button styles based on active state
   const getToolButtonStyles = (toolMode: ToolMode) => {
@@ -49,12 +50,24 @@ function CanvasControls({
   };
 
   return (
-    <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg sm:rounded-xl shadow-lg px-2 py-2 sm:px-4 sm:py-2.5 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 z-40 border border-gray-200 max-w-[95vw] sm:max-w-[600px] md:max-w-[700px] lg:max-w-[850px]">
+    <div
+      className={`fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center z-40 border border-gray-200 transition-all duration-[400ms] ease-in-out ${
+        isHovered
+          ? "px-2 py-2 sm:px-4 sm:py-2.5 gap-2 sm:gap-3 md:gap-4 max-w-[95vw] sm:max-w-[700px] md:max-w-[850px] lg:max-w-[1000px]"
+          : "px-2 py-1.5 gap-1.5 sm:gap-2 max-w-[95vw] sm:max-w-[550px] md:max-w-[600px]"
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Zoom Controls */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <button
           onClick={onZoomOut}
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center font-bold text-gray-700 text-base sm:text-lg"
+          className={`rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-[400ms] flex items-center justify-center font-bold text-gray-700 ${
+            isHovered
+              ? "w-8 h-8 sm:w-10 sm:h-10 text-base sm:text-lg"
+              : "w-7 h-7 text-sm"
+          }`}
           title="Zoom Out"
         >
           −
@@ -62,7 +75,11 @@ function CanvasControls({
 
         <button
           onClick={onResetZoom}
-          className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs sm:text-sm font-semibold text-gray-700 min-w-[60px] sm:min-w-[75px]"
+          className={`rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-[400ms] font-semibold text-gray-700 ${
+            isHovered
+              ? "px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm min-w-[60px] sm:min-w-[75px]"
+              : "px-2 py-1 text-[10px] min-w-[45px]"
+          }`}
           title="Reset Zoom (100%)"
         >
           {zoomPercentage}%
@@ -70,7 +87,11 @@ function CanvasControls({
 
         <button
           onClick={onZoomIn}
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center font-bold text-gray-700 text-base sm:text-lg"
+          className={`rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-[400ms] flex items-center justify-center font-bold text-gray-700 ${
+            isHovered
+              ? "w-8 h-8 sm:w-10 sm:h-10 text-base sm:text-lg"
+              : "w-7 h-7 text-sm"
+          }`}
           title="Zoom In"
         >
           +
@@ -78,7 +99,11 @@ function CanvasControls({
       </div>
 
       {/* Divider */}
-      <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+      <div
+        className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
+          isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+        }`}
+      ></div>
 
       {/* Undo/Redo Controls */}
       {(onUndo || onRedo) && (
@@ -87,7 +112,11 @@ function CanvasControls({
             <button
               onClick={onUndo}
               disabled={!canUndo}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition-colors flex items-center justify-center text-base sm:text-lg ${
+              className={`rounded-lg transition-all duration-[400ms] flex items-center justify-center ${
+                isHovered
+                  ? "w-8 h-8 sm:w-10 sm:h-10 text-base sm:text-lg"
+                  : "w-7 h-7 text-sm"
+              } ${
                 canUndo
                   ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
                   : "bg-gray-50 text-gray-300 cursor-not-allowed"
@@ -100,7 +129,11 @@ function CanvasControls({
             <button
               onClick={onRedo}
               disabled={!canRedo}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition-colors flex items-center justify-center text-base sm:text-lg ${
+              className={`rounded-lg transition-all duration-[400ms] flex items-center justify-center ${
+                isHovered
+                  ? "w-8 h-8 sm:w-10 sm:h-10 text-base sm:text-lg"
+                  : "w-7 h-7 text-sm"
+              } ${
                 canRedo
                   ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
                   : "bg-gray-50 text-gray-300 cursor-not-allowed"
@@ -112,7 +145,11 @@ function CanvasControls({
           </div>
 
           {/* Divider */}
-          <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+          <div
+            className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
+              isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+            }`}
+          ></div>
         </>
       )}
 
@@ -124,10 +161,16 @@ function CanvasControls({
           className={getToolButtonStyles("select")}
           title="Select Tool (V) - Click to select objects"
         >
-          <span className="text-sm sm:text-base md:text-lg">↖️</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Select
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            ↖️
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Select</span>
+          )}
         </button>
         {/* Pan */}
         <button
@@ -135,15 +178,25 @@ function CanvasControls({
           className={getToolButtonStyles("pan")}
           title="Pan Tool (H) - Drag to pan the canvas"
         >
-          <span className="text-sm sm:text-base md:text-lg">🤚</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Pan
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            🤚
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Pan</span>
+          )}
         </button>
       </div>
 
       {/* Divider */}
-      <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+      <div
+        className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
+          isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+        }`}
+      ></div>
 
       {/* Shape Tools */}
       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
@@ -153,10 +206,18 @@ function CanvasControls({
           className={getToolButtonStyles("rectangle")}
           title="Rectangle Tool (R) - Click & drag to draw rectangles"
         >
-          <span className="text-sm sm:text-base md:text-lg">▭</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Rectangle
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            ▭
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">
+              Rectangle
+            </span>
+          )}
         </button>
         {/* Circle */}
         <button
@@ -164,10 +225,16 @@ function CanvasControls({
           className={getToolButtonStyles("circle")}
           title="Circle Tool (C) - Click & drag to draw circles"
         >
-          <span className="text-sm sm:text-base md:text-lg">⭕</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Circle
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            ⭕
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Circle</span>
+          )}
         </button>
         {/* Line */}
         <button
@@ -175,10 +242,16 @@ function CanvasControls({
           className={getToolButtonStyles("line")}
           title="Line Tool (L) - Click & drag to draw lines"
         >
-          <span className="text-sm sm:text-base md:text-lg">📏</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Line
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            📏
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Line</span>
+          )}
         </button>
         {/* Text */}
         <button
@@ -186,15 +259,25 @@ function CanvasControls({
           className={getToolButtonStyles("text")}
           title="Text Tool (T) - Click to place text"
         >
-          <span className="text-sm sm:text-base md:text-lg">T</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Text
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            T
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Text</span>
+          )}
         </button>
       </div>
 
       {/* Divider */}
-      <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+      <div
+        className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
+          isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+        }`}
+      ></div>
 
       {/* Delete Tool */}
       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
@@ -203,10 +286,16 @@ function CanvasControls({
           className={getToolButtonStyles("delete")}
           title="Delete Tool - Click objects to delete them"
         >
-          <span className="text-sm sm:text-base md:text-lg">🗑️</span>
-          <span className="hidden lg:inline whitespace-nowrap text-xs md:text-sm">
-            Delete
+          <span
+            className={`transition-all duration-[400ms] ${
+              isHovered ? "text-sm sm:text-base md:text-lg" : "text-base"
+            }`}
+          >
+            🗑️
           </span>
+          {isHovered && (
+            <span className="whitespace-nowrap text-xs md:text-sm">Delete</span>
+          )}
         </button>
       </div>
     </div>
