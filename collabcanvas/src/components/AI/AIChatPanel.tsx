@@ -374,7 +374,7 @@ export function AIChatPanel({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-40 w-14 h-14 bg-gradient-to-br from-green-500 to-purple-500 hover:from-green-600 hover:to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-300 hover:scale-110 animate-pulse"
+        className="fixed bottom-6 left-6 z-40 w-28 h-28 bg-gradient-to-br from-green-500 to-purple-500 hover:from-green-600 hover:to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center text-6xl transition-all duration-300 hover:scale-110 animate-pulse"
         title="Open AI Chat"
       >
         🤖
