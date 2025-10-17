@@ -65,6 +65,12 @@ export function AIChatPanel({
   const { getCanvasContext, findObjectByDescription } = useCanvasContext();
   const getNextZIndex = useCanvasStore((state) => state.getNextZIndex);
 
+  // Set userId globally for API authentication
+  // This allows the APIRouteClient to access it
+  if (typeof window !== "undefined") {
+    (globalThis as any).__userId = userId;
+  }
+
   // Panel state
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<AIChatMessage[]>([]);

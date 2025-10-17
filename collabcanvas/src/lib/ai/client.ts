@@ -219,29 +219,36 @@ class APIRouteClient implements AIClient {
     context: CanvasContext
   ): Promise<AIResponse> {
     try {
-      // TODO: Implement in Task 19
-      // This will make a fetch call to the API route with authentication
+      // Get user ID for authentication (set by auth system)
+      const userId = (globalThis as any).__userId || "anonymous";
 
       const response = await fetch(this.endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // TODO: Add Firebase auth token
-          // Authorization: `Bearer ${userToken}`,
+          "x-user-id": userId, // Simple authentication header
+          // Note: In production, use Firebase ID token instead:
+          // "Authorization": `Bearer ${await user.getIdToken()}`,
         },
         body: JSON.stringify({ command, context }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        return {
+          success: false,
+          message: data.message || "Failed to process command",
+          error: data.error || `HTTP ${response.status}`,
+        };
       }
 
-      return await response.json();
+      return data;
     } catch (error) {
       console.error("APIRouteClient error:", error);
       return {
         success: false,
-        message: "Failed to process command",
+        message: "Failed to connect to AI service",
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
@@ -253,18 +260,30 @@ class APIRouteClient implements AIClient {
 // ============================================================================
 
 /**
- * Export the appropriate client based on environment
+ * Export the appropriate client based on configuration
  *
- * Development: DirectOpenAIClient (client-side)
- * Production: APIRouteClient (server-side)
+ * Mode Selection:
+ * - "api": APIRouteClient (secure server-side, RECOMMENDED)
+ * - "direct": DirectOpenAIClient (browser-side, DEVELOPMENT ONLY)
  *
- * This allows us to seamlessly switch between implementations
- * without changing any consuming code.
+ * Set NEXT_PUBLIC_AI_CLIENT_MODE in .env.local to control this.
+ * Defaults to "api" for security.
  */
+const clientMode = process.env.NEXT_PUBLIC_AI_CLIENT_MODE || "api";
+
 export const aiClient: AIClient =
-  process.env.NODE_ENV === "production"
-    ? new APIRouteClient()
-    : new DirectOpenAIClient();
+  clientMode === "direct" ? new DirectOpenAIClient() : new APIRouteClient();
+
+// Log which client is being used (helps with debugging)
+if (typeof window !== "undefined") {
+  console.log(
+    `🤖 AI Client Mode: ${
+      clientMode === "direct"
+        ? "Direct (INSECURE - Dev Only)"
+        : "API Route (SECURE)"
+    }`
+  );
+}
 
 // Also export classes for testing
 export { DirectOpenAIClient, APIRouteClient };
