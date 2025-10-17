@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import {
   doc,
   getDoc,
   serverTimestamp,
   setDoc,
+  updateDoc,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -22,8 +23,9 @@ interface User {
 }
 
 export function useObjectLock(canvasId: string, user: User | null) {
-  const renewTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const currentLockObjectIdRef = useRef<string | null>(null);
+  // Support multiple concurrent lock renewals (one per object)
+  const lockRenewalIntervals = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const activeLocks = useRef<Set<string>>(new Set());
 
   const ref = useCallback(
     (id: string) => doc(db, `canvas/${canvasId}/objects`, id),
@@ -111,12 +113,8 @@ export function useObjectLock(canvasId: string, user: User | null) {
 
           if (ok && mode === "edit") {
             // Start renew loop during active edit
-            stopRenew();
-            currentLockObjectIdRef.current = objectId;
-            renewTimerRef.current = setInterval(() => {
-              extendLock(objectId);
-            }, LOCK_RENEW_INTERVAL_MS);
-            console.log(`[Lock] Started auto-renewal for object ${objectId}`);
+            activeLocks.current.add(objectId);
+            startLockRenewal(objectId);
           }
 
           return ok;
@@ -158,19 +156,10 @@ export function useObjectLock(canvasId: string, user: User | null) {
       const expiresAt = expiryFromNow(LOCK_EDIT_TTL_SEC);
 
       try {
-        await setDoc(
-          ref(objectId),
-          {
-            lock: {
-              userId: user.id,
-              userName: user.name,
-              userColor: user.color || "#999",
-              acquiredAt: serverTimestamp(),
-              expiresAt: expiresAt,
-            },
-          },
-          { merge: true }
-        );
+        // Efficiently update only the expiration timestamp
+        await updateDoc(ref(objectId), {
+          "lock.expiresAt": expiresAt,
+        });
         console.log(`[Lock] Extended lock for object ${objectId}`);
       } catch (error) {
         console.error("[Lock] Error extending lock:", error);
@@ -179,11 +168,66 @@ export function useObjectLock(canvasId: string, user: User | null) {
     [canvasId, user, ref, expiryFromNow]
   );
 
+  // Start auto-renewal for an object lock (supports multiple concurrent renewals)
+  const startLockRenewal = useCallback(
+    (objectId: string) => {
+      // Clear existing interval if any
+      if (lockRenewalIntervals.current.has(objectId)) {
+        const existingInterval = lockRenewalIntervals.current.get(objectId);
+        if (existingInterval) {
+          clearInterval(existingInterval);
+        }
+      }
+
+      const interval = setInterval(async () => {
+        // Check if lock is still active
+        if (!activeLocks.current.has(objectId)) {
+          clearInterval(interval);
+          lockRenewalIntervals.current.delete(objectId);
+          console.log(`[Lock] Stopped renewal for released object ${objectId}`);
+          return;
+        }
+
+        try {
+          const lockDoc = await getDoc(ref(objectId));
+
+          if (lockDoc.exists()) {
+            const data = lockDoc.data();
+
+            // Only renew if we still own the lock
+            if (data?.lock?.userId === user?.id) {
+              await extendLock(objectId);
+            } else {
+              // Lock was taken by someone else, stop renewal
+              clearInterval(interval);
+              lockRenewalIntervals.current.delete(objectId);
+              activeLocks.current.delete(objectId);
+              console.log(`[Lock] Lock lost for object ${objectId}`);
+            }
+          }
+        } catch (error) {
+          console.error("[Lock] Error in renewal loop:", error);
+        }
+      }, LOCK_RENEW_INTERVAL_MS);
+
+      lockRenewalIntervals.current.set(objectId, interval);
+      console.log(`[Lock] Started auto-renewal for object ${objectId}`);
+    },
+    [user, ref, extendLock]
+  );
+
   const releaseLock = useCallback(
     async (objectId: string) => {
       if (!canvasId || !user) return;
 
-      stopRenew();
+      // Remove from active locks and stop renewal for this specific object
+      activeLocks.current.delete(objectId);
+      const interval = lockRenewalIntervals.current.get(objectId);
+      if (interval) {
+        clearInterval(interval);
+        lockRenewalIntervals.current.delete(objectId);
+        console.log(`[Lock] Stopped renewal interval for object ${objectId}`);
+      }
       console.log(`[Lock] Releasing lock for object ${objectId}`);
 
       try {
@@ -208,12 +252,25 @@ export function useObjectLock(canvasId: string, user: User | null) {
   );
 
   const stopRenew = useCallback(() => {
-    if (renewTimerRef.current) {
-      clearInterval(renewTimerRef.current);
-      renewTimerRef.current = null;
-      currentLockObjectIdRef.current = null;
-      console.log("[Lock] Stopped auto-renewal");
-    }
+    // Clear all lock renewal intervals
+    lockRenewalIntervals.current.forEach((interval) => {
+      clearInterval(interval);
+    });
+    lockRenewalIntervals.current.clear();
+    activeLocks.current.clear();
+    console.log("[Lock] Stopped all auto-renewals");
+  }, []);
+
+  // Cleanup all intervals on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all lock renewal intervals
+      lockRenewalIntervals.current.forEach((interval) => {
+        clearInterval(interval);
+      });
+      lockRenewalIntervals.current.clear();
+      console.log("[Lock] Cleaned up all lock renewals on unmount");
+    };
   }, []);
 
   return { acquireLock, extendLock, releaseLock, stopRenew };
