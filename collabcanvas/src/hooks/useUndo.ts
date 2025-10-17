@@ -40,19 +40,36 @@ export function useUndo({
 
   /**
    * Record a create operation for undo
+   * @param objectIdsOrObjects - Either object IDs (will look up from store) or actual CanvasObject array
+   * @param source - Source of the operation ("ai" or "manual")
+   * @param aiOperationId - Optional AI operation ID for grouping
    */
   const recordCreate = useCallback(
     (
-      objectIds: string[],
+      objectIdsOrObjects: string[] | CanvasObject[],
       source: "ai" | "manual" = "manual",
       aiOperationId?: string
     ) => {
-      // Get current state of created objects
-      const createdObjects = objectIds
-        .map((id) => objects.get(id))
-        .filter((obj): obj is CanvasObject => obj !== undefined);
+      // Determine if we received IDs or actual objects
+      let createdObjects: CanvasObject[];
 
-      if (createdObjects.length === 0) return;
+      if (
+        objectIdsOrObjects.length > 0 &&
+        typeof objectIdsOrObjects[0] === "string"
+      ) {
+        // We received IDs - look them up from store
+        const objectIds = objectIdsOrObjects as string[];
+        createdObjects = objectIds
+          .map((id) => objects.get(id))
+          .filter((obj): obj is CanvasObject => obj !== undefined);
+      } else {
+        // We received actual objects - use them directly
+        createdObjects = objectIdsOrObjects as CanvasObject[];
+      }
+
+      if (createdObjects.length === 0) {
+        return;
+      }
 
       const operation: UndoOperation = {
         id: crypto.randomUUID(),
@@ -60,7 +77,7 @@ export function useUndo({
         timestamp: new Date(),
         source,
         aiOperationId,
-        affectedObjectIds: objectIds,
+        affectedObjectIds: createdObjects.map((obj) => obj.id),
         previousState: undefined, // No previous state for create
         newState: createdObjects,
       };
@@ -85,7 +102,9 @@ export function useUndo({
         .map((id) => objects.get(id))
         .filter((obj): obj is CanvasObject => obj !== undefined);
 
-      if (newStates.length === 0) return;
+      if (newStates.length === 0) {
+        return;
+      }
 
       const operation: UndoOperation = {
         id: crypto.randomUUID(),
@@ -133,7 +152,9 @@ export function useUndo({
    */
   const performUndo = useCallback(() => {
     const operation = undoFromStore();
-    if (!operation) return false;
+    if (!operation) {
+      return false;
+    }
 
     try {
       if (operation.type === "create") {
@@ -182,7 +203,9 @@ export function useUndo({
    */
   const performRedo = useCallback(() => {
     const operation = redoFromStore();
-    if (!operation) return false;
+    if (!operation) {
+      return false;
+    }
 
     try {
       if (operation.type === "create") {
@@ -226,6 +249,11 @@ export function useUndo({
     onDeleteObject,
   ]);
 
+  // CRITICAL FIX: Use reactive Zustand selectors instead of function calls
+  // This ensures the component re-renders when undo/redo stacks change
+  const canUndo = useCanvasStore((state) => state.undoStack.length > 0);
+  const canRedo = useCanvasStore((state) => state.redoStack.length > 0);
+
   return {
     // Actions
     undo: performUndo,
@@ -234,8 +262,8 @@ export function useUndo({
     recordUpdate,
     recordDelete,
 
-    // State
-    canUndo: canUndoFromStore(),
-    canRedo: canRedoFromStore(),
+    // State (now reactive!)
+    canUndo,
+    canRedo,
   };
 }

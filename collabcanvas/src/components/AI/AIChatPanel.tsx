@@ -29,6 +29,22 @@ interface AIChatPanelProps {
   onCreateObject: (object: CanvasObject) => void;
   onUpdateObject: (id: string, updates: Partial<CanvasObject>) => void;
   onDeleteObject: (id: string) => void;
+  onRecordCreate?: (
+    objectIdsOrObjects: string[] | CanvasObject[],
+    source?: "ai" | "manual",
+    aiOperationId?: string
+  ) => void;
+  onRecordUpdate?: (
+    objectIds: string[],
+    previousStates: CanvasObject[],
+    source?: "ai" | "manual",
+    aiOperationId?: string
+  ) => void;
+  onRecordDelete?: (
+    deletedObjects: CanvasObject[],
+    source?: "ai" | "manual",
+    aiOperationId?: string
+  ) => void;
 }
 
 // Example commands by category
@@ -61,6 +77,9 @@ export function AIChatPanel({
   onCreateObject,
   onUpdateObject,
   onDeleteObject,
+  onRecordCreate,
+  onRecordUpdate,
+  onRecordDelete,
 }: AIChatPanelProps) {
   const { getCanvasContext, findObjectByDescription } = useCanvasContext();
   const getNextZIndex = useCanvasStore((state) => state.getNextZIndex);
@@ -96,6 +115,9 @@ export function AIChatPanel({
     onCreateObject,
     onUpdateObject,
     onDeleteObject,
+    onRecordCreate,
+    onRecordUpdate,
+    onRecordDelete,
     getCanvasContext,
     findObjectByDescription,
     getNextZIndex,
@@ -107,6 +129,9 @@ export function AIChatPanel({
       onCreateObject,
       onUpdateObject,
       onDeleteObject,
+      onRecordCreate,
+      onRecordUpdate,
+      onRecordDelete,
       getCanvasContext,
       findObjectByDescription,
       getNextZIndex,
@@ -115,6 +140,9 @@ export function AIChatPanel({
     onCreateObject,
     onUpdateObject,
     onDeleteObject,
+    onRecordCreate,
+    onRecordUpdate,
+    onRecordDelete,
     getCanvasContext,
     findObjectByDescription,
     getNextZIndex,
@@ -135,12 +163,29 @@ export function AIChatPanel({
       findObjectByDescription: (desc) =>
         callbacksRef.current.findObjectByDescription(desc),
       getNextZIndex: () => callbacksRef.current.getNextZIndex(),
-    });
-
-    console.log("🎯 New AI Session Created:", {
-      userId,
-      canvasId,
-      note: "Agent will maintain same sessionId until user/canvas changes",
+      // Undo recording callbacks
+      onRecordCreate: (objectIdsOrObjects, source, aiOperationId) => {
+        callbacksRef.current.onRecordCreate?.(
+          objectIdsOrObjects,
+          source,
+          aiOperationId
+        );
+      },
+      onRecordUpdate: (objectIds, previousStates, source, aiOperationId) => {
+        callbacksRef.current.onRecordUpdate?.(
+          objectIds,
+          previousStates,
+          source,
+          aiOperationId
+        );
+      },
+      onRecordDelete: (deletedObjects, source, aiOperationId) => {
+        callbacksRef.current.onRecordDelete?.(
+          deletedObjects,
+          source,
+          aiOperationId
+        );
+      },
     });
   }, [userId, canvasId]); // Only depend on userId and canvasId
 

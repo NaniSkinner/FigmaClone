@@ -61,10 +61,21 @@ export class CanvasAIAgent {
   private getCanvasContext: () => CanvasContext;
   private findObjectByDescription: (description: string) => CanvasObject[];
   private getNextZIndex: () => number;
-  private recordUndoOperation?: (
+  private onRecordCreate?: (
+    objectIdsOrObjects: string[] | CanvasObject[],
+    source: "ai" | "manual",
+    aiOperationId?: string
+  ) => void;
+  private onRecordUpdate?: (
     objectIds: string[],
-    actionType: "create" | "update" | "delete",
-    aiOperationId: string
+    previousStates: CanvasObject[],
+    source: "ai" | "manual",
+    aiOperationId?: string
+  ) => void;
+  private onRecordDelete?: (
+    deletedObjects: CanvasObject[],
+    source: "ai" | "manual",
+    aiOperationId?: string
   ) => void;
 
   constructor(
@@ -72,10 +83,21 @@ export class CanvasAIAgent {
       getCanvasContext: () => CanvasContext;
       findObjectByDescription: (description: string) => CanvasObject[];
       getNextZIndex: () => number;
-      recordUndoOperation?: (
+      onRecordCreate?: (
+        objectIdsOrObjects: string[] | CanvasObject[],
+        source: "ai" | "manual",
+        aiOperationId?: string
+      ) => void;
+      onRecordUpdate?: (
         objectIds: string[],
-        actionType: "create" | "update" | "delete",
-        aiOperationId: string
+        previousStates: CanvasObject[],
+        source: "ai" | "manual",
+        aiOperationId?: string
+      ) => void;
+      onRecordDelete?: (
+        deletedObjects: CanvasObject[],
+        source: "ai" | "manual",
+        aiOperationId?: string
       ) => void;
     }
   ) {
@@ -88,7 +110,9 @@ export class CanvasAIAgent {
     this.getCanvasContext = config.getCanvasContext;
     this.findObjectByDescription = config.findObjectByDescription;
     this.getNextZIndex = config.getNextZIndex;
-    this.recordUndoOperation = config.recordUndoOperation;
+    this.onRecordCreate = config.onRecordCreate;
+    this.onRecordUpdate = config.onRecordUpdate;
+    this.onRecordDelete = config.onRecordDelete;
   }
 
   /**
@@ -327,8 +351,8 @@ export class CanvasAIAgent {
         this.onCreateObject(rectangle);
 
         // Record for undo (if callback provided)
-        if (this.recordUndoOperation && this.currentOperationId) {
-          this.recordUndoOperation([id], "create", this.currentOperationId);
+        if (this.onRecordCreate && this.currentOperationId) {
+          this.onRecordCreate([rectangle], "ai", this.currentOperationId);
         }
 
         return {
@@ -365,8 +389,8 @@ export class CanvasAIAgent {
         this.onCreateObject(circle);
 
         // Record for undo (if callback provided)
-        if (this.recordUndoOperation && this.currentOperationId) {
-          this.recordUndoOperation([id], "create", this.currentOperationId);
+        if (this.onRecordCreate && this.currentOperationId) {
+          this.onRecordCreate([circle], "ai", this.currentOperationId);
         }
 
         return {
@@ -450,8 +474,8 @@ export class CanvasAIAgent {
       this.onCreateObject(textObject);
 
       // Record for undo (if callback provided)
-      if (this.recordUndoOperation && this.currentOperationId) {
-        this.recordUndoOperation([id], "create", this.currentOperationId);
+      if (this.onRecordCreate && this.currentOperationId) {
+        this.onRecordCreate([textObject], "ai", this.currentOperationId);
       }
 
       return {
@@ -703,16 +727,13 @@ export class CanvasAIAgent {
       }
 
       const object = objects[0];
-      this.onDeleteObject(object.id);
 
-      // Record for undo (if callback provided)
-      if (this.recordUndoOperation && this.currentOperationId) {
-        this.recordUndoOperation(
-          [object.id],
-          "delete",
-          this.currentOperationId
-        );
+      // Record for undo BEFORE deletion (need object data)
+      if (this.onRecordDelete && this.currentOperationId) {
+        this.onRecordDelete([object], "ai", this.currentOperationId);
       }
+
+      this.onDeleteObject(object.id);
 
       return {
         type: "delete",
@@ -954,9 +975,8 @@ export class CanvasAIAgent {
       objectsWithMetadata.forEach((obj) => this.onCreateObject(obj));
 
       // Record for undo (if callback provided) - group all objects as one undo action
-      if (this.recordUndoOperation && this.currentOperationId) {
-        const objectIds = objectsWithMetadata.map((obj) => obj.id);
-        this.recordUndoOperation(objectIds, "create", this.currentOperationId);
+      if (this.onRecordCreate && this.currentOperationId) {
+        this.onRecordCreate(objectsWithMetadata, "ai", this.currentOperationId);
       }
 
       return {

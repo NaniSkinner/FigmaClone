@@ -18,6 +18,10 @@ interface CanvasControlsProps {
   onZoomOut: () => void;
   onResetZoom: () => void;
   onSetTool: (tool: ToolMode) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 function CanvasControls({
@@ -27,6 +31,10 @@ function CanvasControls({
   onZoomOut,
   onResetZoom,
   onSetTool,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: CanvasControlsProps) {
   const zoomPercentage = Math.round(scale * 100);
 
@@ -71,6 +79,42 @@ function CanvasControls({
 
       {/* Divider */}
       <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+
+      {/* Undo/Redo Controls */}
+      {(onUndo || onRedo) && (
+        <>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition-colors flex items-center justify-center text-base sm:text-lg ${
+                canUndo
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              }`}
+              title="Undo (Ctrl+Z / Cmd+Z)"
+            >
+              ↩️
+            </button>
+
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition-colors flex items-center justify-center text-base sm:text-lg ${
+                canRedo
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              }`}
+              title="Redo (Ctrl+Shift+Z / Cmd+Shift+Z)"
+            >
+              ↪️
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-7 sm:h-8 md:h-9 bg-gray-300 flex-shrink-0"></div>
+        </>
+      )}
 
       {/* Tool Buttons */}
       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">

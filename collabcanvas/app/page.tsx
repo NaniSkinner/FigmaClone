@@ -16,6 +16,8 @@ import LayerPanel from "@/components/Layers/LayerPanel";
 import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
 import { AIChatPanel } from "@/components/AI/AIChatPanel";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useUndo } from "@/hooks/useUndo";
+import { useUndoKeyboard } from "@/hooks/useUndoKeyboard";
 import { cleanupStalePresence } from "@/lib/cleanupPresence";
 
 export default function Home() {
@@ -34,6 +36,42 @@ function HomePage() {
   // Single shared realtime sync instance (prevents duplicate listeners)
   const { createObject, updateObjectInFirestore, deleteObject } =
     useRealtimeSync(canvasId, user?.id || null);
+
+  // Initialize undo/redo with Firestore sync
+  const {
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    recordCreate,
+    recordUpdate,
+    recordDelete,
+  } = useUndo({
+    onCreateObject: createObject,
+    onUpdateObject: updateObjectInFirestore,
+    onDeleteObject: deleteObject,
+  });
+
+  // Keyboard shortcuts for undo/redo
+  useUndoKeyboard({
+    onUndo: () => {
+      if (canUndo) {
+        const success = undo();
+        if (success) {
+          addToast("Undo successful ↩️", "success", 2000);
+        }
+      }
+    },
+    onRedo: () => {
+      if (canRedo) {
+        const success = redo();
+        if (success) {
+          addToast("Redo successful ↪️", "success", 2000);
+        }
+      }
+    },
+    enabled: true,
+  });
 
   // Toast callbacks for user join/leave events
   const handleUserJoined = useCallback(
@@ -245,6 +283,9 @@ function HomePage() {
             onCreateObject={createObject}
             onUpdateObject={updateObjectInFirestore}
             onDeleteObject={deleteObject}
+            onRecordCreate={recordCreate}
+            onRecordUpdate={recordUpdate}
+            onRecordDelete={recordDelete}
           />
         )}
 
@@ -256,6 +297,10 @@ function HomePage() {
           onZoomOut={zoomOut}
           onResetZoom={() => resetZoom(dimensions.width, dimensions.height)}
           onSetTool={setTool}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
 
         {/* Layer Panel */}

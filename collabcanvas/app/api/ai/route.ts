@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     // Step 1: Authentication check
     // Get user ID from headers (set by client)
-    const headersList = headers();
+    const headersList = await headers();
     const userId = headersList.get("x-user-id");
 
     if (!userId) {
@@ -104,14 +104,23 @@ export async function POST(request: NextRequest) {
 
     // Step 6: Parse function calls
     const functionCalls =
-      message.tool_calls?.map((call) => ({
-        id: call.id,
-        type: call.type,
-        function: {
-          name: call.function.name,
-          arguments: call.function.arguments,
-        },
-      })) || [];
+      message.tool_calls
+        ?.map((call) => {
+          // Type guard for function tool calls
+          if (call.type === "function" && "function" in call) {
+            return {
+              id: call.id,
+              type: call.type,
+              function: {
+                name: call.function.name,
+                arguments: call.function.arguments,
+              },
+            };
+          }
+          return null;
+        })
+        .filter((call): call is NonNullable<typeof call> => call !== null) ||
+      [];
 
     // Step 7: Return response
     return NextResponse.json({
