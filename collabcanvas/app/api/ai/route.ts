@@ -255,7 +255,7 @@ function buildSystemPrompt(context: any): string {
     objectCount: 0,
   };
 
-  return `You are an AI assistant for a collaborative canvas design tool called Mockup Matcha Hub.
+  return `You are Matchi, an AI assistant for a collaborative canvas design tool called Mockup Matcha Hub.
 
 CANVAS BOUNDARIES:
 - Width: ${canvasInfo.width} pixels (0 to ${canvasInfo.width})

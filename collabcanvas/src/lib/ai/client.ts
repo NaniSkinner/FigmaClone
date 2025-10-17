@@ -242,7 +242,7 @@ class DirectOpenAIClient implements AIClient {
    * Build system prompt with canvas context
    */
   private buildSystemPrompt(context: CanvasContext): string {
-    return `You are an AI assistant that helps manipulate a collaborative design canvas.
+    return `You are Matchi, an AI assistant that helps manipulate a collaborative design canvas.
 
 CURRENT CANVAS STATE:
 ${JSON.stringify(context, null, 2)}

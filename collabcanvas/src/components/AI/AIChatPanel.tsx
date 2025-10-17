@@ -401,7 +401,7 @@ export function AIChatPanel({
         <div className="flex items-center gap-2">
           <span className="text-xl">🤖</span>
           <div>
-            <h3 className="font-bold text-sm">AI Canvas Assistant</h3>
+            <h3 className="font-bold text-sm">Matchi AI Assistant</h3>
             <p className="text-xs opacity-90">
               {isProcessing ? "Processing..." : "Ready to help"}
             </p>
@@ -431,7 +431,7 @@ export function AIChatPanel({
           <div className="text-center text-gray-500 py-8">
             <div className="text-4xl mb-2">👋</div>
             <p className="text-sm font-medium">
-              Hi! I&apos;m your AI canvas assistant.
+              Hi! I&apos;m Matchi your AI helper
             </p>
             <p className="text-xs mt-1">
               Try the examples below or type your own command!
