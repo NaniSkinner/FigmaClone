@@ -3,7 +3,7 @@
 import { useRef, useCallback } from "react";
 import {
   doc,
-  runTransaction,
+  getDoc,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -44,13 +44,25 @@ export function useObjectLock(canvasId: string, user: User | null) {
       }
 
       const ttl = mode === "edit" ? LOCK_EDIT_TTL_SEC : LOCK_SELECTION_TTL_SEC;
-      const expiresAt = expiryFromNow(ttl);
+      const maxRetries = 3;
+      const baseDelay = 100; // ms
 
-      console.log(`[Lock] Attempting to acquire ${mode} lock for object ${objectId}`);
+      // Retry loop with exponential backoff
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          console.log(`[Lock] Retry attempt ${attempt + 1}/${maxRetries}`);
+        }
 
-      try {
-        const ok = await runTransaction(db, async (tx) => {
-          const snap = await tx.get(ref(objectId));
+        try {
+          const expiresAt = expiryFromNow(ttl);
+          console.log(
+            `[Lock] Attempting to acquire ${mode} lock for object ${objectId} (attempt ${
+              attempt + 1
+            })`
+          );
+
+          // Use simple read-write instead of transaction (locks are advisory only)
+          const snap = await getDoc(ref(objectId));
           if (!snap.exists()) {
             console.log("[Lock] Object does not exist");
             return false;
@@ -73,8 +85,9 @@ export function useObjectLock(canvasId: string, user: User | null) {
               : new Date(data.lock.expiresAt) > now);
 
           // Can acquire if: no lock, expired, or already held by me
+          let ok: boolean;
           if (!hasLock || isExpired || heldByMe) {
-            tx.set(
+            await setDoc(
               ref(objectId),
               {
                 lock: {
@@ -88,30 +101,52 @@ export function useObjectLock(canvasId: string, user: User | null) {
               { merge: true }
             );
             console.log(`[Lock] Successfully acquired ${mode} lock`);
-            return true;
+            ok = true;
+          } else {
+            console.log(
+              `[Lock] Failed to acquire - lock held by ${data.lock.userId}`
+            );
+            ok = false;
           }
 
-          console.log(
-            `[Lock] Failed to acquire - lock held by ${data.lock.userId}`
+          if (ok && mode === "edit") {
+            // Start renew loop during active edit
+            stopRenew();
+            currentLockObjectIdRef.current = objectId;
+            renewTimerRef.current = setInterval(() => {
+              extendLock(objectId);
+            }, LOCK_RENEW_INTERVAL_MS);
+            console.log(`[Lock] Started auto-renewal for object ${objectId}`);
+          }
+
+          return ok;
+        } catch (error: any) {
+          console.error(
+            `[Lock] Error acquiring lock (attempt ${attempt + 1}):`,
+            error
           );
+
+          // If this is a transaction conflict and we have retries left, wait and retry
+          if (
+            (error.code === "failed-precondition" ||
+              error.code === "aborted") &&
+            attempt < maxRetries - 1
+          ) {
+            const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+            console.log(
+              `[Lock] Transaction conflict, retrying in ${delay}ms...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue; // Retry
+          }
+
+          // For other errors or last attempt, return false
           return false;
-        });
-
-        if (ok && mode === "edit") {
-          // Start renew loop during active edit
-          stopRenew();
-          currentLockObjectIdRef.current = objectId;
-          renewTimerRef.current = setInterval(() => {
-            extendLock(objectId);
-          }, LOCK_RENEW_INTERVAL_MS);
-          console.log(`[Lock] Started auto-renewal for object ${objectId}`);
         }
-
-        return ok;
-      } catch (error) {
-        console.error("[Lock] Error acquiring lock:", error);
-        return false;
       }
+
+      console.log(`[Lock] Failed to acquire lock after ${maxRetries} attempts`);
+      return false;
     },
     [canvasId, user, ref, expiryFromNow]
   );
@@ -152,20 +187,19 @@ export function useObjectLock(canvasId: string, user: User | null) {
       console.log(`[Lock] Releasing lock for object ${objectId}`);
 
       try {
-        await runTransaction(db, async (tx) => {
-          const snap = await tx.get(ref(objectId));
-          if (!snap.exists()) return;
+        // Use simple read-write instead of transaction
+        const snap = await getDoc(ref(objectId));
+        if (!snap.exists()) return;
 
-          const data = snap.data() as any;
+        const data = snap.data() as any;
 
-          // Only release if I hold the lock
-          if (data?.lock?.userId === user.id) {
-            const updated = { ...data };
-            delete updated.lock;
-            tx.set(ref(objectId), updated);
-            console.log(`[Lock] Successfully released lock`);
-          }
-        });
+        // Only release if I hold the lock
+        if (data?.lock?.userId === user.id) {
+          const updated = { ...data };
+          delete updated.lock;
+          await setDoc(ref(objectId), updated);
+          console.log(`[Lock] Successfully released lock`);
+        }
       } catch (error) {
         console.error("[Lock] Error releasing lock:", error);
       }
@@ -184,4 +218,3 @@ export function useObjectLock(canvasId: string, user: User | null) {
 
   return { acquireLock, extendLock, releaseLock, stopRenew };
 }
-

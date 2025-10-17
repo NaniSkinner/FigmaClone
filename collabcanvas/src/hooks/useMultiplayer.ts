@@ -52,6 +52,7 @@ export const useMultiplayer = (
       setDoc(
         presenceRef,
         {
+          userId,
           cursor: { x, y },
           lastSeen: serverTimestamp(),
         },
@@ -78,6 +79,7 @@ export const useMultiplayer = (
       setDoc(
         presenceRef,
         {
+          userId,
           selectedObjectIds,
           lastSeen: serverTimestamp(),
         },
@@ -129,6 +131,7 @@ export const useMultiplayer = (
       setDoc(
         presenceRef,
         {
+          userId,
           lastSeen: serverTimestamp(),
         },
         { merge: true }

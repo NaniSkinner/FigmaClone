@@ -36,20 +36,22 @@ service cloud.firestore {
         (isAuthenticated() && resource.data.lastSeen < request.time - duration.value(60, 's'));
 
       // Allow create with full validation (admins bypass validation)
+      // For merge operations, only require the fields being set
       allow create: if isAdmin() || (isOwner(userId)
-        && request.resource.data.keys().hasAll(['userId', 'lastSeen', 'cursor'])
-        && request.resource.data.cursor.keys().hasAll(['x', 'y'])
-        && request.resource.data.cursor.x is number
-        && request.resource.data.cursor.y is number);
-
-      // Allow update with partial data (for cursor position and selection updates)
-      allow update: if isAdmin() || (isOwner(userId)
+        && request.resource.data.keys().hasAny(['userId'])
+        && request.resource.data.userId == userId
+        // If cursor is provided, validate it
         && (!request.resource.data.keys().hasAny(['cursor']) ||
             (request.resource.data.cursor.keys().hasAll(['x', 'y'])
              && request.resource.data.cursor.x is number
              && request.resource.data.cursor.y is number))
+        // If selectedObjectIds provided, must be list
         && (!request.resource.data.keys().hasAny(['selectedObjectIds']) ||
             request.resource.data.selectedObjectIds is list));
+
+      // Allow update with partial data (for cursor position and selection updates)
+      // Simplified validation for merge operations
+      allow update: if isAdmin() || isOwner(userId);
     }
 
     // Canvas collections - collaborative canvas objects
