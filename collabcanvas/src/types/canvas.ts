@@ -25,6 +25,10 @@ interface BaseCanvasObject {
   visible?: boolean; // Visibility state (default: true)
   locked?: boolean; // Lock state (default: false)
   lock?: ObjectLock; // Soft lock for collaborative editing
+  // AI metadata (optional - only present for AI-created objects)
+  createdByAI?: boolean; // Whether object was created by AI agent
+  aiCommand?: string; // Original natural language command
+  aiSessionId?: string; // Session ID for grouping related AI operations
 }
 
 // Rectangle shape

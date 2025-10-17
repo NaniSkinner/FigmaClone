@@ -140,6 +140,7 @@ export interface AISession {
 // Configuration for AI Agent
 export interface AIAgentConfig {
   userId: string;
+  canvasId?: string; // For Firebase operation logging
   apiKey?: string;
   temperature?: number;
   maxTokens?: number;
@@ -147,6 +148,12 @@ export interface AIAgentConfig {
   onCreateObject?: (object: CanvasObject) => void;
   onUpdateObject?: (id: string, updates: Partial<CanvasObject>) => void;
   onDeleteObject?: (id: string) => void;
+}
+
+// AI Operation Log for Firestore (extends AIOperation with canvas context)
+export interface AIOperationLog extends AIOperation {
+  canvasId: string; // Canvas where operation was performed
+  actions: AIAction[]; // Detailed action results
 }
 
 // Object reference types for natural language

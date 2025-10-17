@@ -14,6 +14,7 @@ import {
   AIResponse,
   AIAction,
   AIOperation,
+  AIOperationLog,
   AIAgentConfig,
   CanvasContext,
 } from "@/types/ai";
@@ -24,6 +25,8 @@ import {
   generateButtonGroup,
   generateDashboard,
 } from "./layouts";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 // Constants - Physical canvas dimensions
 const CANVAS_WIDTH = 8000;
@@ -48,27 +51,44 @@ const DEFAULT_FONT_FAMILY = "Arial";
  */
 export class CanvasAIAgent {
   private userId: string;
+  private canvasId?: string;
+  private sessionId: string; // Session ID for grouping related operations
+  private currentCommand: string | null = null; // Track current command for metadata
+  private currentOperationId: string | null = null; // Track current operation for undo grouping
   private onCreateObject: (object: CanvasObject) => void;
   private onUpdateObject: (id: string, updates: Partial<CanvasObject>) => void;
   private onDeleteObject: (id: string) => void;
   private getCanvasContext: () => CanvasContext;
   private findObjectByDescription: (description: string) => CanvasObject[];
   private getNextZIndex: () => number;
+  private recordUndoOperation?: (
+    objectIds: string[],
+    actionType: "create" | "update" | "delete",
+    aiOperationId: string
+  ) => void;
 
   constructor(
     config: AIAgentConfig & {
       getCanvasContext: () => CanvasContext;
       findObjectByDescription: (description: string) => CanvasObject[];
       getNextZIndex: () => number;
+      recordUndoOperation?: (
+        objectIds: string[],
+        actionType: "create" | "update" | "delete",
+        aiOperationId: string
+      ) => void;
     }
   ) {
     this.userId = config.userId;
+    this.canvasId = config.canvasId;
+    this.sessionId = crypto.randomUUID(); // Generate session ID for this agent instance
     this.onCreateObject = config.onCreateObject || (() => {});
     this.onUpdateObject = config.onUpdateObject || (() => {});
     this.onDeleteObject = config.onDeleteObject || (() => {});
     this.getCanvasContext = config.getCanvasContext;
     this.findObjectByDescription = config.findObjectByDescription;
     this.getNextZIndex = config.getNextZIndex;
+    this.recordUndoOperation = config.recordUndoOperation;
   }
 
   /**
@@ -78,6 +98,10 @@ export class CanvasAIAgent {
   async processCommand(command: string): Promise<AIResponse> {
     const startTime = Date.now();
     const actions: AIAction[] = [];
+
+    // Store current command for metadata and generate operation ID for undo grouping
+    this.currentCommand = command;
+    this.currentOperationId = crypto.randomUUID();
 
     try {
       // Step 1: Get current canvas context
@@ -123,6 +147,13 @@ export class CanvasAIAgent {
         }
       }
 
+      // Step 5: Log operation to Firestore (if canvasId provided)
+      if (this.canvasId && successCount > 0) {
+        this.logOperation(command, true, actions, executionTime).catch((err) =>
+          console.warn("Failed to log AI operation:", err)
+        );
+      }
+
       return {
         success: successCount > 0,
         message,
@@ -130,6 +161,19 @@ export class CanvasAIAgent {
       };
     } catch (error) {
       console.error("CanvasAIAgent error:", error);
+
+      // Log failed operation (if canvasId provided)
+      if (this.canvasId) {
+        const executionTime = Date.now() - startTime;
+        this.logOperation(
+          command,
+          false,
+          actions,
+          executionTime,
+          error instanceof Error ? error.message : "Unknown error"
+        ).catch((err) => console.warn("Failed to log AI operation:", err));
+      }
+
       return {
         success: false,
         message: "Failed to process command",
@@ -137,6 +181,53 @@ export class CanvasAIAgent {
         actions,
       };
     }
+  }
+
+  /**
+   * Log AI operation to Firestore for tracking and analytics
+   */
+  private async logOperation(
+    command: string,
+    success: boolean,
+    actions: AIAction[],
+    executionTimeMs: number,
+    error?: string
+  ): Promise<void> {
+    if (!this.canvasId) return;
+
+    const operationId = crypto.randomUUID();
+    const operationLog: AIOperationLog = {
+      id: operationId,
+      sessionId: this.sessionId,
+      canvasId: this.canvasId,
+      userId: this.userId,
+      command,
+      timestamp: new Date(),
+      success,
+      actions,
+      objectsCreated: actions
+        .filter((a) => a.type === "create" && a.success && a.objectId)
+        .map((a) => a.objectId!),
+      objectsModified: actions
+        .filter((a) => a.type === "update" && a.success && a.objectId)
+        .map((a) => a.objectId!),
+      objectsDeleted: actions
+        .filter((a) => a.type === "delete" && a.success && a.objectId)
+        .map((a) => a.objectId!),
+      error,
+      executionTimeMs,
+    };
+
+    const operationRef = doc(
+      db,
+      `canvas/${this.canvasId}/ai-operations`,
+      operationId
+    );
+
+    await setDoc(operationRef, {
+      ...operationLog,
+      timestamp: serverTimestamp(),
+    });
   }
 
   /**
@@ -227,9 +318,18 @@ export class CanvasAIAgent {
           zIndex,
           createdAt: new Date(),
           updatedAt: new Date(),
+          // AI metadata
+          createdByAI: true,
+          aiCommand: this.currentCommand || undefined,
+          aiSessionId: this.sessionId,
         };
 
         this.onCreateObject(rectangle);
+
+        // Record for undo (if callback provided)
+        if (this.recordUndoOperation && this.currentOperationId) {
+          this.recordUndoOperation([id], "create", this.currentOperationId);
+        }
 
         return {
           type: "create",
@@ -256,9 +356,18 @@ export class CanvasAIAgent {
           zIndex,
           createdAt: new Date(),
           updatedAt: new Date(),
+          // AI metadata
+          createdByAI: true,
+          aiCommand: this.currentCommand || undefined,
+          aiSessionId: this.sessionId,
         };
 
         this.onCreateObject(circle);
+
+        // Record for undo (if callback provided)
+        if (this.recordUndoOperation && this.currentOperationId) {
+          this.recordUndoOperation([id], "create", this.currentOperationId);
+        }
 
         return {
           type: "create",
@@ -332,9 +441,18 @@ export class CanvasAIAgent {
         zIndex,
         createdAt: new Date(),
         updatedAt: new Date(),
+        // AI metadata
+        createdByAI: true,
+        aiCommand: this.currentCommand || undefined,
+        aiSessionId: this.sessionId,
       };
 
       this.onCreateObject(textObject);
+
+      // Record for undo (if callback provided)
+      if (this.recordUndoOperation && this.currentOperationId) {
+        this.recordUndoOperation([id], "create", this.currentOperationId);
+      }
 
       return {
         type: "create",
@@ -468,16 +586,19 @@ export class CanvasAIAgent {
       }
 
       const object = objects[0];
-      const updates: Partial<CanvasObject> = { updatedAt: new Date() };
 
       if (object.type === "rectangle") {
+        const updates: Partial<Rectangle> = { updatedAt: new Date() };
         if (args.width !== undefined)
           updates.width = Math.max(10, Math.min(args.width, CANVAS_WIDTH));
         if (args.height !== undefined)
           updates.height = Math.max(10, Math.min(args.height, CANVAS_HEIGHT));
+        this.onUpdateObject(object.id, updates);
       } else if (object.type === "circle") {
+        const updates: Partial<Circle> = { updatedAt: new Date() };
         if (args.radius !== undefined)
           updates.radius = Math.max(5, Math.min(args.radius, CANVAS_WIDTH / 2));
+        this.onUpdateObject(object.id, updates);
       } else {
         return {
           type: "update",
@@ -485,8 +606,6 @@ export class CanvasAIAgent {
           message: `Cannot resize ${object.type} objects`,
         };
       }
-
-      this.onUpdateObject(object.id, updates);
 
       return {
         type: "update",
@@ -586,6 +705,15 @@ export class CanvasAIAgent {
       const object = objects[0];
       this.onDeleteObject(object.id);
 
+      // Record for undo (if callback provided)
+      if (this.recordUndoOperation && this.currentOperationId) {
+        this.recordUndoOperation(
+          [object.id],
+          "delete",
+          this.currentOperationId
+        );
+      }
+
       return {
         type: "delete",
         objectId: object.id,
@@ -656,7 +784,12 @@ export class CanvasAIAgent {
               y: startY,
               updatedAt: new Date(),
             });
-            const width = obj.type === "rectangle" ? obj.width : obj.radius * 2;
+            const width =
+              obj.type === "rectangle"
+                ? obj.width
+                : obj.type === "circle"
+                ? obj.radius * 2
+                : 100;
             currentX += width + spacing;
           }
         });
@@ -683,7 +816,11 @@ export class CanvasAIAgent {
               updatedAt: new Date(),
             });
             const height =
-              obj.type === "rectangle" ? obj.height : obj.radius * 2;
+              obj.type === "rectangle"
+                ? obj.height
+                : obj.type === "circle"
+                ? obj.radius * 2
+                : 100;
             currentY += height + spacing;
           }
         });
@@ -805,8 +942,22 @@ export class CanvasAIAgent {
         };
       }
 
+      // Add AI metadata to all objects
+      const objectsWithMetadata = objects.map((obj) => ({
+        ...obj,
+        createdByAI: true,
+        aiCommand: this.currentCommand || undefined,
+        aiSessionId: this.sessionId,
+      }));
+
       // Create all objects
-      objects.forEach((obj) => this.onCreateObject(obj));
+      objectsWithMetadata.forEach((obj) => this.onCreateObject(obj));
+
+      // Record for undo (if callback provided) - group all objects as one undo action
+      if (this.recordUndoOperation && this.currentOperationId) {
+        const objectIds = objectsWithMetadata.map((obj) => obj.id);
+        this.recordUndoOperation(objectIds, "create", this.currentOperationId);
+      }
 
       return {
         type: "create",

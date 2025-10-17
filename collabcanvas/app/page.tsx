@@ -241,6 +241,7 @@ function HomePage() {
         {user?.id && (
           <AIChatPanel
             userId={user.id}
+            canvasId={canvasId}
             onCreateObject={createObject}
             onUpdateObject={updateObjectInFirestore}
             onDeleteObject={deleteObject}

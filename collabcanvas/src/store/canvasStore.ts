@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { CanvasObject, Point, SelectionBox } from "@/types";
-import { AIOperation } from "@/types/ai";
+import { AIOperation, UndoOperation } from "@/types/ai";
 
 interface CanvasStore {
   canvasId: string | null;
@@ -17,6 +17,11 @@ interface CanvasStore {
   lastAICommand: string | null;
   aiOperationHistory: AIOperation[];
   isAIProcessing: boolean;
+
+  // Undo/Redo state
+  undoStack: UndoOperation[];
+  redoStack: UndoOperation[];
+  maxUndoSize: number;
 
   setCanvasId: (id: string) => void;
   setScale: (scale: number) => void;
@@ -63,6 +68,14 @@ interface CanvasStore {
   batchCreateObjects: (objects: CanvasObject[]) => void;
   findObjectsByType: (type: string) => CanvasObject[];
   getObjectsByDescription: (desc: string) => CanvasObject[];
+
+  // Undo/Redo methods
+  pushToUndoStack: (operation: UndoOperation) => void;
+  undo: () => UndoOperation | null;
+  redo: () => UndoOperation | null;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  clearUndoHistory: () => void;
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -78,6 +91,11 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   lastAICommand: null,
   aiOperationHistory: [],
   isAIProcessing: false,
+
+  // Undo/Redo state
+  undoStack: [],
+  redoStack: [],
+  maxUndoSize: 50,
 
   setCanvasId: (id) => set({ canvasId: id }),
 
@@ -348,4 +366,56 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
       return false;
     });
   },
+
+  // Undo/Redo methods
+  pushToUndoStack: (operation) =>
+    set((state) => {
+      const newUndoStack = [...state.undoStack, operation];
+      // Limit stack size
+      if (newUndoStack.length > state.maxUndoSize) {
+        newUndoStack.shift(); // Remove oldest
+      }
+      // Clear redo stack on new operation
+      return { undoStack: newUndoStack, redoStack: [] };
+    }),
+
+  undo: () => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    if (state.undoStack.length === 0) return null;
+
+    const operation = state.undoStack[state.undoStack.length - 1];
+
+    set((state) => ({
+      undoStack: state.undoStack.slice(0, -1),
+      redoStack: [...state.redoStack, operation],
+    }));
+
+    return operation;
+  },
+
+  redo: () => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    if (state.redoStack.length === 0) return null;
+
+    const operation = state.redoStack[state.redoStack.length - 1];
+
+    set((state) => ({
+      redoStack: state.redoStack.slice(0, -1),
+      undoStack: [...state.undoStack, operation],
+    }));
+
+    return operation;
+  },
+
+  canUndo: () => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    return state.undoStack.length > 0;
+  },
+
+  canRedo: () => {
+    const state = useCanvasStore.getState() as CanvasStore;
+    return state.redoStack.length > 0;
+  },
+
+  clearUndoHistory: () => set({ undoStack: [], redoStack: [] }),
 }));

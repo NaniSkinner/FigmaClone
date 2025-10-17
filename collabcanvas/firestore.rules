@@ -61,13 +61,30 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.keys().hasAll(['id', 'type'])
         && request.resource.data.id is string
-        && request.resource.data.type is string;
+        && request.resource.data.type is string
+        // Optional AI metadata validation
+        && (!request.resource.data.keys().hasAny(['createdByAI']) || request.resource.data.createdByAI is bool)
+        && (!request.resource.data.keys().hasAny(['aiCommand']) || request.resource.data.aiCommand is string)
+        && (!request.resource.data.keys().hasAny(['aiSessionId']) || request.resource.data.aiSessionId is string);
 
       // Update allowed for any authenticated user (soft locks only)
       allow update: if isAuthenticated();
 
       // Delete allowed for any authenticated user
       allow delete: if isAuthenticated();
+    }
+
+    // AI operations log - for tracking and analytics
+    match /canvas/{canvasId}/ai-operations/{operationId} {
+      allow read: if isAuthenticated();
+      
+      // Allow create for AI operation logs
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['id', 'userId', 'command', 'timestamp', 'success']);
+      
+      // No updates or deletes (logs are immutable)
+      allow update, delete: if false;
     }
   }
 }

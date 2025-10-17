@@ -25,6 +25,7 @@ import { CanvasObject } from "@/types/canvas";
 
 interface AIChatPanelProps {
   userId: string;
+  canvasId?: string; // Optional canvas ID for operation logging
   onCreateObject: (object: CanvasObject) => void;
   onUpdateObject: (id: string, updates: Partial<CanvasObject>) => void;
   onDeleteObject: (id: string) => void;
@@ -56,6 +57,7 @@ const EXAMPLE_COMMANDS = {
 
 export function AIChatPanel({
   userId,
+  canvasId,
   onCreateObject,
   onUpdateObject,
   onDeleteObject,
@@ -83,19 +85,27 @@ export function AIChatPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const agentRef = useRef<CanvasAIAgent | null>(null);
 
-  // Initialize AI Agent
+  // Store latest callbacks in refs to avoid stale closures
+  const callbacksRef = useRef({
+    onCreateObject,
+    onUpdateObject,
+    onDeleteObject,
+    getCanvasContext,
+    findObjectByDescription,
+    getNextZIndex,
+  });
+
+  // Update refs whenever callbacks change
   useEffect(() => {
-    agentRef.current = new CanvasAIAgent({
-      userId,
+    callbacksRef.current = {
       onCreateObject,
       onUpdateObject,
       onDeleteObject,
       getCanvasContext,
       findObjectByDescription,
       getNextZIndex,
-    });
+    };
   }, [
-    userId,
     onCreateObject,
     onUpdateObject,
     onDeleteObject,
@@ -103,6 +113,30 @@ export function AIChatPanel({
     findObjectByDescription,
     getNextZIndex,
   ]);
+
+  // Initialize AI Agent
+  // Only recreate when userId or canvasId changes (new session = new sessionId)
+  useEffect(() => {
+    agentRef.current = new CanvasAIAgent({
+      userId,
+      canvasId,
+      // Use wrapper functions that call the latest callbacks from refs
+      onCreateObject: (obj) => callbacksRef.current.onCreateObject(obj),
+      onUpdateObject: (id, updates) =>
+        callbacksRef.current.onUpdateObject(id, updates),
+      onDeleteObject: (id) => callbacksRef.current.onDeleteObject(id),
+      getCanvasContext: () => callbacksRef.current.getCanvasContext(),
+      findObjectByDescription: (desc) =>
+        callbacksRef.current.findObjectByDescription(desc),
+      getNextZIndex: () => callbacksRef.current.getNextZIndex(),
+    });
+
+    console.log("🎯 New AI Session Created:", {
+      userId,
+      canvasId,
+      note: "Agent will maintain same sessionId until user/canvas changes",
+    });
+  }, [userId, canvasId]); // Only depend on userId and canvasId
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
