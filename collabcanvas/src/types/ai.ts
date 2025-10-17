@@ -11,6 +11,7 @@ export interface AIResponse {
   message: string;
   actions?: AIAction[];
   error?: string;
+  errorType?: "timeout" | "rate_limit" | "server_error" | "generic";
   functionCalls?: AIFunctionCall[];
 }
 

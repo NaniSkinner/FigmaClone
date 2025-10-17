@@ -283,12 +283,37 @@ export function AIChatPanel({
       // Remove thinking message and add real response
       setMessages((prev) => {
         const filtered = prev.filter((m) => m.id !== thinkingMessage.id);
+
+        // Generate user-friendly error message based on error type
+        let displayMessage = response.message;
+        if (!response.success && response.errorType) {
+          switch (response.errorType) {
+            case "timeout":
+              displayMessage =
+                "⏱️ Request timed out. The AI service took too long to respond. Please try again or simplify your command.";
+              break;
+            case "rate_limit":
+              displayMessage =
+                "🚦 Rate limit reached. You've made too many requests. Please wait a moment (30-60 seconds) before trying again.";
+              break;
+            case "server_error":
+              displayMessage =
+                "🔧 AI service is temporarily unavailable. The service is experiencing issues. Please try again in a few minutes.";
+              break;
+            default:
+              displayMessage = `❌ ${
+                response.message ||
+                "An unexpected error occurred. Please try again."
+              }`;
+          }
+        }
+
         return [
           ...filtered,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            content: response.message,
+            content: displayMessage,
             timestamp: new Date(),
             status: response.success ? "success" : "error",
             actions: response.actions,
@@ -304,9 +329,9 @@ export function AIChatPanel({
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            content: `Sorry, I encountered an error: ${
+            content: `❌ Sorry, I encountered an unexpected error: ${
               error instanceof Error ? error.message : "Unknown error"
-            }`,
+            }. Please try again.`,
             timestamp: new Date(),
             status: "error",
           },

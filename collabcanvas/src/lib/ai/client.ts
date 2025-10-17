@@ -72,6 +72,74 @@ class DirectOpenAIClient implements AIClient {
     this.maxTokens = 1000; // Response limit
   }
 
+  /**
+   * Execute operation with retry logic, timeout handling, and rate limit support
+   */
+  private async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await Promise.race([
+          operation(),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error("Request timeout after 10 seconds")),
+              10000
+            )
+          ),
+        ]);
+      } catch (error: any) {
+        lastError = error;
+
+        // Check for rate limit (429)
+        if (error?.status === 429) {
+          const retryAfter = error?.headers?.["retry-after"] || 5;
+          console.warn(`[AI] Rate limited. Retrying after ${retryAfter}s...`);
+          await new Promise((resolve) =>
+            setTimeout(resolve, retryAfter * 1000)
+          );
+          continue;
+        }
+
+        // Check for server errors (5xx) - retry with exponential backoff
+        if (error?.status >= 500 && error?.status < 600) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+          console.warn(
+            `[AI] Server error (${
+              error.status
+            }). Retrying in ${delay}ms... (attempt ${
+              attempt + 1
+            }/${maxRetries})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // For client errors (4xx) or other errors, retry with linear backoff
+        if (attempt < maxRetries - 1) {
+          console.warn(
+            `[AI] Error: ${error.message}. Retrying... (attempt ${
+              attempt + 1
+            }/${maxRetries})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        } else {
+          break;
+        }
+      }
+    }
+
+    throw new Error(
+      `AI command failed after ${maxRetries} attempts: ${
+        lastError?.message || "Unknown error"
+      }`
+    );
+  }
+
   async processCommand(
     command: string,
     context: CanvasContext
@@ -85,24 +153,26 @@ class DirectOpenAIClient implements AIClient {
       // Get available tools/functions
       const tools = this.getTools();
 
-      // Call OpenAI with function calling
-      const response = await this.openai.chat.completions.create({
-        model: this.model,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: command,
-          },
-        ],
-        tools,
-        tool_choice: "auto", // Let GPT decide when to use tools
-      });
+      // Call OpenAI with function calling (with retry logic)
+      const response = await this.executeWithRetry(() =>
+        this.openai.chat.completions.create({
+          model: this.model,
+          temperature: this.temperature,
+          max_tokens: this.maxTokens,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: command,
+            },
+          ],
+          tools,
+          tool_choice: "auto", // Let GPT decide when to use tools
+        })
+      );
 
       const executionTime = Date.now() - startTime;
 
@@ -134,12 +204,36 @@ class DirectOpenAIClient implements AIClient {
         message: message.content || "Processing your request...",
         functionCalls,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("DirectOpenAIClient error:", error);
+
+      // Detect error type for better user feedback
+      let errorType: "timeout" | "rate_limit" | "server_error" | "generic" =
+        "generic";
+      let userMessage = "Failed to process command";
+
+      if (error.message?.includes("timeout")) {
+        errorType = "timeout";
+        userMessage =
+          "Request timed out. Please try again or check your connection.";
+      } else if (
+        error.status === 429 ||
+        error.message?.includes("rate limit")
+      ) {
+        errorType = "rate_limit";
+        userMessage =
+          "Rate limit reached. Please wait a moment before trying again.";
+      } else if (error.status >= 500) {
+        errorType = "server_error";
+        userMessage =
+          "AI service is temporarily unavailable. Please try again.";
+      }
+
       return {
         success: false,
-        message: "Failed to process command",
+        message: userMessage,
         error: error instanceof Error ? error.message : "Unknown error",
+        errorType,
       };
     }
   }

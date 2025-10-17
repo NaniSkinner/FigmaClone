@@ -238,7 +238,7 @@ export class CanvasAIAgent {
       objectsDeleted: actions
         .filter((a) => a.type === "delete" && a.success && a.objectId)
         .map((a) => a.objectId!),
-      error,
+      ...(error && { error }), // Only include error field if it's defined
       executionTimeMs,
     };
 

@@ -24,6 +24,70 @@ const AI_CONFIG = {
 };
 
 /**
+ * Execute operation with retry logic, timeout handling, and rate limit support
+ */
+async function executeWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await Promise.race([
+        operation(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Request timeout after 10 seconds")),
+            10000
+          )
+        ),
+      ]);
+    } catch (error: any) {
+      lastError = error;
+
+      // Check for rate limit (429)
+      if (error?.status === 429) {
+        const retryAfter = error?.headers?.["retry-after"] || 5;
+        console.warn(`[AI] Rate limited. Retrying after ${retryAfter}s...`);
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        continue;
+      }
+
+      // Check for server errors (5xx) - retry with exponential backoff
+      if (error?.status >= 500 && error?.status < 600) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+        console.warn(
+          `[AI] Server error (${
+            error.status
+          }). Retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // For client errors (4xx) or other errors, retry with linear backoff
+      if (attempt < maxRetries - 1) {
+        console.warn(
+          `[AI] Error: ${error.message}. Retrying... (attempt ${
+            attempt + 1
+          }/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } else {
+        break;
+      }
+    }
+  }
+
+  throw new Error(
+    `AI command failed after ${maxRetries} attempts: ${
+      lastError?.message || "Unknown error"
+    }`
+  );
+}
+
+/**
  * POST /api/ai
  *
  * Process AI commands securely on the server
@@ -76,18 +140,20 @@ export async function POST(request: NextRequest) {
     // Step 4: Build system prompt
     const systemPrompt = buildSystemPrompt(context);
 
-    // Step 5: Call OpenAI API (server-side, key never exposed)
-    const completion = await openai.chat.completions.create({
-      model: AI_CONFIG.model,
-      temperature: AI_CONFIG.temperature,
-      max_tokens: AI_CONFIG.maxTokens,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: command },
-      ],
-      tools: getTools(),
-      tool_choice: "auto",
-    });
+    // Step 5: Call OpenAI API with retry logic (server-side, key never exposed)
+    const completion = await executeWithRetry(() =>
+      openai.chat.completions.create({
+        model: AI_CONFIG.model,
+        temperature: AI_CONFIG.temperature,
+        max_tokens: AI_CONFIG.maxTokens,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: command },
+        ],
+        tools: getTools(),
+        tool_choice: "auto",
+      })
+    );
 
     const message = completion.choices[0]?.message;
 
@@ -128,29 +194,53 @@ export async function POST(request: NextRequest) {
       message: message.content || "",
       functionCalls,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI API Error:", error);
 
-    // Handle OpenAI-specific errors
-    if (error instanceof OpenAI.APIError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.message,
-          message: "OpenAI API error occurred",
-        },
-        { status: error.status || 500 }
-      );
+    // Detect error type and return appropriate status code
+    let errorType = "generic";
+    let userMessage = "Failed to process AI command";
+    let statusCode = 500;
+
+    if (error.message?.includes("timeout")) {
+      errorType = "timeout";
+      userMessage =
+        "Request timed out. Please try again or check your connection.";
+      statusCode = 408; // Request Timeout
+    } else if (error instanceof OpenAI.APIError) {
+      if (error.status === 429) {
+        errorType = "rate_limit";
+        userMessage =
+          "Rate limit reached. Please wait a moment before trying again.";
+        statusCode = 429; // Too Many Requests
+      } else if (error.status && error.status >= 500) {
+        errorType = "server_error";
+        userMessage =
+          "AI service is temporarily unavailable. Please try again.";
+        statusCode = error.status;
+      } else {
+        userMessage = "OpenAI API error occurred";
+        statusCode = error.status || 500;
+      }
+    } else if (error.status === 429 || error.message?.includes("rate limit")) {
+      errorType = "rate_limit";
+      userMessage =
+        "Rate limit reached. Please wait a moment before trying again.";
+      statusCode = 429;
+    } else if (error.status >= 500) {
+      errorType = "server_error";
+      userMessage = "AI service is temporarily unavailable. Please try again.";
+      statusCode = error.status;
     }
 
-    // Generic error
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        message: "Failed to process AI command",
+        errorType,
+        message: userMessage,
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }
