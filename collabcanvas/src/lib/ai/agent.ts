@@ -33,7 +33,7 @@ const DEFAULT_FILL = "#D4E7C5"; // Matcha Green
 const DEFAULT_STROKE = "#B4A7D6"; // Lavender
 const DEFAULT_STROKE_WIDTH = 3;
 const DEFAULT_TEXT_FILL = "#1F2937"; // Dark gray
-const DEFAULT_FONT_SIZE = 32;
+const DEFAULT_FONT_SIZE = 128; // 4x larger for 8000x8000 canvas (was 32 for 2000x2000)
 const DEFAULT_FONT_FAMILY = "Arial";
 
 /**

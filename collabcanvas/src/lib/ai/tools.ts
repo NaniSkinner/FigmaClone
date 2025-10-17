@@ -106,7 +106,7 @@ export const createTextTool: AITool = {
         },
         fontSize: {
           type: "number",
-          description: "Font size in pixels. Default: 32. Range: 8-200",
+          description: "Font size in pixels. Default: 128. Range: 16-800",
         },
         fontFamily: {
           type: "string",
