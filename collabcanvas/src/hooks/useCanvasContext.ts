@@ -12,9 +12,9 @@ import { useCanvasStore } from "@/store/canvasStore";
 import { CanvasObject } from "@/types/canvas";
 import { CanvasContext, CanvasContextObject } from "@/types/ai";
 
-// Canvas constants
-const CANVAS_WIDTH = 2000;
-const CANVAS_HEIGHT = 2000;
+// Canvas constants - Physical canvas dimensions
+const CANVAS_WIDTH = 8000;
+const CANVAS_HEIGHT = 8000;
 const GRID_SIZE = 50;
 
 /**

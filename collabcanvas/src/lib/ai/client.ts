@@ -13,6 +13,7 @@
 
 import OpenAI from "openai";
 import { AIResponse, CanvasContext, AITool } from "@/types/ai";
+import { allTools } from "./tools";
 
 // ============================================================================
 // Interface Definition
@@ -66,7 +67,7 @@ class DirectOpenAIClient implements AIClient {
     });
 
     // Configuration from PRD Section 4.4.1
-    this.model = "gpt-4-turbo-preview";
+    this.model = "gpt-4o"; // Using GPT-4o for better function calling and faster responses
     this.temperature = 0.7; // Creative flexibility
     this.maxTokens = 1000; // Response limit
   }
@@ -161,12 +162,13 @@ CAPABILITIES:
 - Query canvas state
 
 RULES:
-1. Canvas boundaries: 0-2000px (width and height)
+1. Canvas boundaries: 8000x8000 pixels (coordinates from 0-8000 on both axes)
 2. Maximum 5 objects per command
-3. Use Matcha Green (#D4E7C5) and Lavender (#B4A7D6) as default colors
+3. Use Matcha Green (#D4E7C5) for fills and Lavender (#B4A7D6) for strokes as default colors
 4. All measurements in pixels
 5. Rotation in degrees (0-360)
 6. Z-index range: 0-999
+7. Center of canvas is at (4000, 4000)
 
 RESPONSE STYLE:
 - Be concise and professional
@@ -179,12 +181,11 @@ When the user asks you to do something, use the available function tools to mani
   }
 
   /**
-   * Get AI tool definitions (placeholder - will be filled in Task 5)
+   * Get AI tool definitions
+   * Returns all available tools for the AI to use
    */
   private getTools(): AITool[] {
-    // TODO: Implement full tool definitions in Task 5
-    // For now, return empty array
-    return [];
+    return allTools;
   }
 }
 

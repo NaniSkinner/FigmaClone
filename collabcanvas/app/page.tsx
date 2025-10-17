@@ -14,6 +14,7 @@ import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
 import LayerPanel from "@/components/Layers/LayerPanel";
 import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
+import { AIChatPanel } from "@/components/AI/AIChatPanel";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { cleanupStalePresence } from "@/lib/cleanupPresence";
 
@@ -235,6 +236,16 @@ function HomePage() {
 
         {/* Canvas State Panel (AI Feature) */}
         <CanvasStatePanel />
+
+        {/* AI Chat Panel (AI Feature) */}
+        {user?.id && (
+          <AIChatPanel
+            userId={user.id}
+            onCreateObject={createObject}
+            onUpdateObject={updateObjectInFirestore}
+            onDeleteObject={deleteObject}
+          />
+        )}
 
         {/* Canvas Controls */}
         <CanvasControls
