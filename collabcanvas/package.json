@@ -11,9 +11,14 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ai": "jest src/__tests__/ai --coverage",
-    "test:integration": "RUN_INTEGRATION_TESTS=true jest src/__tests__/integration",
+    "test:ai:reference": "jest src/__tests__/ai/agent.reference.test.ts",
+    "test:ai:boundaries": "jest src/__tests__/ai/agent.boundaries.test.ts",
+    "test:ai:layouts": "jest src/__tests__/ai/layouts.test.ts",
+    "test:integration": "jest src/__tests__/integration",
+    "test:integration:e2e": "jest src/__tests__/integration/ai-e2e.test.ts",
+    "test:performance": "jest src/__tests__/performance",
     "test:coverage": "jest --coverage",
-    "test:performance": "jest src/__tests__/integration/performance.test.ts"
+    "test:all": "jest --coverage --verbose"
   },
   "dependencies": {
     "firebase": "^12.4.0",

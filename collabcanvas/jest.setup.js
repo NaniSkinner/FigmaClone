@@ -1,4 +1,13 @@
 import "@testing-library/jest-dom";
+import { randomUUID } from "crypto";
+
+// Mock crypto.randomUUID for tests
+if (!global.crypto) {
+  global.crypto = {};
+}
+if (!global.crypto.randomUUID) {
+  global.crypto.randomUUID = randomUUID;
+}
 
 // Mock Firebase modules for tests
 jest.mock("firebase/app", () => ({
