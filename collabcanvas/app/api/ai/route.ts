@@ -291,27 +291,29 @@ DEFAULT STYLING:
 INSTRUCTIONS:
 - Always use the provided function tools to manipulate the canvas
 - Ensure all coordinates are within canvas boundaries
-- When user says "center", use (${canvasInfo.width / 2}, ${
-    canvasInfo.height / 2
-  })
+- When user says "center" or doesn't specify position, use (${
+    canvasInfo.width / 2
+  }, ${canvasInfo.height / 2})
+- For UI components (login form, nav bar, etc.), use createComplexLayout function
+- Accept ANY color name or hex code - convert color names: red=#FF0000, blue=#0000FF, black=#000000, white=#FFFFFF, green=#00FF00, yellow=#FFFF00, orange=#FFA500, purple=#800080
+- Don't ask for color confirmation - use the color the user requests
+- Maximum 20 objects per command
 - Be helpful and confirm actions taken
-- If unclear, ask for clarification`;
+- Ask for clarification only when truly needed (not for colors or positions)`;
 }
 
 /**
  * Get AI tools/functions
- * (Imported from tools.ts logic - simplified for server)
+ * (Imported from tools.ts logic - inline version for server)
  */
 function getTools() {
-  // Import tools from the existing tools.ts file
-  // For now, we'll inline a simplified version
-  // In production, you'd import from a shared file
   return [
     {
       type: "function" as const,
       function: {
         name: "createShape",
-        description: "Create a rectangle or circle on the canvas",
+        description:
+          "Create a rectangle or circle on the canvas with specified colors",
         parameters: {
           type: "object",
           properties: {
@@ -340,8 +342,16 @@ function getTools() {
               type: "number",
               description: "Radius for circles (default: 200)",
             },
-            fill: { type: "string", description: "Fill color (hex code)" },
-            stroke: { type: "string", description: "Stroke color (hex code)" },
+            fill: {
+              type: "string",
+              description:
+                "Fill color as hex code or color name. Accepts any color: red, blue, black, or hex like #FF0000",
+            },
+            stroke: {
+              type: "string",
+              description:
+                "Stroke color as hex code or color name. Accepts any color: black, white, red, or hex like #000000",
+            },
             strokeWidth: { type: "number", description: "Stroke width" },
             rotation: { type: "number", description: "Rotation in degrees" },
           },
@@ -353,25 +363,131 @@ function getTools() {
       type: "function" as const,
       function: {
         name: "createText",
-        description: "Create a text label on the canvas",
+        description:
+          "Create a text label on the canvas. Defaults to center (4000, 4000) if position not specified.",
         parameters: {
           type: "object",
           properties: {
             text: { type: "string", description: "The text content" },
-            x: { type: "number", description: "X coordinate (0-8000)" },
-            y: { type: "number", description: "Y coordinate (0-8000)" },
+            x: {
+              type: "number",
+              description:
+                "X coordinate (0-8000, center is 4000). Defaults to 4000.",
+            },
+            y: {
+              type: "number",
+              description:
+                "Y coordinate (0-8000, center is 4000). Defaults to 4000.",
+            },
             fontSize: {
               type: "number",
               description: "Font size (default: 128)",
             },
             fontFamily: { type: "string", description: "Font family" },
-            fill: { type: "string", description: "Text color" },
+            fill: {
+              type: "string",
+              description: "Text color as hex or color name",
+            },
           },
-          required: ["text", "x", "y"],
+          required: ["text"],
         },
       },
     },
-    // Add other tools as needed (moveObject, deleteObject, etc.)
-    // This is a simplified version - full implementation would import from tools.ts
+    {
+      type: "function" as const,
+      function: {
+        name: "moveObject",
+        description:
+          "Move an object to a new position. Can reference by description or ID.",
+        parameters: {
+          type: "object",
+          properties: {
+            objectId: {
+              type: "string",
+              description:
+                "Object ID or description like 'blue rectangle', 'largest circle'",
+            },
+            x: { type: "number", description: "New X coordinate (0-8000)" },
+            y: { type: "number", description: "New Y coordinate (0-8000)" },
+          },
+          required: ["objectId", "x", "y"],
+        },
+      },
+    },
+    {
+      type: "function" as const,
+      function: {
+        name: "resizeObject",
+        description: "Resize an object (rectangles or circles)",
+        parameters: {
+          type: "object",
+          properties: {
+            objectId: {
+              type: "string",
+              description: "Object ID or description",
+            },
+            width: { type: "number", description: "New width (rectangles)" },
+            height: { type: "number", description: "New height (rectangles)" },
+            radius: { type: "number", description: "New radius (circles)" },
+          },
+          required: ["objectId"],
+        },
+      },
+    },
+    {
+      type: "function" as const,
+      function: {
+        name: "deleteObject",
+        description: "Delete an object from the canvas",
+        parameters: {
+          type: "object",
+          properties: {
+            objectId: {
+              type: "string",
+              description: "Object ID or description like 'red circle'",
+            },
+          },
+          required: ["objectId"],
+        },
+      },
+    },
+    {
+      type: "function" as const,
+      function: {
+        name: "createComplexLayout",
+        description:
+          "Create a complete UI component from templates (login form, navigation bar, card, etc.)",
+        parameters: {
+          type: "object",
+          properties: {
+            layoutType: {
+              type: "string",
+              enum: [
+                "loginForm",
+                "navigationBar",
+                "card",
+                "buttonGroup",
+                "dashboard",
+              ],
+              description: "The type of layout template to create",
+            },
+            x: {
+              type: "number",
+              description: "X coordinate for top-left corner (default: 500)",
+            },
+            y: {
+              type: "number",
+              description: "Y coordinate for top-left corner (default: 400)",
+            },
+            config: {
+              type: "object",
+              description:
+                "Optional configuration (title, items, width, height)",
+            },
+          },
+          required: ["layoutType"],
+        },
+      },
+    },
   ];
 }

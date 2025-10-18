@@ -97,7 +97,7 @@ export interface AIChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
-  status?: "pending" | "success" | "error";
+  status?: "pending" | "success" | "error" | "info";
   actions?: AIAction[];
 }
 

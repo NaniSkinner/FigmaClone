@@ -21,12 +21,13 @@ const WHITE = "#FFFFFF";
  * Generate a login form layout
  *
  * Structure (from PRD Section 12.1):
- * - Container rectangle (300x450)
+ * - Container rectangle (scaled for 8000x8000 canvas)
  * - Title text "Login"
  * - Username label and input field
  * - Password label and input field
- * - Remember me checkbox with label
  * - Submit button with text
+ *
+ * Scaled up for better visibility on 8000x8000 canvas
  */
 export function generateLoginForm(
   x: number,
@@ -37,32 +38,43 @@ export function generateLoginForm(
   const objects: CanvasObject[] = [];
   const now = new Date();
 
-  // Container
+  // Scaled dimensions for 8000x8000 canvas (3x larger than before)
+  const containerWidth = 800;
+  const containerHeight = 1000;
+  const padding = 100;
+  const inputWidth = 600;
+  const inputHeight = 100;
+  const buttonHeight = 120;
+  const titleFontSize = 96;
+  const labelFontSize = 64;
+  const buttonFontSize = 72;
+
+  // Container background
   objects.push({
     id: crypto.randomUUID(),
     type: "rectangle",
     userId,
     x,
     y,
-    width: 300,
-    height: 450,
+    width: containerWidth,
+    height: containerHeight,
     fill: WHITE,
-    stroke: DARK_GRAY,
-    strokeWidth: 2,
+    stroke: LAVENDER,
+    strokeWidth: 3,
     zIndex: getNextZIndex(),
     createdAt: now,
     updatedAt: now,
   } as Rectangle);
 
-  // Title
+  // Title "Login"
   objects.push({
     id: crypto.randomUUID(),
     type: "text",
     userId,
-    x: x + 150,
-    y: y + 30,
+    x: x + containerWidth / 2 - 80,
+    y: y + padding,
     text: "Login",
-    fontSize: 24,
+    fontSize: titleFontSize,
     fontFamily: "Arial",
     fontStyle: "bold",
     fill: DARK_GRAY,
@@ -76,10 +88,10 @@ export function generateLoginForm(
     id: crypto.randomUUID(),
     type: "text",
     userId,
-    x: x + 20,
-    y: y + 90,
-    text: "Username",
-    fontSize: 14,
+    x: x + padding,
+    y: y + 250,
+    text: "Username:",
+    fontSize: labelFontSize,
     fontFamily: "Arial",
     fill: DARK_GRAY,
     zIndex: getNextZIndex(),
@@ -92,13 +104,13 @@ export function generateLoginForm(
     id: crypto.randomUUID(),
     type: "rectangle",
     userId,
-    x: x + 20,
-    y: y + 110,
-    width: 260,
-    height: 40,
-    fill: LIGHT_GRAY,
-    stroke: DARK_GRAY,
-    strokeWidth: 1,
+    x: x + padding,
+    y: y + 350,
+    width: inputWidth,
+    height: inputHeight,
+    fill: MATCHA,
+    stroke: LAVENDER,
+    strokeWidth: 3,
     zIndex: getNextZIndex(),
     createdAt: now,
     updatedAt: now,
@@ -109,10 +121,10 @@ export function generateLoginForm(
     id: crypto.randomUUID(),
     type: "text",
     userId,
-    x: x + 20,
-    y: y + 170,
-    text: "Password",
-    fontSize: 14,
+    x: x + padding,
+    y: y + 500,
+    text: "Password:",
+    fontSize: labelFontSize,
     fontFamily: "Arial",
     fill: DARK_GRAY,
     zIndex: getNextZIndex(),
@@ -125,80 +137,47 @@ export function generateLoginForm(
     id: crypto.randomUUID(),
     type: "rectangle",
     userId,
-    x: x + 20,
-    y: y + 190,
-    width: 260,
-    height: 40,
-    fill: LIGHT_GRAY,
-    stroke: DARK_GRAY,
-    strokeWidth: 1,
+    x: x + padding,
+    y: y + 600,
+    width: inputWidth,
+    height: inputHeight,
+    fill: MATCHA,
+    stroke: LAVENDER,
+    strokeWidth: 3,
     zIndex: getNextZIndex(),
     createdAt: now,
     updatedAt: now,
   } as Rectangle);
-
-  // Remember me checkbox
-  objects.push({
-    id: crypto.randomUUID(),
-    type: "rectangle",
-    userId,
-    x: x + 20,
-    y: y + 250,
-    width: 20,
-    height: 20,
-    fill: WHITE,
-    stroke: DARK_GRAY,
-    strokeWidth: 2,
-    zIndex: getNextZIndex(),
-    createdAt: now,
-    updatedAt: now,
-  } as Rectangle);
-
-  // Remember me label
-  objects.push({
-    id: crypto.randomUUID(),
-    type: "text",
-    userId,
-    x: x + 50,
-    y: y + 255,
-    text: "Remember me",
-    fontSize: 12,
-    fontFamily: "Arial",
-    fill: DARK_GRAY,
-    zIndex: getNextZIndex(),
-    createdAt: now,
-    updatedAt: now,
-  } as Text);
 
   // Submit button
   objects.push({
     id: crypto.randomUUID(),
     type: "rectangle",
     userId,
-    x: x + 20,
-    y: y + 300,
-    width: 260,
-    height: 45,
-    fill: MATCHA,
-    stroke: LAVENDER,
-    strokeWidth: 2,
+    x: x + (containerWidth - 300) / 2,
+    y: y + 800,
+    width: 300,
+    height: buttonHeight,
+    fill: LAVENDER,
+    stroke: WHITE,
+    strokeWidth: 3,
     zIndex: getNextZIndex(),
     createdAt: now,
     updatedAt: now,
   } as Rectangle);
 
-  // Submit button text
+  // Submit button text "Log In"
   objects.push({
     id: crypto.randomUUID(),
     type: "text",
     userId,
-    x: x + 125,
-    y: y + 315,
-    text: "Sign In",
-    fontSize: 16,
+    x: x + containerWidth / 2 - 80,
+    y: y + 840,
+    text: "Log In",
+    fontSize: buttonFontSize,
     fontFamily: "Arial",
     fontStyle: "bold",
-    fill: DARK_GRAY,
+    fill: WHITE,
     zIndex: getNextZIndex(),
     createdAt: now,
     updatedAt: now,

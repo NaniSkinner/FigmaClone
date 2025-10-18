@@ -286,6 +286,10 @@ export function AIChatPanel({
 
         // Generate user-friendly error message based on error type
         let displayMessage = response.message;
+        let messageStatus: "success" | "error" | "info" = response.success
+          ? "success"
+          : "error";
+
         if (!response.success && response.errorType) {
           switch (response.errorType) {
             case "timeout":
@@ -306,6 +310,25 @@ export function AIChatPanel({
                 "An unexpected error occurred. Please try again."
               }`;
           }
+        } else if (response.success) {
+          // Detect clarification questions (not errors, just asking for more info)
+          const isQuestion =
+            displayMessage.includes("?") ||
+            displayMessage.startsWith("Could you") ||
+            displayMessage.startsWith("Please provide") ||
+            displayMessage.startsWith("Please specify") ||
+            displayMessage.startsWith("Which") ||
+            displayMessage.startsWith("Where would you like") ||
+            displayMessage.startsWith("What") ||
+            displayMessage.includes("clarification") ||
+            displayMessage.includes("more information");
+
+          if (
+            isQuestion &&
+            (!response.actions || response.actions.length === 0)
+          ) {
+            messageStatus = "info";
+          }
         }
 
         return [
@@ -315,7 +338,7 @@ export function AIChatPanel({
             role: "assistant",
             content: displayMessage,
             timestamp: new Date(),
-            status: response.success ? "success" : "error",
+            status: messageStatus,
             actions: response.actions,
           },
         ];
@@ -454,6 +477,8 @@ export function AIChatPanel({
                   ? "bg-red-100 text-red-800 border border-red-300"
                   : message.status === "pending"
                   ? "bg-gray-200 text-gray-600 animate-pulse"
+                  : message.status === "info"
+                  ? "bg-blue-50 text-blue-900 border border-blue-200"
                   : "bg-white text-gray-800 border border-gray-200"
               }`}
             >

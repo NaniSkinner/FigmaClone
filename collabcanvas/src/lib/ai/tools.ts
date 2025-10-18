@@ -56,12 +56,12 @@ export const createShapeTool: AITool = {
         fill: {
           type: "string",
           description:
-            "Fill color as hex code. Default: #D4E7C5 (Matcha Green). Examples: #FF0000, #0000FF",
+            "Fill color as hex code or color name. Default: #D4E7C5 (Matcha Green). Accepts any color: red, blue, black, or hex codes like #FF0000, #0000FF",
         },
         stroke: {
           type: "string",
           description:
-            "Stroke color as hex code. Default: #B4A7D6 (Lavender). Examples: #000000, #FFFFFF",
+            "Stroke color as hex code or color name. Default: #B4A7D6 (Lavender). Accepts any color: black, white, red, or hex codes like #000000, #FFFFFF",
         },
         strokeWidth: {
           type: "number",
@@ -86,7 +86,7 @@ export const createTextTool: AITool = {
   function: {
     name: "createText",
     description:
-      "Create a text element on the canvas with specified content, position, and styling",
+      "Create a text element on the canvas with specified content, position, and styling. If position not specified, defaults to center (4000, 4000).",
     parameters: {
       type: "object",
       properties: {
@@ -97,12 +97,12 @@ export const createTextTool: AITool = {
         x: {
           type: "number",
           description:
-            "X coordinate of the text (top-left). Range: 0-8000. Center is at 4000.",
+            "X coordinate of the text (top-left). Range: 0-8000. Center is at 4000. Defaults to 4000 if not specified.",
         },
         y: {
           type: "number",
           description:
-            "Y coordinate of the text (top-left). Range: 0-8000. Center is at 4000.",
+            "Y coordinate of the text (top-left). Range: 0-8000. Center is at 4000. Defaults to 4000 if not specified.",
         },
         fontSize: {
           type: "number",
@@ -121,14 +121,14 @@ export const createTextTool: AITool = {
         fill: {
           type: "string",
           description:
-            "Text color as hex code. Default: #1F2937 (dark gray). Examples: #000000, #FFFFFF",
+            "Text color as hex code or color name. Default: #1F2937 (dark gray). Accepts any color: black, white, red, blue, or hex codes like #000000, #FFFFFF",
         },
         rotation: {
           type: "number",
           description: "Rotation in degrees. Default: 0. Range: 0-360",
         },
       },
-      required: ["text", "x", "y"],
+      required: ["text"],
     },
   },
 };

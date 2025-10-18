@@ -31,9 +31,9 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 // Constants - Physical canvas dimensions
 const CANVAS_WIDTH = 8000;
 const CANVAS_HEIGHT = 8000;
-const MAX_OBJECTS_PER_COMMAND = 5;
-const DEFAULT_FILL = "#D4E7C5"; // Matcha Green
-const DEFAULT_STROKE = "#B4A7D6"; // Lavender
+const MAX_OBJECTS_PER_COMMAND = 20; // Increased to support complex layouts (login forms, dashboards, etc.)
+const DEFAULT_FILL = "#D4E7C5"; // Matcha Green (used only when no color specified)
+const DEFAULT_STROKE = "#B4A7D6"; // Lavender (used only when no color specified)
 const DEFAULT_STROKE_WIDTH = 3;
 const DEFAULT_TEXT_FILL = "#1F2937"; // Dark gray
 const DEFAULT_FONT_SIZE = 128; // 4x larger for 8000x8000 canvas (was 32 for 2000x2000)
@@ -424,8 +424,8 @@ export class CanvasAIAgent {
    */
   private executeCreateText(args: {
     text: string;
-    x: number;
-    y: number;
+    x?: number;
+    y?: number;
     fontSize?: number;
     fontFamily?: string;
     fontStyle?: "normal" | "bold" | "italic" | "bold italic";
@@ -436,17 +436,16 @@ export class CanvasAIAgent {
       const id = crypto.randomUUID();
       const zIndex = this.getNextZIndex();
 
+      // Default to center if position not specified
+      const x = args.x ?? CANVAS_WIDTH / 2;
+      const y = args.y ?? CANVAS_HEIGHT / 2;
+
       // Validate boundaries
-      if (
-        args.x < 0 ||
-        args.x > CANVAS_WIDTH ||
-        args.y < 0 ||
-        args.y > CANVAS_HEIGHT
-      ) {
+      if (x < 0 || x > CANVAS_WIDTH || y < 0 || y > CANVAS_HEIGHT) {
         return {
           type: "create",
           success: false,
-          message: `Position (${args.x}, ${args.y}) is outside canvas boundaries`,
+          message: `Position (${x}, ${y}) is outside canvas boundaries`,
         };
       }
 
@@ -454,8 +453,8 @@ export class CanvasAIAgent {
         id,
         type: "text",
         userId: this.userId,
-        x: args.x,
-        y: args.y,
+        x,
+        y,
         text: args.text,
         fontSize: args.fontSize || DEFAULT_FONT_SIZE,
         fontFamily: args.fontFamily || DEFAULT_FONT_FAMILY,
@@ -482,7 +481,7 @@ export class CanvasAIAgent {
         type: "create",
         objectId: id,
         success: true,
-        message: `✓ Created text "${args.text}" at (${args.x}, ${args.y})`,
+        message: `✓ Created text "${args.text}" at (${x}, ${y})`,
       };
     } catch (error) {
       return {
