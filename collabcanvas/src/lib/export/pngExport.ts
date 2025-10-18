@@ -7,6 +7,12 @@
 import Konva from "konva";
 import { CanvasObject, Rectangle, Circle, Line, Text } from "@/types/canvas";
 import { ExportOptions, ExportProgress, Bounds } from "@/types/export";
+import {
+  preloadWebFonts,
+  preloadFont,
+  getFallbackFont,
+  waitForFontsReady,
+} from "./fontPreloader";
 
 /**
  * Calculate bounds of a single object considering rotation
@@ -182,12 +188,14 @@ function createKonvaShape(obj: CanvasObject): Konva.Shape | null {
 
     case "text": {
       const text = obj as Text;
+      // Use fallback font if requested font is not available
+      const fontFamily = getFallbackFont(text.fontFamily || "Arial");
       return new Konva.Text({
         x: text.x,
         y: text.y,
         text: text.text,
         fontSize: text.fontSize,
-        fontFamily: text.fontFamily || "Arial",
+        fontFamily: fontFamily,
         fontStyle: text.fontStyle || "normal",
         fill: text.fill,
         width: text.width,
@@ -202,26 +210,28 @@ function createKonvaShape(obj: CanvasObject): Konva.Shape | null {
 }
 
 /**
- * Placeholder for font preloading (implemented in Phase 3)
+ * Preload fonts used in canvas objects
+ * Ensures text renders correctly during export
  */
 async function preloadFonts(objects: CanvasObject[]): Promise<void> {
-  // Collect unique fonts from text objects
+  // Step 1: Preload all web-safe fonts
+  await preloadWebFonts();
+
+  // Step 2: Collect unique fonts from text objects
   const fonts = new Set<string>();
   objects.forEach((obj) => {
     if (obj.type === "text") {
-      fonts.add(obj.fontFamily || "Arial");
+      const fontFamily = obj.fontFamily || "Arial";
+      fonts.add(fontFamily);
     }
   });
 
-  // Preload each font
-  const fontPromises = Array.from(fonts).map((font) => {
-    return document.fonts.load(`16px ${font}`).catch((err) => {
-      console.warn(`Failed to load font ${font}:`, err);
-    });
-  });
-
+  // Step 3: Preload each custom font
+  const fontPromises = Array.from(fonts).map((font) => preloadFont(font));
   await Promise.all(fontPromises);
-  await document.fonts.ready;
+
+  // Step 4: Wait for all fonts to be fully ready
+  await waitForFontsReady();
 }
 
 /**
