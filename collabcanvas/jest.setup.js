@@ -39,4 +39,33 @@ jest.mock("firebase/firestore", () => ({
   updateDoc: jest.fn(),
   onSnapshot: jest.fn(),
   serverTimestamp: jest.fn(() => new Date()),
+  writeBatch: jest.fn(() => ({
+    set: jest.fn(),
+    delete: jest.fn(),
+    commit: jest.fn().mockResolvedValue(undefined),
+  })),
+  query: jest.fn(),
+  orderBy: jest.fn(),
+  Timestamp: {
+    fromDate: jest.fn((date) => date),
+  },
+}));
+
+// Mock Konva for thumbnail generation
+jest.mock("konva", () => ({
+  default: {
+    Stage: jest.fn().mockImplementation(() => ({
+      add: jest.fn(),
+      destroy: jest.fn(),
+      toDataURL: jest.fn(() => "data:image/jpeg;base64,mockThumbnail"),
+    })),
+    Layer: jest.fn().mockImplementation(() => ({
+      add: jest.fn(),
+      draw: jest.fn(),
+    })),
+    Rect: jest.fn(),
+    Circle: jest.fn(),
+    Line: jest.fn(),
+    Text: jest.fn(),
+  },
 }));
