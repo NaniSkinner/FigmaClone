@@ -1,13 +1,20 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import { useProjectStore } from "@/store/projectStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
 import ProjectsPanel from "@/components/Projects/ProjectsPanel";
 import UnsavedChangesDialog from "@/components/Projects/UnsavedChangesDialog";
+import ExportProgressModal from "@/components/Export/ExportProgressModal";
 import { useToast } from "@/contexts/ToastContext";
 import { useProjectSwitcher } from "@/hooks/useProjectSwitcher";
+import {
+  exportToPNG,
+  generateExportFilename,
+  downloadPNG,
+} from "@/lib/export/pngExport";
+import { ExportProgress } from "@/types/export";
 
 export type ToolMode =
   | "rectangle"
@@ -51,6 +58,12 @@ function CanvasControls({
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
   const { addToast } = useToast();
 
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<ExportProgress | null>(
+    null
+  );
+
   // Use proper Zustand selectors to avoid infinite loops
   const currentProject = useProjectStore((state) => state.currentProject);
   const projects = useProjectStore((state) => state.projects);
@@ -61,6 +74,10 @@ function CanvasControls({
   );
   const loadProject = useProjectStore((state) => state.loadProject);
   const canvasIsDirty = useCanvasStore((state) => state.isDirty);
+
+  // Get canvas objects for export
+  const objectsMap = useCanvasStore((state) => state.objects);
+  const objects = useMemo(() => Array.from(objectsMap.values()), [objectsMap]);
 
   // Project switcher hook for handling unsaved changes
   const {
@@ -101,6 +118,49 @@ function CanvasControls({
     },
     [switchToProject]
   );
+
+  // Export handler
+  const handleExportPNG = useCallback(async () => {
+    if (objects.length === 0) {
+      addToast("Canvas is empty. Add objects before exporting.", "error");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+
+      // Show progress modal for 50+ objects
+      const showProgress = objects.length >= 50;
+
+      const dataURL = await exportToPNG(
+        objects,
+        {
+          resolution: 2,
+          backgroundColor: "white",
+          autoCrop: true,
+        },
+        showProgress ? setExportProgress : undefined
+      );
+
+      const filename = generateExportFilename(
+        currentProject?.metadata.name || "canvas"
+      );
+
+      downloadPNG(dataURL, filename);
+      addToast(`Exported ${filename}`, "success");
+    } catch (error) {
+      console.error("Export failed:", error);
+      if (
+        error instanceof Error &&
+        !error.message.includes("cancelled by user")
+      ) {
+        addToast(error.message || "Export failed. Please try again.", "error");
+      }
+    } finally {
+      setIsExporting(false);
+      setExportProgress(null);
+    }
+  }, [objects, currentProject, addToast]);
 
   // Helper to get button styles based on active state
   const getToolButtonStyles = (toolMode: ToolMode) => {
@@ -283,6 +343,35 @@ function CanvasControls({
               </span>
             )}
           </button>
+
+          {/* Export PNG Button */}
+          <button
+            onClick={handleExportPNG}
+            disabled={isExporting || objects.length === 0}
+            className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
+              isHovered
+                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
+                : "px-2 py-1 text-[10px]"
+            } ${
+              isExporting || objects.length === 0
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+            }`}
+            title={
+              objects.length === 0
+                ? "Canvas is empty"
+                : "Export as PNG (Ctrl+E)"
+            }
+          >
+            <span className={isHovered ? "text-sm sm:text-base" : "text-base"}>
+              {isExporting ? "⏳" : "📥"}
+            </span>
+            {isHovered && (
+              <span className="whitespace-nowrap">
+                {isExporting ? "Exporting..." : "Export PNG"}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Divider */}
@@ -459,6 +548,11 @@ function CanvasControls({
         onDontSave={handleDontSave}
         onCancel={handleCancel}
       />
+
+      {/* Export Progress Modal */}
+      {exportProgress && (
+        <ExportProgressModal isOpen={isExporting} progress={exportProgress} />
+      )}
     </div>
   );
 }

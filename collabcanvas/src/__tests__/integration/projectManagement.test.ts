@@ -51,11 +51,12 @@ describe("Project Management - Integration Tests", () => {
       stroke: "#000000",
       strokeWidth: 2,
       rotation: 0,
-      opacity: 1,
+      userId: mockUserId,
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: mockUserId,
-      lockedBy: null,
+      zIndex: i + 1,
+      visible: true,
+      locked: false,
     }));
   };
 
@@ -176,11 +177,12 @@ describe("Project Management - Integration Tests", () => {
           stroke: "#00ff00",
           strokeWidth: 5,
           rotation: 45,
-          opacity: 0.7,
+          userId: mockUserId,
           createdAt: new Date("2024-01-01"),
           updatedAt: new Date("2024-01-02"),
-          createdBy: mockUserId,
-          lockedBy: null,
+          zIndex: 1,
+          visible: true,
+          locked: false,
         },
         {
           id: "circle-1",
@@ -192,11 +194,12 @@ describe("Project Management - Integration Tests", () => {
           stroke: "#000000",
           strokeWidth: 3,
           rotation: 0,
-          opacity: 1,
+          userId: mockUserId,
           createdAt: new Date("2024-01-01"),
           updatedAt: new Date("2024-01-02"),
-          createdBy: mockUserId,
-          lockedBy: null,
+          zIndex: 2,
+          visible: true,
+          locked: false,
         },
       ];
 
@@ -238,7 +241,7 @@ describe("Project Management - Integration Tests", () => {
       expect(loadedObjects?.[0]).toMatchObject({
         id: "rect-1",
         rotation: 45,
-        opacity: 0.7,
+        fill: "#ff0000",
       });
       expect(loadedObjects?.[1]).toMatchObject({
         id: "circle-1",

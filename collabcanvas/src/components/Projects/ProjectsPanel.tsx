@@ -3,9 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useProjectStore } from "@/store/projectStore";
+import { useUserStore } from "@/store/userStore";
+import { useToast } from "@/contexts/ToastContext";
 import { ProjectMetadata } from "@/types/project";
+import { loadProject } from "@/lib/firebase/projects";
 import ProjectCard from "./ProjectCard";
 import ShareProjectDialog from "./ShareProjectDialog";
+import {
+  exportToPNG,
+  generateExportFilename,
+  downloadPNG,
+} from "@/lib/export/pngExport";
 
 interface ProjectsPanelProps {
   isOpen: boolean;
@@ -26,6 +34,8 @@ export default function ProjectsPanel({
   const loadProjects = useProjectStore((state) => state.loadProjects);
   const deleteProject = useProjectStore((state) => state.deleteProject);
   const renameProject = useProjectStore((state) => state.renameProject);
+  const currentUser = useUserStore((state) => state.currentUser);
+  const { addToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
@@ -146,6 +156,39 @@ export default function ProjectsPanel({
     setShowShareDialog(true);
   };
 
+  // Handle export
+  const handleExport = async (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    if (!currentUser?.id) {
+      addToast("Not authenticated", "error");
+      return;
+    }
+
+    try {
+      addToast("Exporting project...", "info");
+
+      // Load project data (without affecting current canvas)
+      const projectData = await loadProject(currentUser.id, projectId);
+
+      // Export directly
+      const dataURL = await exportToPNG(projectData.objects, {
+        resolution: 2,
+        backgroundColor: "white",
+        autoCrop: true,
+      });
+
+      const filename = generateExportFilename(projectData.metadata.name);
+      downloadPNG(dataURL, filename);
+
+      addToast(`Exported ${projectData.metadata.name}`, "success");
+    } catch (error) {
+      console.error("Export failed:", error);
+      addToast("Export failed. Please try again.", "error");
+    }
+  };
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -226,6 +269,7 @@ export default function ProjectsPanel({
                 onRename={handleRename}
                 onDelete={handleDelete}
                 onShare={handleShare}
+                onExport={handleExport}
               />
             ))}
           </div>

@@ -10,6 +10,7 @@ interface ProjectCardProps {
   onRename: (projectId: string) => void;
   onDelete: (projectId: string) => void;
   onShare: (projectId: string) => void;
+  onExport: (projectId: string) => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export default function ProjectCard({
   onRename,
   onDelete,
   onShare,
+  onExport,
 }: ProjectCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -100,6 +102,17 @@ export default function ProjectCard({
       {/* Action buttons (show on hover) */}
       {isHovered && (
         <div className="absolute bottom-3 right-3 flex gap-2">
+          {/* Export button - available for all projects */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onExport(project.id);
+            }}
+            className="p-2 hover:bg-blue-100 rounded transition-colors"
+            title="Export as PNG"
+          >
+            <span className="text-lg">📥</span>
+          </button>
           {/* Only show share button for owned projects */}
           {!project.isSharedWithMe && (
             <button
