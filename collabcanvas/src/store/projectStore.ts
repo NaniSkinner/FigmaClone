@@ -175,9 +175,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   saveCurrentProject: async () => {
     const { currentProject, isDirty } = get();
     const userId = useUserStore.getState().currentUser?.id;
-    const objects = Array.from(useCanvasStore.getState().objects.values());
+    const canvasState = useCanvasStore.getState();
+    const objects = Array.from(canvasState.objects.values());
+    const canvasIsDirty = canvasState.isDirty;
 
-    if (!userId || !currentProject || !isDirty) {
+    // Check if either store has unsaved changes
+    if (!userId || !currentProject || (!isDirty && !canvasIsDirty)) {
       return;
     }
 
