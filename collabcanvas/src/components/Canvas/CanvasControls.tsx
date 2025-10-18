@@ -5,7 +5,9 @@ import { useProjectStore } from "@/store/projectStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
 import ProjectsPanel from "@/components/Projects/ProjectsPanel";
+import UnsavedChangesDialog from "@/components/Projects/UnsavedChangesDialog";
 import { useToast } from "@/contexts/ToastContext";
+import { useProjectSwitcher } from "@/hooks/useProjectSwitcher";
 
 export type ToolMode =
   | "rectangle"
@@ -60,6 +62,15 @@ function CanvasControls({
   const loadProject = useProjectStore((state) => state.loadProject);
   const canvasIsDirty = useCanvasStore((state) => state.isDirty);
 
+  // Project switcher hook for handling unsaved changes
+  const {
+    switchToProject,
+    showUnsavedDialog,
+    handleSaveAndSwitch,
+    handleDontSave,
+    handleCancel,
+  } = useProjectSwitcher();
+
   // Stable callback functions to prevent infinite loops
   const handleCloseSaveDialog = useCallback(() => {
     setShowSaveDialog(false);
@@ -85,16 +96,10 @@ function CanvasControls({
 
   const handleOpenProject = useCallback(
     async (projectId: string) => {
-      try {
-        await loadProject(projectId);
-        setShowProjectsPanel(false);
-        addToast("Project loaded", "success");
-      } catch (error) {
-        addToast("Failed to load project", "error");
-        console.error("Load error:", error);
-      }
+      await switchToProject(projectId);
+      setShowProjectsPanel(false);
     },
-    [loadProject, addToast]
+    [switchToProject]
   );
 
   // Helper to get button styles based on active state
@@ -445,6 +450,14 @@ function CanvasControls({
         isOpen={showProjectsPanel}
         onClose={handleCloseProjectsPanel}
         onOpenProject={handleOpenProject}
+      />
+
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog
+        isOpen={showUnsavedDialog}
+        onSave={handleSaveAndSwitch}
+        onDontSave={handleDontSave}
+        onCancel={handleCancel}
       />
     </div>
   );

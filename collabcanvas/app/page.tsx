@@ -16,6 +16,8 @@ import LayerPanel from "@/components/Layers/LayerPanel";
 import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
 import { AIChatPanel } from "@/components/AI/AIChatPanel";
 import SaveStatusIndicator from "@/components/Projects/SaveStatusIndicator";
+import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
+import { useProjectStore } from "@/store/projectStore";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useUndo } from "@/hooks/useUndo";
 import { useUndoKeyboard } from "@/hooks/useUndoKeyboard";
@@ -109,6 +111,15 @@ function HomePage() {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [tool, setTool] = useState<ToolMode>("select");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  // Project management
+  const currentProject = useProjectStore((state) => state.currentProject);
+  const loadProjects = useProjectStore((state) => state.loadProjects);
+  const createProject = useProjectStore((state) => state.createProject);
+  const saveCurrentProject = useProjectStore(
+    (state) => state.saveCurrentProject
+  );
 
   // Handle logout
   const handleLogout = async () => {
@@ -144,6 +155,42 @@ function HomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions.width, dimensions.height]); // Only run when dimensions change, not when scale changes
+
+  // Load projects on app start
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  // Keyboard shortcuts for project management
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+      // Ctrl+S / Cmd+S → Save project
+      if (ctrlOrCmd && e.key === "s") {
+        e.preventDefault();
+        if (currentProject) {
+          saveCurrentProject();
+          addToast("Project saved!", "success");
+        } else {
+          setShowSaveDialog(true);
+        }
+      }
+
+      // Ctrl+P / Cmd+P → Toggle Projects Panel (handled in CanvasControls)
+      // Note: This is handled in CanvasControls component
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentProject, saveCurrentProject, addToast]);
 
   // Expose cleanup function to browser console for manual cleanup
   useEffect(() => {
@@ -334,6 +381,22 @@ function HomePage() {
             deleteObject={deleteObject}
           />
         )}
+
+        {/* Save Project Dialog */}
+        <SaveProjectDialog
+          isOpen={showSaveDialog}
+          onClose={() => setShowSaveDialog(false)}
+          onSave={async (name) => {
+            try {
+              await createProject(name);
+              setShowSaveDialog(false);
+              addToast("Project saved successfully!", "success");
+            } catch (error) {
+              addToast("Failed to save project", "error");
+              console.error("Save error:", error);
+            }
+          }}
+        />
       </div>
     </>
   );
