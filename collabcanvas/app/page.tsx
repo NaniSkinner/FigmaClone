@@ -15,6 +15,7 @@ import ConnectionStatus from "@/components/UI/ConnectionStatus";
 import LayerPanel from "@/components/Layers/LayerPanel";
 import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
 import { AIChatPanel } from "@/components/AI/AIChatPanel";
+import SaveStatusIndicator from "@/components/Projects/SaveStatusIndicator";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useUndo } from "@/hooks/useUndo";
 import { useUndoKeyboard } from "@/hooks/useUndoKeyboard";
@@ -309,6 +310,9 @@ function HomePage() {
           userId={user?.id || null}
           updateObjectInFirestore={updateObjectInFirestore}
         />
+
+        {/* Save Status Indicator */}
+        <SaveStatusIndicator />
 
         {/* Main Canvas */}
         {dimensions.width > 0 && (

@@ -1,6 +1,11 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, useCallback } from "react";
+import { useProjectStore } from "@/store/projectStore";
+import { useCanvasStore } from "@/store/canvasStore";
+import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
+import ProjectsPanel from "@/components/Projects/ProjectsPanel";
+import { useToast } from "@/contexts/ToastContext";
 
 export type ToolMode =
   | "rectangle"
@@ -38,6 +43,59 @@ function CanvasControls({
 }: CanvasControlsProps) {
   const zoomPercentage = Math.round(scale * 100);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Project management state
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showProjectsPanel, setShowProjectsPanel] = useState(false);
+  const { addToast } = useToast();
+
+  // Use proper Zustand selectors to avoid infinite loops
+  const currentProject = useProjectStore((state) => state.currentProject);
+  const projects = useProjectStore((state) => state.projects);
+  const isSaving = useProjectStore((state) => state.isSaving);
+  const createProject = useProjectStore((state) => state.createProject);
+  const saveCurrentProject = useProjectStore(
+    (state) => state.saveCurrentProject
+  );
+  const loadProject = useProjectStore((state) => state.loadProject);
+  const canvasIsDirty = useCanvasStore((state) => state.isDirty);
+
+  // Stable callback functions to prevent infinite loops
+  const handleCloseSaveDialog = useCallback(() => {
+    setShowSaveDialog(false);
+  }, []);
+
+  const handleSaveProject = useCallback(
+    async (name: string) => {
+      try {
+        await createProject(name);
+        setShowSaveDialog(false);
+        addToast("Project saved successfully!", "success");
+      } catch (error) {
+        addToast("Failed to save project", "error");
+        console.error("Save error:", error);
+      }
+    },
+    [createProject, addToast]
+  );
+
+  const handleCloseProjectsPanel = useCallback(() => {
+    setShowProjectsPanel(false);
+  }, []);
+
+  const handleOpenProject = useCallback(
+    async (projectId: string) => {
+      try {
+        await loadProject(projectId);
+        setShowProjectsPanel(false);
+        addToast("Project loaded", "success");
+      } catch (error) {
+        addToast("Failed to load project", "error");
+        console.error("Load error:", error);
+      }
+    },
+    [loadProject, addToast]
+  );
 
   // Helper to get button styles based on active state
   const getToolButtonStyles = (toolMode: ToolMode) => {
@@ -152,6 +210,83 @@ function CanvasControls({
           ></div>
         </>
       )}
+
+      {/* Project Management Controls */}
+      <>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Save Button */}
+          <button
+            onClick={() => {
+              if (currentProject) {
+                saveCurrentProject();
+                addToast("Project saved!", "success");
+              } else {
+                setShowSaveDialog(true);
+              }
+            }}
+            disabled={!canvasIsDirty && !!currentProject}
+            className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
+              isHovered
+                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
+                : "px-2 py-1 text-[10px]"
+            } ${
+              !canvasIsDirty && currentProject
+                ? "bg-gray-50 text-gray-300 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+            }`}
+            title={
+              currentProject
+                ? "Save project (Ctrl+S)"
+                : "Save as new project (Ctrl+S)"
+            }
+          >
+            <span className={isHovered ? "text-sm sm:text-base" : "text-base"}>
+              💾
+            </span>
+            {isHovered && (
+              <span className="whitespace-nowrap">
+                {isSaving
+                  ? "Saving..."
+                  : currentProject
+                  ? "Save"
+                  : "Save As..."}
+              </span>
+            )}
+          </button>
+
+          {/* Projects Button */}
+          <button
+            onClick={() => setShowProjectsPanel(!showProjectsPanel)}
+            className={`rounded-lg bg-purple-500 hover:bg-purple-600 text-white transition-all duration-[400ms] flex items-center gap-1 relative ${
+              isHovered
+                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
+                : "px-2 py-1 text-[10px]"
+            }`}
+            title="View all projects (Ctrl+P)"
+          >
+            <span className={isHovered ? "text-sm sm:text-base" : "text-base"}>
+              📁
+            </span>
+            {isHovered && <span className="whitespace-nowrap">Projects</span>}
+            {projects.length > 0 && (
+              <span
+                className={`absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center font-bold ${
+                  isHovered ? "w-5 h-5 text-[10px]" : "w-4 h-4 text-[8px]"
+                }`}
+              >
+                {projects.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div
+          className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
+            isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+          }`}
+        ></div>
+      </>
 
       {/* Tool Buttons */}
       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 flex-shrink-0">
@@ -298,6 +433,19 @@ function CanvasControls({
           )}
         </button>
       </div>
+
+      {/* Project Management Dialogs */}
+      <SaveProjectDialog
+        isOpen={showSaveDialog}
+        onClose={handleCloseSaveDialog}
+        onSave={handleSaveProject}
+      />
+
+      <ProjectsPanel
+        isOpen={showProjectsPanel}
+        onClose={handleCloseProjectsPanel}
+        onOpenProject={handleOpenProject}
+      />
     </div>
   );
 }

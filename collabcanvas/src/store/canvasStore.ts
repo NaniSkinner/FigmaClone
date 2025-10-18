@@ -23,6 +23,11 @@ interface CanvasStore {
   redoStack: UndoOperation[];
   maxUndoSize: number;
 
+  // Project management state
+  currentProjectId: string | null;
+  projectName: string;
+  isDirty: boolean;
+
   setCanvasId: (id: string) => void;
   setScale: (scale: number) => void;
   setPosition: (position: Point) => void;
@@ -76,6 +81,11 @@ interface CanvasStore {
   canUndo: () => boolean;
   canRedo: () => boolean;
   clearUndoHistory: () => void;
+
+  // Project management methods
+  setCurrentProjectId: (projectId: string | null, name: string) => void;
+  clearCanvas: () => void;
+  markDirty: () => void;
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -96,6 +106,11 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   undoStack: [],
   redoStack: [],
   maxUndoSize: 50,
+
+  // Project management state
+  currentProjectId: null,
+  projectName: "",
+  isDirty: false,
 
   setCanvasId: (id) => set({ canvasId: id }),
 
@@ -147,7 +162,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set((state) => {
       const newMap = new Map(state.objects);
       newMap.set(object.id, object);
-      return { objects: newMap };
+      return { objects: newMap, isDirty: true };
     }),
 
   updateObject: (id, updates) =>
@@ -157,7 +172,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
 
       const newMap = new Map(state.objects);
       newMap.set(id, { ...existing, ...updates } as CanvasObject);
-      return { objects: newMap };
+      return { objects: newMap, isDirty: true };
     }),
 
   removeObject: (id) =>
@@ -167,7 +182,11 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
       // Also remove from selection if present
       const newSelection = new Set(state.selectedObjectIds);
       newSelection.delete(id);
-      return { objects: newMap, selectedObjectIds: newSelection };
+      return {
+        objects: newMap,
+        selectedObjectIds: newSelection,
+        isDirty: true,
+      };
     }),
 
   setObjects: (objects) =>
@@ -418,4 +437,19 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   },
 
   clearUndoHistory: () => set({ undoStack: [], redoStack: [] }),
+
+  // Project management methods
+  setCurrentProjectId: (projectId, name) =>
+    set({
+      currentProjectId: projectId,
+      projectName: name,
+    }),
+
+  clearCanvas: () =>
+    set({
+      objects: new Map(),
+      selectedObjectIds: new Set(),
+    }),
+
+  markDirty: () => set({ isDirty: true }),
 }));

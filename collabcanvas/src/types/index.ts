@@ -10,3 +10,4 @@ export type {
   Circle,
   Line,
 } from "./canvas";
+export type { Project, ProjectMetadata, ProjectListItem } from "./project";

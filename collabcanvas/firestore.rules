@@ -88,5 +88,35 @@ service cloud.firestore {
       // No updates or deletes (logs are immutable)
       allow update, delete: if false;
     }
+
+    // Project Management Rules (Collaborative Projects)
+    // Projects can be owned by one user and shared with others
+    match /users/{userId}/projects/{projectId} {
+      // Helper function to check if user has access to this project
+      function hasProjectAccess() {
+        return isAuthenticated() && (
+          // User is the owner
+          isOwner(userId) ||
+          // User is in the sharedWith array
+          (request.auth.uid in resource.data.sharedWith)
+        );
+      }
+
+      // Owner can create and delete projects
+      // Shared users can read and update (but not delete)
+      allow read: if hasProjectAccess();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if hasProjectAccess();
+      allow delete: if isAuthenticated() && isOwner(userId);
+
+      // Objects subcollection - anyone with project access can read/write
+      match /objects/{objectId} {
+        // Check parent project access (need to get parent document)
+        allow read, write: if isAuthenticated() && (
+          isOwner(userId) ||
+          request.auth.uid in get(/databases/$(database)/documents/users/$(userId)/projects/$(projectId)).data.sharedWith
+        );
+      }
+    }
   }
 }
