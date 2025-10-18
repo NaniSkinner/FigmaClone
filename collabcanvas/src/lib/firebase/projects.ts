@@ -1,5 +1,6 @@
 import {
   collection,
+  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -9,12 +10,15 @@ import {
   writeBatch,
   query,
   orderBy,
+  where,
+  limit,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CanvasObject } from "@/types/canvas";
 import { Project, ProjectMetadata, ProjectListItem } from "@/types/project";
+import { User } from "@/types/user";
 
 /**
  * Create a new project with metadata and objects
@@ -22,13 +26,15 @@ import { Project, ProjectMetadata, ProjectListItem } from "@/types/project";
  * @param name - Project name
  * @param objects - Canvas objects to save
  * @param thumbnail - Base64 thumbnail image
+ * @param ownerName - Owner's display name (for shared project display)
  * @returns Created project ID
  */
 export async function createProject(
   userId: string,
   name: string,
   objects: CanvasObject[],
-  thumbnail: string
+  thumbnail: string,
+  ownerName?: string
 ): Promise<string> {
   const projectId = crypto.randomUUID();
   const projectRef = doc(db, `users/${userId}/projects/${projectId}`);
@@ -42,6 +48,7 @@ export async function createProject(
     thumbnail,
     objectCount: objects.length,
     ownerId: userId,
+    ownerName: ownerName || "Unknown",
     isShared: false,
     sharedWith: [],
   });
@@ -273,10 +280,62 @@ export async function shareProject(
 export async function getSharedProjects(
   currentUserId: string
 ): Promise<ProjectListItem[]> {
-  // Note: This requires a composite index on (sharedWith, updatedAt)
-  // For MVP, we can skip this and just show owned projects
-  // Future implementation would query across all users' projects where
-  // sharedWith array-contains currentUserId
-  console.log("Shared projects feature - coming soon for:", currentUserId);
-  return [];
+  try {
+    // Use collection group query to search across ALL users' projects
+    const projectsQuery = query(
+      collectionGroup(db, "projects"),
+      where("sharedWith", "array-contains", currentUserId),
+      orderBy("updatedAt", "desc")
+    );
+
+    const snapshot = await getDocs(projectsQuery);
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: data.id,
+        name: data.name,
+        thumbnail: data.thumbnail,
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+        objectCount: data.objectCount || 0,
+        isSharedWithMe: true, // Mark as shared
+        ownerId: data.ownerId, // Store owner ID for loading
+        ownerName: data.ownerName || "Unknown", // Owner's name
+      } as ProjectListItem;
+    });
+  } catch (error) {
+    console.error("Failed to load shared projects:", error);
+    return [];
+  }
+}
+
+/**
+ * Look up a user by their email address
+ * @param email - User's email address
+ * @returns User object if found, null otherwise
+ */
+export async function getUserByEmail(email: string): Promise<User | null> {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", normalizedEmail), limit(1));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const userData = snapshot.docs[0].data();
+    return {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      color: userData.color,
+      isAnonymous: userData.isAnonymous || false,
+      createdAt: userData.createdAt?.toDate(),
+    } as User;
+  } catch (error) {
+    console.error("Error looking up user by email:", error);
+    throw error;
+  }
 }

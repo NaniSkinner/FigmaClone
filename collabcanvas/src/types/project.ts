@@ -35,4 +35,8 @@ export interface ProjectListItem {
   thumbnail: string;
   updatedAt: Date;
   objectCount: number;
+  // Shared project metadata
+  isSharedWithMe?: boolean; // True if this project is shared with current user
+  ownerId?: string; // Owner's user ID (needed for loading shared projects)
+  ownerName?: string; // Owner's display name
 }

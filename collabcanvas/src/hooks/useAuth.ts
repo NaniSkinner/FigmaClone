@@ -9,7 +9,13 @@ import {
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User } from "@/types";
 import { generateUserColor, generateAnonymousName } from "@/lib/utils";
@@ -30,6 +36,22 @@ export const useAuth = () => {
           let userData: User;
           if (userDoc.exists()) {
             userData = userDoc.data() as User;
+
+            // MIGRATION: Update email for existing users who don't have it
+            if (
+              !userData.email &&
+              !firebaseUser.isAnonymous &&
+              firebaseUser.email
+            ) {
+              userData.email = firebaseUser.email;
+              await updateDoc(doc(db, "users", firebaseUser.uid), {
+                email: firebaseUser.email,
+              });
+              console.log(
+                "✅ Email updated for existing user:",
+                firebaseUser.email
+              );
+            }
           } else {
             // Create new user document
             userData = {
@@ -37,12 +59,16 @@ export const useAuth = () => {
               name: firebaseUser.isAnonymous
                 ? generateAnonymousName()
                 : firebaseUser.email?.split("@")[0] || "User",
+              email: firebaseUser.isAnonymous
+                ? undefined
+                : firebaseUser.email || undefined,
               color: generateUserColor(firebaseUser.uid),
               isAnonymous: firebaseUser.isAnonymous,
             };
 
             await setDoc(doc(db, "users", firebaseUser.uid), {
               ...userData,
+              email: userData.email || null, // Store null instead of undefined for Firestore
               createdAt: serverTimestamp(),
             });
           }

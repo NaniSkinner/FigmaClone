@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useProjectStore } from "@/store/projectStore";
 import { ProjectMetadata } from "@/types/project";
+import { getUserByEmail } from "@/lib/firebase/projects";
+import { User } from "@/types/user";
 
 interface ShareProjectDialogProps {
   isOpen: boolean;
@@ -11,15 +13,26 @@ interface ShareProjectDialogProps {
   project: ProjectMetadata | null;
 }
 
+interface SharedUserDisplay {
+  userId: string;
+  email?: string;
+  name?: string;
+}
+
 export default function ShareProjectDialog({
   isOpen,
   onClose,
   project,
 }: ShareProjectDialogProps) {
-  const [userIdInput, setUserIdInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [sharedUsers, setSharedUsers] = useState<string[]>([]);
+  const [sharedUserDetails, setSharedUserDetails] = useState<
+    Map<string, SharedUserDisplay>
+  >(new Map());
   const [isLoading, setIsLoading] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Use proper Zustand selector to avoid infinite loops
@@ -30,7 +43,8 @@ export default function ShareProjectDialog({
     if (isOpen && project) {
       setSharedUsers(project.sharedWith || []);
       setError("");
-      setUserIdInput("");
+      setSuccess("");
+      setEmailInput("");
     }
   }, [isOpen, project]);
 
@@ -41,34 +55,88 @@ export default function ShareProjectDialog({
     }
   }, [isOpen]);
 
-  const handleAddUser = () => {
-    const userId = userIdInput.trim();
+  // Email validation function
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-    if (!userId) {
-      setError("Please enter a user ID");
+  const handleAddUser = async () => {
+    const email = emailInput.trim().toLowerCase();
+
+    if (!email) {
+      setError("Please enter an email address");
       return;
     }
 
-    // Check if already shared
-    if (sharedUsers.includes(userId)) {
-      setError("Project already shared with this user");
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
       return;
     }
 
-    // Check if trying to share with self
-    if (project && userId === project.ownerId) {
-      setError("Cannot share with yourself (you're the owner)");
-      return;
-    }
-
-    // Add to list
-    setSharedUsers([...sharedUsers, userId]);
-    setUserIdInput("");
+    setIsLookingUp(true);
     setError("");
+    setSuccess("");
+
+    try {
+      // Look up user by email
+      const user = await getUserByEmail(email);
+
+      if (!user) {
+        setError(
+          `No user found with email "${email}". They need to create an account first.`
+        );
+        return;
+      }
+
+      // Check if trying to share with self
+      if (project && user.id === project.ownerId) {
+        setError("Cannot share with yourself (you're the owner)");
+        return;
+      }
+
+      // Check if already shared
+      if (sharedUsers.includes(user.id)) {
+        setError(`Project already shared with ${user.name || email}`);
+        return;
+      }
+
+      // Check if anonymous user
+      if (user.isAnonymous) {
+        setError(
+          "Cannot share with anonymous users. They need to create an account."
+        );
+        return;
+      }
+
+      // Add to list
+      setSharedUsers([...sharedUsers, user.id]);
+      setSharedUserDetails(
+        new Map(sharedUserDetails).set(user.id, {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+        })
+      );
+      setEmailInput("");
+      setSuccess(`Added ${user.name || email} as collaborator`);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error("Error looking up user:", err);
+      setError("Failed to look up user. Please try again.");
+    } finally {
+      setIsLookingUp(false);
+    }
   };
 
   const handleRemoveUser = (userId: string) => {
     setSharedUsers(sharedUsers.filter((id) => id !== userId));
+    const newDetails = new Map(sharedUserDetails);
+    newDetails.delete(userId);
+    setSharedUserDetails(newDetails);
+    setSuccess("");
   };
 
   const handleSave = async () => {
@@ -76,10 +144,14 @@ export default function ShareProjectDialog({
 
     setIsLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       await shareProject(project.id, sharedUsers);
-      onClose();
+      setSuccess("Sharing settings saved successfully!");
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (err) {
       setError("Failed to update sharing. Please try again.");
       console.error("Share error:", err);
@@ -117,7 +189,7 @@ export default function ShareProjectDialog({
         justifyContent: "center",
       }}
     >
-      <div className="bg-white rounded-lg p-6 w-[500px] shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg p-6 w-[550px] shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <span>🔗</span>
           Share Project
@@ -128,40 +200,59 @@ export default function ShareProjectDialog({
             Project: <span className="font-semibold">{project.name}</span>
           </p>
           <p className="text-xs text-gray-500">
-            Share this project with other users to collaborate together.
+            Share this project with other users by entering their email address.
+            They'll be able to view and edit this project.
           </p>
         </div>
 
         {/* Add User Input */}
         <div className="mb-4">
           <label className="block text-sm font-medium mb-2">
-            Add Collaborator (User ID)
+            📧 Add Collaborator by Email
           </label>
           <div className="flex gap-2">
             <input
               ref={inputRef}
-              type="text"
-              value={userIdInput}
+              type="email"
+              value={emailInput}
               onChange={(e) => {
-                setUserIdInput(e.target.value);
+                setEmailInput(e.target.value);
                 setError("");
+                setSuccess("");
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Enter user ID..."
+              placeholder="collaborator@example.com"
               className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-              disabled={isLoading}
+              disabled={isLoading || isLookingUp}
             />
             <button
               onClick={handleAddUser}
-              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-              disabled={isLoading}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors disabled:opacity-50"
+              disabled={isLoading || isLookingUp}
             >
-              Add
+              {isLookingUp ? "Looking up..." : "Add"}
             </button>
           </div>
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-          <p className="text-xs text-gray-500 mt-1">
-            💡 Tip: You can find user IDs in the online users list
+
+          {/* Success Message */}
+          {success && (
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+              <p className="text-green-700 text-sm flex items-center gap-2">
+                <span>✓</span>
+                {success}
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500 mt-2">
+            💡 Tip: Only registered users can be added as collaborators
           </p>
         </div>
 
@@ -174,33 +265,41 @@ export default function ShareProjectDialog({
           {sharedUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <p className="text-sm">No collaborators yet</p>
-              <p className="text-xs">Add users above to share this project</p>
+              <p className="text-xs">
+                Add users by email to share this project
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
-              {sharedUsers.map((userId) => (
-                <div
-                  key={userId}
-                  className="flex items-center justify-between bg-white p-2 rounded border border-gray-200"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">👤</span>
-                    <span className="text-sm font-mono text-gray-700">
-                      {userId.length > 20
-                        ? `${userId.substring(0, 20)}...`
-                        : userId}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveUser(userId)}
-                    className="text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
-                    title="Remove access"
-                    disabled={isLoading}
+              {sharedUsers.map((userId) => {
+                const userDetails = sharedUserDetails.get(userId);
+                return (
+                  <div
+                    key={userId}
+                    className="flex items-center justify-between bg-white p-3 rounded border border-gray-200 hover:border-purple-300 transition-colors"
                   >
-                    <span className="text-lg">🗑️</span>
-                  </button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-2xl">👤</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {userDetails?.name || "Unknown User"}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {userDetails?.email || userId}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveUser(userId)}
+                      className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors ml-2"
+                      title="Remove access"
+                      disabled={isLoading}
+                    >
+                      <span className="text-lg">🗑️</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -210,11 +309,9 @@ export default function ShareProjectDialog({
           <p className="text-xs text-blue-800 flex items-center gap-2">
             <span>ℹ️</span>
             <span>
-              <strong>Owner:</strong>{" "}
-              {project.ownerId === "you" ? "You" : project.ownerId}
+              <strong>Owner:</strong> You (project owner)
               <br />
-              Only the owner can delete this project. Collaborators can view and
-              edit.
+              Only you can delete this project. Collaborators can view and edit.
             </span>
           </p>
         </div>

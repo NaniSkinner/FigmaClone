@@ -71,6 +71,14 @@ export default function ProjectCard({
             Active
           </div>
         )}
+
+        {/* Shared indicator */}
+        {project.isSharedWithMe && (
+          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
+            <span>🤝</span>
+            <span>Shared</span>
+          </div>
+        )}
       </div>
 
       {/* Project info */}
@@ -83,42 +91,54 @@ export default function ProjectCard({
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           {formatRelativeTime(project.updatedAt)}
+          {project.isSharedWithMe && project.ownerName && (
+            <span className="text-blue-600 ml-1">• by {project.ownerName}</span>
+          )}
         </p>
       </div>
 
       {/* Action buttons (show on hover) */}
       {isHovered && (
         <div className="absolute bottom-3 right-3 flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onShare(project.id);
-            }}
-            className="p-2 hover:bg-purple-100 rounded transition-colors"
-            title="Share project"
-          >
-            <span className="text-lg">🔗</span>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRename(project.id);
-            }}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
-            title="Rename project"
-          >
-            <span className="text-lg">📝</span>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(project.id);
-            }}
-            className="p-2 hover:bg-red-100 rounded transition-colors"
-            title="Delete project"
-          >
-            <span className="text-lg">🗑️</span>
-          </button>
+          {/* Only show share button for owned projects */}
+          {!project.isSharedWithMe && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(project.id);
+              }}
+              className="p-2 hover:bg-purple-100 rounded transition-colors"
+              title="Share project"
+            >
+              <span className="text-lg">🔗</span>
+            </button>
+          )}
+          {/* Only show rename button for owned projects */}
+          {!project.isSharedWithMe && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRename(project.id);
+              }}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              title="Rename project"
+            >
+              <span className="text-lg">📝</span>
+            </button>
+          )}
+          {/* Only show delete button for owned projects (not shared) */}
+          {!project.isSharedWithMe && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(project.id);
+              }}
+              className="p-2 hover:bg-red-100 rounded transition-colors"
+              title="Delete project"
+            >
+              <span className="text-lg">🗑️</span>
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   name: string;
+  email?: string; // Optional: only for non-anonymous users
   color: string;
   cursor?: { x: number; y: number };
   isAnonymous?: boolean;

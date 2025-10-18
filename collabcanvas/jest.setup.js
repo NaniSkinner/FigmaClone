@@ -44,8 +44,10 @@ jest.mock("firebase/firestore", () => ({
     delete: jest.fn(),
     commit: jest.fn().mockResolvedValue(undefined),
   })),
-  query: jest.fn(),
+  query: jest.fn((ref, ...constraints) => ({ ref, constraints })),
+  where: jest.fn((field, op, value) => ({ field, op, value })),
   orderBy: jest.fn(),
+  limit: jest.fn((count) => ({ limit: count })),
   Timestamp: {
     fromDate: jest.fn((date) => date),
   },

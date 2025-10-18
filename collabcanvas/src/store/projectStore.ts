@@ -62,7 +62,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setLastSaved: (date) => set({ lastSaved: date }),
 
-  // Load all projects for current user
+  // Load all projects for current user (owned + shared)
   loadProjects: async () => {
     const userId = useUserStore.getState().currentUser?.id;
     if (!userId) {
@@ -72,8 +72,19 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      const projects = await projectOps.loadProjects(userId);
-      set({ projects, isLoading: false });
+      // Load both owned projects AND projects shared with me
+      const [ownedProjects, sharedProjects] = await Promise.all([
+        projectOps.loadProjects(userId),
+        projectOps.getSharedProjects(userId),
+      ]);
+
+      // Merge both lists (shared projects already have isSharedWithMe flag)
+      const allProjects = [...ownedProjects, ...sharedProjects];
+
+      // Sort by updatedAt (most recent first)
+      allProjects.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+      set({ projects: allProjects, isLoading: false });
     } catch (error) {
       console.error("Failed to load projects:", error);
       set({ isLoading: false });
@@ -81,10 +92,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   createProject: async (name: string) => {
-    const userId = useUserStore.getState().currentUser?.id;
+    const currentUser = useUserStore.getState().currentUser;
+    const userId = currentUser?.id;
     const objects = Array.from(useCanvasStore.getState().objects.values());
 
-    if (!userId) {
+    if (!userId || !currentUser) {
       throw new Error("Not authenticated");
     }
 
@@ -98,7 +110,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         userId,
         name,
         objects,
-        thumbnail
+        thumbnail,
+        currentUser.name // Pass owner's name for shared project display
       );
 
       // Reload projects list
@@ -145,8 +158,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      // Load project from Firestore
-      const project = await projectOps.loadProject(userId, projectId);
+      // Find project in list to check if it's shared
+      const projectInList = get().projects.find((p) => p.id === projectId);
+
+      // For shared projects, use the owner's ID; otherwise use current user's ID
+      const ownerUserId = projectInList?.isSharedWithMe
+        ? projectInList.ownerId!
+        : userId;
+
+      // Load project from Firestore (from owner's path)
+      const project = await projectOps.loadProject(ownerUserId, projectId);
 
       set({
         currentProject: project,
@@ -189,9 +210,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       // Generate updated thumbnail
       const thumbnail = await generateThumbnail(objects);
 
-      // Update project in Firestore
+      // For shared projects, save to owner's path; otherwise save to current user's path
+      const ownerUserId = currentProject.metadata.ownerId;
+
+      // Update project in Firestore (using owner's path)
       await projectOps.updateProject(
-        userId,
+        ownerUserId,
         currentProject.metadata.id,
         objects,
         thumbnail
