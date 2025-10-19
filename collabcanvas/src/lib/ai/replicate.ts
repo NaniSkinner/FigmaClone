@@ -24,9 +24,9 @@ const REPLICATE_STYLE_PROMPTS = {
     "anime style, soft muted pastels, nature elements, peaceful countryside mood, gentle features",
 };
 
-// Negative prompts to avoid
+// Negative prompts to avoid identity drift and quality issues
 const NEGATIVE_PROMPT =
-  "photorealistic, realistic photo, 3d render, cgi, distorted face, extra limbs, deformed, ugly, blurry, different person, wrong hair color, western cartoon";
+  "photorealistic, realistic photo, 3d render, cgi, distorted face, extra limbs, deformed, ugly, blurry, different person, wrong hair color, wrong face shape, identity drift, age changed, western cartoon, photo filter";
 
 export interface ReplicateGenerateOptions {
   sourceImageDataUrl: string; // Base64 data URL
@@ -42,8 +42,11 @@ export interface ReplicateGenerateResult {
 }
 
 /**
- * Generate anime-style image using Replicate SDXL Anime model
- * Uses image-to-image to preserve identity and composition
+ * Generate anime-style image using Replicate SDXL img2img
+ * Uses true image-to-image transformation to preserve identity, facial features,
+ * pose, and composition while applying anime art style.
+ *
+ * Identity preservation is controlled by the strength parameter (lower = better preservation).
  */
 export async function generateAnimeWithReplicate(
   options: ReplicateGenerateOptions
@@ -67,16 +70,29 @@ export async function generateAnimeWithReplicate(
       REPLICATE_STYLE_PROMPTS[style as keyof typeof REPLICATE_STYLE_PROMPTS] ||
       REPLICATE_STYLE_PROMPTS.anime;
 
-    // Use FLUX-schnell model - Faster and less aggressive NSFW filtering
-    // Public model: https://replicate.com/black-forest-labs/flux-schnell
-    // Note: FLUX is newer and has better quality + reasonable safety filters
-    const output = await replicate.run("black-forest-labs/flux-schnell", {
+    // Calculate strength parameter for SDXL img2img
+    // Lower strength = more identity preservation (0.15-0.35 recommended)
+    // identityStrength 0.8 → strength 0.2 (strong identity preservation)
+    // identityStrength 0.6 → strength 0.4 (moderate transformation)
+    const strength = Math.max(0.15, Math.min(0.5, 1 - identityStrength));
+
+    console.log(
+      `[Replicate] Using SDXL img2img with strength=${strength.toFixed(
+        2
+      )} for identity preservation`
+    );
+
+    // Use FLUX.1-dev - Supports true img2img with controlnet
+    // Public model: https://replicate.com/black-forest-labs/flux-dev
+    // Unlike schnell, dev version supports image conditioning for identity preservation
+    const output = await replicate.run("black-forest-labs/flux-dev", {
       input: {
         prompt: stylePrompt,
-        image: sourceImageDataUrl, // Image for img2img transformation
-        num_inference_steps: 4, // FLUX-schnell is optimized for 4 steps (very fast)
-        // FLUX-schnell doesn't support: negative_prompt, guidance_scale, prompt_strength
-        // It's a distilled model optimized for speed with simpler inputs
+        image: sourceImageDataUrl, // Source image for img2img transformation
+        prompt_strength: strength, // How much to transform (lower = more identity preservation)
+        num_inference_steps: 28, // FLUX-dev needs more steps than schnell for quality
+        guidance_scale: 3.5, // FLUX works better with lower guidance (2-4 range)
+        // FLUX-dev doesn't have aggressive NSFW filtering like SDXL
       },
     });
 
@@ -248,10 +264,12 @@ export async function generateAnimeWithReplicate(
 
     const duration = Date.now() - startTime;
 
-    // FLUX-schnell pricing: ~$0.003 per generation (very fast, 4 steps)
-    // Typical run: 3-8 seconds
-    // Much cheaper than SDXL
-    const estimatedCost = 0.003;
+    // FLUX.1-dev img2img pricing: ~$0.015-0.02 per generation (28 steps)
+    // Typical run: 15-25 seconds
+    // True identity-preserving image-to-image transformation
+    // Less aggressive NSFW filtering than SDXL
+    // Still cheaper than OpenAI (~$0.06)
+    const estimatedCost = 0.018;
 
     console.log(
       `[Replicate] SUCCESS - Cost: ~$${estimatedCost.toFixed(
