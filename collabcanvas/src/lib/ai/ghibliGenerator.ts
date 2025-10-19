@@ -68,6 +68,7 @@ export async function generateGhibliVariant(
         style,
         userId,
         projectId,
+        provider: "replicate", // Use Replicate for better identity preservation (fallback to OpenAI if fails)
       }),
     });
 

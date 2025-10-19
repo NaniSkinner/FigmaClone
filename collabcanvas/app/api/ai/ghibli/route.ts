@@ -11,8 +11,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import {
+  generateAnimeWithReplicate,
+  isReplicateConfigured,
+} from "@/lib/ai/replicate";
 
-// Initialize OpenAI with server-side key
+// Initialize OpenAI with server-side key (fallback)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -38,18 +42,35 @@ const STYLE_PROMPTS = {
            simple but expressive character designs with round gentle features`,
 };
 
-// GPT-4 Vision analysis prompt
-const ANALYSIS_PROMPT = `Analyze this image in extreme detail for accurate recreation. Describe:
-- Main subjects and their exact positions/poses
-- Facial expressions and emotions (if people/characters present)
-- Lighting direction and quality
-- Color palette and tones
-- Composition and perspective
-- Background elements and depth
-- Textures and materials
-- Overall mood and atmosphere
+// GPT-4 Vision analysis prompt - IDENTITY PRESERVATION FOCUSED
+const ANALYSIS_PROMPT = `Analyze this image in EXTREME detail for faithful recreation. For accurate preservation, describe:
 
-Be extremely specific - this description will be used to recreate the image in a different artistic style.`;
+PEOPLE/SUBJECTS (if present):
+- Exact face shape, facial features, and proportions
+- Hair style, color, length, and how it frames the face
+- Clothing details, colors, patterns, and fit
+- Exact body pose, posture, and positioning
+- Age, gender presentation, and distinctive features
+- Eye color, nose shape, mouth shape, expression
+
+COMPOSITION & LAYOUT:
+- Camera angle and perspective (eye-level, above, below)
+- Subject placement and framing
+- Foreground, midground, background layering
+- Spatial relationships between elements
+
+ENVIRONMENT:
+- Background elements and their exact positions
+- Setting and location details
+- Objects, furniture, or scenery
+- Depth and distance
+
+TECHNICAL:
+- Lighting direction, quality, and shadows
+- Color palette and tones
+- Mood and atmosphere
+
+Be EXTREMELY specific about identity-defining features. This must preserve the subject's appearance while only changing to anime art style.`;
 
 /**
  * POST /api/ai/ghibli
@@ -77,7 +98,13 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { imageUrl, style = "ghibli", userId, projectId } = body;
+    const {
+      imageUrl,
+      style = "anime",
+      userId,
+      projectId,
+      provider = "replicate", // Default to Replicate for better identity preservation
+    } = body;
 
     // Validate inputs
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -121,16 +148,129 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[Ghibli API] Starting generation: style=${style}, imageUrl=${imageUrl.substring(
+      `[Ghibli API] Starting generation: provider=${provider}, style=${style}, imageUrl=${imageUrl.substring(
         0,
         50
       )}...`
     );
 
     // ========================================================================
+    // REPLICATE PATH (Image-to-Image with Identity Preservation)
+    // ========================================================================
+    if (provider === "replicate" && isReplicateConfigured()) {
+      console.log("[Ghibli API] Using Replicate for image-to-image generation");
+
+      try {
+        // Download source image and convert to base64
+        console.log("[Ghibli API] Step 1: Downloading source image...");
+        const sourceResponse = await fetch(imageUrl);
+        if (!sourceResponse.ok) {
+          throw new Error(
+            `Failed to download source image: ${sourceResponse.statusText}`
+          );
+        }
+        const sourceBuffer = await sourceResponse.arrayBuffer();
+
+        console.log(
+          `[Ghibli API] Original image size: ${(
+            sourceBuffer.byteLength /
+            1024 /
+            1024
+          ).toFixed(2)}MB`
+        );
+
+        // Resize image to 1024x1024 to avoid CUDA out of memory errors
+        console.log("[Ghibli API] Step 1a: Resizing image to 1024x1024...");
+        const sharp = (await import("sharp")).default;
+        const resizedBuffer = await sharp(Buffer.from(sourceBuffer))
+          .resize(1024, 1024, { fit: "cover" })
+          .png()
+          .toBuffer();
+
+        const sourceBase64 = resizedBuffer.toString("base64");
+        const sourceDataUrl = `data:image/png;base64,${sourceBase64}`;
+
+        console.log(
+          `[Ghibli API] Resized image size: ${(
+            resizedBuffer.byteLength /
+            1024 /
+            1024
+          ).toFixed(2)}MB`
+        );
+
+        // Generate with Replicate (quality-optimized settings)
+        console.log("[Ghibli API] Step 2: Generating with Replicate...");
+        const result = await generateAnimeWithReplicate({
+          sourceImageDataUrl: sourceDataUrl,
+          style,
+          identityStrength: 0.8, // Higher identity preservation
+          styleStrength: 0.65, // Moderate transformation
+        });
+
+        const totalCost = result.cost;
+        const duration = Date.now() - startTime;
+
+        console.log(
+          `[Ghibli API] REPLICATE SUCCESS - Cost: $${totalCost.toFixed(
+            4
+          )}, Duration: ${duration}ms`
+        );
+
+        return NextResponse.json({
+          success: true,
+          imageDataUrl: result.imageDataUrl,
+          description:
+            "Image transformed using Replicate (identity-preserving)",
+          style,
+          cost: totalCost,
+          duration,
+        });
+      } catch (replicateError) {
+        // Replicate failed, log warning and fall back to OpenAI
+        console.warn(
+          "[Ghibli API] Replicate generation failed, falling back to OpenAI:",
+          replicateError instanceof Error
+            ? replicateError.message
+            : "Unknown error"
+        );
+        console.log(
+          "[Ghibli API] Automatic fallback to OpenAI (text-to-image)"
+        );
+        // Continue to OpenAI path below
+      }
+    }
+
+    // ========================================================================
+    // OPENAI FALLBACK PATH (Text-to-Image via Vision + DALL-E)
+    // ========================================================================
+    console.log(
+      "[Ghibli API] Using OpenAI (fallback - identity may not be preserved)"
+    );
+
+    // ========================================================================
     // Step 1: GPT-4 Vision Analysis (5-10 seconds)
     // ========================================================================
     console.log("[Ghibli API] Step 1: Analyzing image with GPT-4 Vision...");
+
+    // Download source image and convert to base64 (ensures Vision can access it)
+    console.log("[Ghibli API] Step 1a: Downloading source image for Vision...");
+    const sourceResponse = await fetch(imageUrl);
+    if (!sourceResponse.ok) {
+      throw new Error(
+        `Failed to download source image: ${sourceResponse.statusText}`
+      );
+    }
+    const sourceBuffer = await sourceResponse.arrayBuffer();
+    const sourceBase64 = Buffer.from(sourceBuffer).toString("base64");
+    const sourceDataUrl = `data:image/png;base64,${sourceBase64}`;
+
+    console.log(
+      `[Ghibli API] Step 1b: Source image size: ${(
+        sourceBuffer.byteLength /
+        1024 /
+        1024
+      ).toFixed(2)}MB`
+    );
 
     const analysisResponse = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -145,14 +285,14 @@ export async function POST(request: NextRequest) {
             {
               type: "image_url",
               image_url: {
-                url: imageUrl,
+                url: sourceDataUrl, // Use base64 data URL instead of Firebase URL
                 detail: "high",
               },
             },
           ],
         },
       ],
-      max_tokens: 500,
+      max_tokens: 1000, // Increased from 500 for more detailed descriptions
     });
 
     const description = analysisResponse.choices[0].message.content || "";
@@ -173,23 +313,33 @@ export async function POST(request: NextRequest) {
       "[Ghibli API] Step 2: Generating Ghibli artwork with DALL-E 3..."
     );
 
-    // Construct final prompt
+    // Construct final prompt with IDENTITY PRESERVATION emphasis
     const stylePrompt = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS];
-    const finalPrompt = `Transform this into a Japanese anime character illustration.
+    const finalPrompt = `Transform this into a Japanese anime art style while PRESERVING the original subject identity and composition.
 
 STYLE: ${stylePrompt}
 
-SCENE TO RECREATE:
+SCENE TO RECREATE EXACTLY:
 ${description}
 
-IMPORTANT INSTRUCTIONS:
-- Use painterly textures and soft brush strokes for a warm, nostalgic feeling
-- Turn subjects into anime characters with expressive eyes and stylized features
-- Maintain the original composition and subject positions
-- Apply hand-drawn 2D animation techniques with painted backgrounds
-- Use traditional cel animation aesthetic
-- Make it look like a frame from an authentic Japanese anime film
-- If there are people, transform them into anime characters with characteristic large expressive eyes`;
+CRITICAL PRESERVATION REQUIREMENTS:
+- PRESERVE the exact subject identity: face shape, facial features, hair style/color, clothing, body proportions
+- PRESERVE the exact pose, posture, and body positioning
+- PRESERVE the exact camera angle and perspective
+- PRESERVE the exact composition and layout
+- PRESERVE background elements in their exact positions
+- DO NOT add, remove, or move any elements
+- DO NOT change hair color, clothing colors, or facial features
+- DO NOT alter the scene layout or camera framing
+
+STYLE TRANSFORMATION (ONLY):
+- Apply Japanese anime art style: clean line art, flat cel shading, soft gradients
+- Add characteristic anime eyes (large, expressive) while keeping original eye color and expression
+- Use painterly textures and soft brush strokes for warmth
+- Apply hand-drawn 2D animation aesthetic
+- Use traditional cel animation techniques
+
+The result must look like the SAME person/scene in anime style, not a different character or composition.`;
 
     console.log(
       `[Ghibli API] DALL-E prompt length: ${finalPrompt.length} characters`
