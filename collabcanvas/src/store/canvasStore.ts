@@ -13,6 +13,9 @@ interface CanvasStore {
   selectionBox: SelectionBox | null;
   isSelecting: boolean;
 
+  // Pending objects tracking (for real-time sync)
+  pendingObjects: Set<string>;
+
   // AI-specific state
   lastAICommand: string | null;
   aiOperationHistory: AIOperation[];
@@ -43,6 +46,11 @@ interface CanvasStore {
   // Selection box management
   setSelectionBox: (box: SelectionBox | null) => void;
   setIsSelecting: (isSelecting: boolean) => void;
+
+  // Pending objects management
+  addPendingObject: (id: string) => void;
+  removePendingObject: (id: string) => void;
+  isPending: (id: string) => boolean;
 
   addObject: (object: CanvasObject) => void;
   updateObject: (id: string, updates: Partial<CanvasObject>) => void;
@@ -88,7 +96,7 @@ interface CanvasStore {
   markDirty: () => void;
 }
 
-export const useCanvasStore = create<CanvasStore>((set) => ({
+export const useCanvasStore = create<CanvasStore>((set, get) => ({
   canvasId: null,
   scale: 1,
   position: { x: 0, y: 0 },
@@ -96,6 +104,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   selectedObjectIds: new Set(),
   selectionBox: null,
   isSelecting: false,
+  pendingObjects: new Set(),
 
   // AI state
   lastAICommand: null,
@@ -157,6 +166,23 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   setSelectionBox: (box) => set({ selectionBox: box }),
 
   setIsSelecting: (isSelecting) => set({ isSelecting }),
+
+  // Pending objects management
+  addPendingObject: (id) =>
+    set((state) => {
+      const newSet = new Set(state.pendingObjects);
+      newSet.add(id);
+      return { pendingObjects: newSet };
+    }),
+
+  removePendingObject: (id) =>
+    set((state) => {
+      const newSet = new Set(state.pendingObjects);
+      newSet.delete(id);
+      return { pendingObjects: newSet };
+    }),
+
+  isPending: (id) => get().pendingObjects.has(id),
 
   addObject: (object) =>
     set((state) => {

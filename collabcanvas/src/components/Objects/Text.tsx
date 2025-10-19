@@ -7,7 +7,7 @@ import type { Text as TextType } from "@/types/canvas";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useObjectLock } from "@/hooks/useObjectLock";
-import { useUserStore } from "@/store";
+import { useUserStore, useCanvasStore } from "@/store";
 import { useToast } from "@/contexts/ToastContext";
 
 interface TextProps {
@@ -49,6 +49,7 @@ function Text({
       ? { id: currentUser.id, name: currentUser.name, color: currentUser.color }
       : null
   );
+  const { isPending } = useCanvasStore();
 
   // Check if object is locked by another user
   const lockActiveByOther =
@@ -66,6 +67,13 @@ function Text({
 
   // Handle drag start - acquire edit lock (advisory only)
   const handleDragStart = async () => {
+    // Don't attempt to lock pending objects
+    if (isPending(object.id)) {
+      console.log(`[Text] Object ${object.id} is pending, skipping lock`);
+      onDragStart?.();
+      return;
+    }
+
     const got = await acquireLock(object.id, "edit");
     if (!got && lockActiveByOther) {
       // Show warning but allow operation
@@ -117,6 +125,12 @@ function Text({
   };
 
   const handleTransformStart = async () => {
+    // Don't attempt to lock pending objects
+    if (isPending(object.id)) {
+      console.log(`[Text] Object ${object.id} is pending, skipping lock`);
+      return;
+    }
+
     const got = await acquireLock(object.id, "edit");
     if (!got && lockActiveByOther) {
       // Show warning but allow operation
@@ -170,8 +184,11 @@ function Text({
       // Don't acquire lock when deleting - just delete immediately
       onDelete();
     } else if (tool === "select") {
-      // Try to acquire selection lock
-      await acquireLock(object.id, "select");
+      // Don't attempt to lock pending objects
+      if (!isPending(object.id)) {
+        // Try to acquire selection lock
+        await acquireLock(object.id, "select");
+      }
       onSelect(e.evt.shiftKey);
     }
   };

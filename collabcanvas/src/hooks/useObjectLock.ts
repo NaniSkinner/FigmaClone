@@ -66,7 +66,16 @@ export function useObjectLock(canvasId: string, user: User | null) {
           // Use simple read-write instead of transaction (locks are advisory only)
           const snap = await getDoc(ref(objectId));
           if (!snap.exists()) {
-            console.log("[Lock] Object does not exist");
+            // Object might be pending creation - wait and retry
+            if (attempt < maxRetries - 1) {
+              const delay = baseDelay * Math.pow(2, attempt);
+              console.log(
+                `[Lock] Object ${objectId} not found, retrying in ${delay}ms`
+              );
+              await new Promise((resolve) => setTimeout(resolve, delay));
+              continue; // Retry
+            }
+            console.log("[Lock] Object does not exist after retries");
             return false;
           }
 

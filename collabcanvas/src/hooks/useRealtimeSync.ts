@@ -5,6 +5,7 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
   deleteDoc,
   onSnapshot,
   serverTimestamp,
@@ -65,13 +66,38 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
     async (object: CanvasObject) => {
       if (!canvasId || !userId) return;
 
-      const objectRef = doc(db, `canvas/${canvasId}/objects`, object.id);
-      await setDoc(objectRef, {
-        ...object,
-        userId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      const { addPendingObject, removePendingObject, addObject, removeObject } =
+        useCanvasStore.getState();
+
+      try {
+        // Mark as pending
+        addPendingObject(object.id);
+
+        // Add to local state immediately for responsive UI
+        addObject(object);
+
+        // Write to Firestore
+        const objectRef = doc(db, `canvas/${canvasId}/objects`, object.id);
+        await setDoc(objectRef, {
+          ...object,
+          userId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        console.log(`[Sync] Object ${object.id} created in Firestore`);
+
+        // Remove from pending after successful write
+        removePendingObject(object.id);
+      } catch (error) {
+        console.error(`[Sync] Failed to create object ${object.id}:`, error);
+
+        // Rollback: remove from local state and pending
+        removePendingObject(object.id);
+        removeObject(object.id);
+
+        throw error;
+      }
     },
     [canvasId, userId]
   );
@@ -81,15 +107,26 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
     throttle(async (id: string, updates: Partial<CanvasObject>) => {
       if (!canvasId) return;
 
-      const objectRef = doc(db, `canvas/${canvasId}/objects`, id);
-      await setDoc(
-        objectRef,
-        {
+      const { isPending } = useCanvasStore.getState();
+
+      // Skip updates on pending objects
+      if (isPending(id)) {
+        console.log(`[Sync] Skipping update for pending object ${id}`);
+        return;
+      }
+
+      try {
+        const objectRef = doc(db, `canvas/${canvasId}/objects`, id);
+
+        // Use updateDoc instead of setDoc to avoid create validation
+        await updateDoc(objectRef, {
           ...updates,
           updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+        });
+      } catch (error) {
+        console.error(`[Sync] Failed to update object ${id}:`, error);
+        // Don't throw - updates are throttled and can fail gracefully
+      }
     }, OBJECT_UPDATE_THROTTLE),
     [canvasId]
   );

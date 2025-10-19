@@ -7,7 +7,7 @@ import { Rectangle as RectangleType } from "@/types";
 import { CANVAS_SIZE } from "@/lib/constants";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useObjectLock } from "@/hooks/useObjectLock";
-import { useUserStore } from "@/store";
+import { useUserStore, useCanvasStore } from "@/store";
 import { useToast } from "@/contexts/ToastContext";
 
 interface RectangleProps {
@@ -47,6 +47,7 @@ function Rectangle({
       ? { id: currentUser.id, name: currentUser.name, color: currentUser.color }
       : null
   );
+  const { isPending } = useCanvasStore();
 
   // Check if object is locked by another user
   const lockActiveByOther =
@@ -64,10 +65,20 @@ function Rectangle({
 
   // Handle drag start - acquire edit lock (advisory only)
   const handleDragStart = async () => {
+    // Don't attempt to lock pending objects
+    if (isPending(object.id)) {
+      console.log(`[Rectangle] Object ${object.id} is pending, skipping lock`);
+      onDragStart?.();
+      return;
+    }
+
     const got = await acquireLock(object.id, "edit");
     if (!got && lockActiveByOther) {
       // Show warning but allow operation
-      addToast(`${object.lock?.userName || 'Another user'} is editing this`, 'warning');
+      addToast(
+        `${object.lock?.userName || "Another user"} is editing this`,
+        "warning"
+      );
     }
     onDragStart?.(); // Always proceed
   };
@@ -112,10 +123,19 @@ function Rectangle({
   };
 
   const handleTransformStart = async () => {
+    // Don't attempt to lock pending objects
+    if (isPending(object.id)) {
+      console.log(`[Rectangle] Object ${object.id} is pending, skipping lock`);
+      return;
+    }
+
     const got = await acquireLock(object.id, "edit");
     if (!got && lockActiveByOther) {
       // Show warning but allow operation
-      addToast(`${object.lock?.userName || 'Another user'} is editing this`, 'warning');
+      addToast(
+        `${object.lock?.userName || "Another user"} is editing this`,
+        "warning"
+      );
     }
     // Always proceed with transform
   };
@@ -162,8 +182,11 @@ function Rectangle({
       // Don't acquire lock when deleting - just delete immediately
       onDelete();
     } else if (tool === "select") {
-      // Try to acquire selection lock
-      await acquireLock(object.id, "select");
+      // Don't attempt to lock pending objects
+      if (!isPending(object.id)) {
+        // Try to acquire selection lock
+        await acquireLock(object.id, "select");
+      }
       onSelect(e.evt.shiftKey);
     }
     // In draw and pan mode, don't do anything on click
