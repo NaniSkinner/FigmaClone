@@ -42,7 +42,10 @@ export function useCanvasContext() {
         objectCount: objectsArray.length,
         gridSize: GRID_SIZE,
       },
-      objects: objectsArray.map(describeObject),
+      objects: objectsArray
+        .filter((obj) => obj.type !== "image") // Filter out image type - not supported in AI context
+        .map(describeObject)
+        .filter((obj): obj is CanvasContextObject => obj !== undefined),
       selection: Array.from(selectedObjectIds),
       viewport: {
         scale,
@@ -55,7 +58,14 @@ export function useCanvasContext() {
    * Describe a canvas object in AI-friendly format
    * Simplifies the object structure for AI context
    */
-  const describeObject = (obj: CanvasObject): CanvasContextObject => {
+  const describeObject = (
+    obj: CanvasObject
+  ): CanvasContextObject | undefined => {
+    // Skip image objects - not supported in AI context
+    if (obj.type === "image") {
+      return undefined;
+    }
+
     // Helper to convert Firestore Timestamp or Date to ISO string
     const toISOString = (date: any): string => {
       if (!date) return new Date().toISOString();
@@ -75,9 +85,9 @@ export function useCanvasContext() {
       return new Date().toISOString();
     };
 
-    const baseDescription: CanvasContextObject = {
+    const baseDescription = {
       id: obj.id,
-      type: obj.type,
+      type: obj.type as "rectangle" | "circle" | "line" | "text",
       position: { x: 0, y: 0 },
       properties: {
         zIndex: obj.zIndex,
@@ -155,6 +165,10 @@ export function useCanvasContext() {
             rotation: obj.rotation,
           },
         };
+
+      default:
+        // This should never happen due to filter above
+        return undefined;
     }
   };
 
@@ -180,8 +194,8 @@ export function useCanvasContext() {
     );
     if (colorMatch) {
       results = objectsArray.filter((obj) => {
-        if (obj.type === "line") return false;
-        const fill = obj.fill?.toLowerCase() || "";
+        if (obj.type === "line" || obj.type === "image") return false;
+        const fill = "fill" in obj ? obj.fill?.toLowerCase() || "" : "";
         const color = colorMatch[1];
 
         // Color name to hex mapping (common colors)
@@ -330,6 +344,10 @@ export function useCanvasContext() {
         return width * height;
       case "text":
         return (obj.width || 100) * (obj.fontSize * 1.2); // Estimate
+      case "image":
+        return obj.width * obj.height;
+      default:
+        return 0;
     }
   };
 

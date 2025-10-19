@@ -48,33 +48,36 @@ describe("AI Agent - End-to-End Integration Tests", () => {
           objectCount: createdObjects.length,
           gridSize: 50,
         },
-        objects: createdObjects.map((obj) => ({
-          id: obj.id,
-          type: obj.type,
-          position: {
-            x: "x" in obj ? (obj.x as number) : 0,
-            y: "y" in obj ? (obj.y as number) : 0,
-          },
-          dimensions:
-            obj.type === "circle" && "radius" in obj
-              ? { radius: obj.radius }
-              : obj.type === "rectangle" && "width" in obj && "height" in obj
-              ? { width: obj.width, height: obj.height }
-              : undefined,
-          properties: {
-            fill: "fill" in obj ? obj.fill : undefined,
-            stroke: "stroke" in obj ? obj.stroke : undefined,
-            text: "text" in obj ? obj.text : undefined,
-            fontSize: "fontSize" in obj ? obj.fontSize : undefined,
-            rotation: obj.rotation || 0,
-            zIndex: obj.zIndex,
-          },
-          metadata: {
-            createdBy: obj.userId,
-            createdByAI: obj.createdByAI || false,
-            createdAt: obj.createdAt?.toISOString() || new Date().toISOString(),
-          },
-        })),
+        objects: createdObjects
+          .filter((obj) => obj.type !== "image") // Filter out image type - not supported in CanvasContextObject
+          .map((obj) => ({
+            id: obj.id,
+            type: obj.type as "rectangle" | "circle" | "line" | "text",
+            position: {
+              x: "x" in obj ? (obj.x as number) : 0,
+              y: "y" in obj ? (obj.y as number) : 0,
+            },
+            dimensions:
+              obj.type === "circle" && "radius" in obj
+                ? { radius: obj.radius }
+                : obj.type === "rectangle" && "width" in obj && "height" in obj
+                ? { width: obj.width, height: obj.height }
+                : undefined,
+            properties: {
+              fill: "fill" in obj ? obj.fill : undefined,
+              stroke: "stroke" in obj ? obj.stroke : undefined,
+              text: "text" in obj ? obj.text : undefined,
+              fontSize: "fontSize" in obj ? obj.fontSize : undefined,
+              rotation: obj.rotation || 0,
+              zIndex: obj.zIndex,
+            },
+            metadata: {
+              createdBy: obj.userId,
+              createdByAI: obj.createdByAI || false,
+              createdAt:
+                obj.createdAt?.toISOString() || new Date().toISOString(),
+            },
+          })),
         selection: [],
         viewport: { scale: 1, position: { x: 0, y: 0 } },
       }),
