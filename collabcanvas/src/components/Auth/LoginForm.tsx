@@ -22,7 +22,7 @@ export default function LoginForm() {
       } else {
         await login(email, password);
       }
-      router.push("/");
+      router.push("/projects");
     } catch (err: any) {
       setLocalError(err.message);
     }

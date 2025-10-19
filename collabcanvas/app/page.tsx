@@ -333,15 +333,33 @@ function HomePage() {
         {/* Connection Status */}
         <ConnectionStatus />
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="fixed top-4 left-4 z-50 px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow-lg border border-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
-          title="Logout"
-        >
-          <span>⏻</span>
-          <span className="hidden sm:inline">Logout</span>
-        </button>
+        {/* Navigation Buttons - Top Left */}
+        <div className="fixed top-4 left-4 z-50 flex gap-2">
+          {/* Back to Projects Button */}
+          <button
+            onClick={() => {
+              // Use Next.js router to navigate
+              if (typeof window !== "undefined") {
+                window.location.href = "/projects";
+              }
+            }}
+            className="px-4 py-2 bg-white hover:bg-purple-50 text-gray-700 rounded-lg shadow-lg border border-purple-200 transition-colors flex items-center gap-2 text-sm font-medium"
+            title="Back to Projects"
+          >
+            <span>📁</span>
+            <span className="hidden sm:inline">Projects</span>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow-lg border border-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
+            title="Logout"
+          >
+            <span>⏻</span>
+            <span className="hidden sm:inline">Logout</span>
+          </button>
+        </div>
 
         {/* App Title */}
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg border border-gray-200">
