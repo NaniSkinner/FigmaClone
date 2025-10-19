@@ -35,6 +35,7 @@ interface ProjectStore {
   deleteProject: (projectId: string) => Promise<void>;
   renameProject: (projectId: string, newName: string) => Promise<void>;
   shareProject: (projectId: string, userIds: string[]) => Promise<void>;
+  startNewCanvas: () => void;
   setIsDirty: (dirty: boolean) => void;
   setCurrentProject: (project: Project | null) => void;
   setIsLoading: (loading: boolean) => void;
@@ -340,5 +341,19 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       console.error("Failed to share project:", error);
       throw error;
     }
+  },
+
+  startNewCanvas: () => {
+    // Clear current project state
+    set({
+      currentProject: null,
+      isDirty: false,
+      lastSaved: null,
+    });
+
+    // Clear canvas store
+    useCanvasStore.getState().clearCanvas();
+    useCanvasStore.getState().setCurrentProjectId(null, "");
+    useCanvasStore.getState().isDirty = false;
   },
 }));

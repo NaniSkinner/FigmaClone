@@ -91,9 +91,10 @@ function CanvasControls({
   const objectsMap = useCanvasStore((state) => state.objects);
   const objects = useMemo(() => Array.from(objectsMap.values()), [objectsMap]);
 
-  // Project switcher hook for handling unsaved changes
+  // Project switcher hook for handling unsaved changes and new canvas
   const {
     switchToProject,
+    createNewCanvas,
     showUnsavedDialog,
     handleSaveAndSwitch,
     handleDontSave,
@@ -482,6 +483,22 @@ function CanvasControls({
                 {projects.length}
               </span>
             )}
+          </button>
+
+          {/* New Canvas Button */}
+          <button
+            onClick={createNewCanvas}
+            className={`rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all duration-[400ms] flex items-center gap-1 ${
+              isHovered
+                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
+                : "px-2 py-1 text-[10px]"
+            }`}
+            title="Start a new blank canvas"
+          >
+            <span className={isHovered ? "text-sm sm:text-base" : "text-base"}>
+              🆕
+            </span>
+            {isHovered && <span className="whitespace-nowrap">New Canvas</span>}
           </button>
 
           {/* Export PNG Button */}

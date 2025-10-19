@@ -7,6 +7,7 @@ interface UnsavedChangesDialogProps {
   onDontSave: () => void;
   onCancel: () => void;
   onSave: () => void;
+  message?: string;
 }
 
 export default function UnsavedChangesDialog({
@@ -14,8 +15,12 @@ export default function UnsavedChangesDialog({
   onDontSave,
   onCancel,
   onSave,
+  message,
 }: UnsavedChangesDialogProps) {
   if (!isOpen) return null;
+
+  const defaultMessage =
+    "You have unsaved changes. Would you like to save before continuing?";
 
   return createPortal(
     <div
@@ -33,10 +38,7 @@ export default function UnsavedChangesDialog({
     >
       <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
         <h2 className="text-xl font-bold mb-4">💾 Unsaved Changes</h2>
-        <p className="text-gray-700 mb-6">
-          You have unsaved changes. Would you like to save before switching
-          projects?
-        </p>
+        <p className="text-gray-700 mb-6">{message || defaultMessage}</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onDontSave}
