@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import {
   generateAnimeWithReplicate,
+  generateCartoonWithReplicate,
+  generateAnimeWithVision,
   isReplicateConfigured,
 } from "@/lib/ai/replicate";
 
@@ -198,13 +200,15 @@ export async function POST(request: NextRequest) {
           ).toFixed(2)}MB`
         );
 
-        // Generate with Replicate (quality-optimized settings)
-        console.log("[Ghibli API] Step 2: Generating with Replicate...");
+        // Generate with Ghibli Model (img2img)
+        console.log(
+          "[Ghibli API] Step 2: Generating with Ghibli Model (danila013/ghibli-easycontrol)..."
+        );
         const result = await generateAnimeWithReplicate({
           sourceImageDataUrl: sourceDataUrl,
           style,
-          identityStrength: 0.8, // Higher identity preservation
-          styleStrength: 0.65, // Moderate transformation
+          identityStrength: 0.8,
+          styleStrength: 0.65,
         });
 
         const totalCost = result.cost;
