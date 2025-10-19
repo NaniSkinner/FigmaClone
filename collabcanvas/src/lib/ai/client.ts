@@ -69,7 +69,7 @@ class DirectOpenAIClient implements AIClient {
     // Configuration from PRD Section 4.4.1
     this.model = "gpt-4o"; // Using GPT-4o for better function calling and faster responses
     this.temperature = 0.7; // Creative flexibility
-    this.maxTokens = 1000; // Response limit
+    this.maxTokens = 4000; // Response limit - increased for batch operations
   }
 
   /**
@@ -87,8 +87,8 @@ class DirectOpenAIClient implements AIClient {
           operation(),
           new Promise<never>((_, reject) =>
             setTimeout(
-              () => reject(new Error("Request timeout after 10 seconds")),
-              10000
+              () => reject(new Error("Request timeout after 60 seconds")),
+              60000 // Increased to 60 seconds for batch operations
             )
           ),
         ]);
@@ -260,7 +260,7 @@ CAPABILITIES:
 RULES:
 1. Canvas boundaries: 8000x8000 pixels (coordinates from 0-8000 on both axes)
 2. Center of canvas is at (4000, 4000)
-3. Maximum 20 objects per command
+3. **IMPORTANT: You can create up to 500 objects in a SINGLE command** - This is NOT limited to 20! You can handle large batch operations.
 4. All measurements in pixels
 5. Rotation in degrees (0-360)
 6. Z-index range: 0-999
@@ -281,6 +281,12 @@ COMPLEX LAYOUTS:
 - For UI components (login form, navigation bar, card, button group, dashboard), ALWAYS use the createComplexLayout function
 - Examples: "create a login form" → use createComplexLayout with layoutType="loginForm"
 - Examples: "make a nav bar" → use createComplexLayout with layoutType="navigationBar"
+
+BATCH OPERATIONS:
+- When users request many objects (e.g., "create 100 circles", "generate 500 rectangles"), you CAN do this
+- **IMPORTANT: Use createBatchShapes for requests of 10+ objects** - it's much more efficient than multiple createShape calls
+- Example: "create 100 red circles" → call createBatchShapes with an array of 100 circle specifications
+- Do NOT refuse or limit requests to 20 objects - the system supports up to 500 objects per command
 
 RESPONSE STYLE:
 - Be concise and professional

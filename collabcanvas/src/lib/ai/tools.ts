@@ -387,11 +387,82 @@ export const getCanvasStateTool: AITool = {
 };
 
 /**
+ * Tool 10: Create Batch Shapes
+ * Creates multiple shapes at once for efficient batch operations
+ */
+export const createBatchShapesTool: AITool = {
+  type: "function",
+  function: {
+    name: "createBatchShapes",
+    description:
+      "Create multiple shapes at once (up to 500 shapes). Use this for batch operations when user requests many objects. Much more efficient than calling createShape multiple times.",
+    parameters: {
+      type: "object",
+      properties: {
+        shapes: {
+          type: "array",
+          description: "Array of shapes to create",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: ["rectangle", "circle"],
+                description: "Shape type",
+              },
+              x: {
+                type: "number",
+                description: "X coordinate (0-8000)",
+              },
+              y: {
+                type: "number",
+                description: "Y coordinate (0-8000)",
+              },
+              width: {
+                type: "number",
+                description: "Width for rectangles (default: 400)",
+              },
+              height: {
+                type: "number",
+                description: "Height for rectangles (default: 300)",
+              },
+              radius: {
+                type: "number",
+                description: "Radius for circles (default: 200)",
+              },
+              fill: {
+                type: "string",
+                description: "Fill color as hex or name",
+              },
+              stroke: {
+                type: "string",
+                description: "Stroke color as hex or name",
+              },
+              strokeWidth: {
+                type: "number",
+                description: "Stroke width (default: 3)",
+              },
+              rotation: {
+                type: "number",
+                description: "Rotation in degrees (default: 0)",
+              },
+            },
+            required: ["type", "x", "y"],
+          },
+        },
+      },
+      required: ["shapes"],
+    },
+  },
+};
+
+/**
  * Export all tools as an array for OpenAI
  */
 export const allTools: AITool[] = [
   createShapeTool,
   createTextTool,
+  createBatchShapesTool, // Add batch tool
   moveObjectTool,
   resizeObjectTool,
   rotateObjectTool,

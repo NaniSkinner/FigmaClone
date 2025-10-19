@@ -31,7 +31,7 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 // Constants - Physical canvas dimensions
 const CANVAS_WIDTH = 8000;
 const CANVAS_HEIGHT = 8000;
-const MAX_OBJECTS_PER_COMMAND = 20; // Increased to support complex layouts (login forms, dashboards, etc.)
+const MAX_OBJECTS_PER_COMMAND = 500; // Increased to support complex layouts (login forms, dashboards, etc.)
 const DEFAULT_FILL = "#D4E7C5"; // Matcha Green (used only when no color specified)
 const DEFAULT_STROKE = "#B4A7D6"; // Lavender (used only when no color specified)
 const DEFAULT_STROKE_WIDTH = 3;
@@ -263,6 +263,8 @@ export class CanvasAIAgent {
         return this.executeCreateShape(args);
       case "createText":
         return this.executeCreateText(args);
+      case "createBatchShapes":
+        return this.executeCreateBatchShapes(args);
       case "moveObject":
         return this.executeMoveObject(args);
       case "resizeObject":
@@ -488,6 +490,154 @@ export class CanvasAIAgent {
         type: "create",
         success: false,
         message: `Failed to create text: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * Execute createBatchShapes function
+   * Creates multiple shapes at once for efficient batch operations
+   */
+  private executeCreateBatchShapes(args: {
+    shapes: Array<{
+      type: "rectangle" | "circle";
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      radius?: number;
+      fill?: string;
+      stroke?: string;
+      strokeWidth?: number;
+      rotation?: number;
+    }>;
+  }): AIAction {
+    try {
+      const { shapes } = args;
+
+      // Validate batch size
+      if (!shapes || shapes.length === 0) {
+        return {
+          type: "create",
+          success: false,
+          message: "No shapes provided in batch",
+        };
+      }
+
+      if (shapes.length > MAX_OBJECTS_PER_COMMAND) {
+        return {
+          type: "create",
+          success: false,
+          message: `Batch size ${shapes.length} exceeds maximum ${MAX_OBJECTS_PER_COMMAND}`,
+        };
+      }
+
+      const createdObjects: CanvasObject[] = [];
+      let successCount = 0;
+      let failCount = 0;
+
+      // Create each shape
+      for (const shapeSpec of shapes) {
+        try {
+          const id = crypto.randomUUID();
+          const zIndex = this.getNextZIndex();
+
+          // Validate boundaries
+          if (
+            shapeSpec.x < 0 ||
+            shapeSpec.x > CANVAS_WIDTH ||
+            shapeSpec.y < 0 ||
+            shapeSpec.y > CANVAS_HEIGHT
+          ) {
+            failCount++;
+            continue;
+          }
+
+          let object: CanvasObject;
+
+          if (shapeSpec.type === "rectangle") {
+            const width = shapeSpec.width || 400;
+            const height = shapeSpec.height || 300;
+
+            object = {
+              id,
+              type: "rectangle",
+              userId: this.userId,
+              x: shapeSpec.x,
+              y: shapeSpec.y,
+              width,
+              height,
+              fill: shapeSpec.fill || DEFAULT_FILL,
+              stroke: shapeSpec.stroke || DEFAULT_STROKE,
+              strokeWidth: shapeSpec.strokeWidth || DEFAULT_STROKE_WIDTH,
+              rotation: shapeSpec.rotation || 0,
+              zIndex,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              createdByAI: true,
+              aiCommand: this.currentCommand || undefined,
+              aiSessionId: this.sessionId,
+            } as Rectangle;
+          } else {
+            // circle
+            const radius = shapeSpec.radius || 200;
+
+            object = {
+              id,
+              type: "circle",
+              userId: this.userId,
+              x: shapeSpec.x,
+              y: shapeSpec.y,
+              radius,
+              fill: shapeSpec.fill || DEFAULT_FILL,
+              stroke: shapeSpec.stroke || DEFAULT_STROKE,
+              strokeWidth: shapeSpec.strokeWidth || DEFAULT_STROKE_WIDTH,
+              rotation: shapeSpec.rotation || 0,
+              zIndex,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              createdByAI: true,
+              aiCommand: this.currentCommand || undefined,
+              aiSessionId: this.sessionId,
+            } as Circle;
+          }
+
+          createdObjects.push(object);
+          this.onCreateObject(object);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error("Failed to create shape in batch:", error);
+        }
+      }
+
+      // Record for undo (if callback provided) - group all objects as one undo action
+      if (
+        this.onRecordCreate &&
+        this.currentOperationId &&
+        createdObjects.length > 0
+      ) {
+        this.onRecordCreate(createdObjects, "ai", this.currentOperationId);
+      }
+
+      let message = `✓ Created ${successCount} shape(s) in batch`;
+      if (failCount > 0) {
+        message += ` (${failCount} failed)`;
+      }
+
+      return {
+        type: "create",
+        success: successCount > 0,
+        message,
+        objectId: createdObjects.map((o) => o.id).join(", "),
+      };
+    } catch (error) {
+      return {
+        type: "create",
+        success: false,
+        message: `Failed to create batch: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
       };

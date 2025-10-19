@@ -20,7 +20,7 @@ const openai = new OpenAI({
 const AI_CONFIG = {
   model: "gpt-4o",
   temperature: 0.7,
-  maxTokens: 1000,
+  maxTokens: 4000, // Increased for batch operations
 };
 
 /**
@@ -38,8 +38,8 @@ async function executeWithRetry<T>(
         operation(),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error("Request timeout after 10 seconds")),
-            10000
+            () => reject(new Error("Request timeout after 60 seconds")),
+            60000 // Increased to 60 seconds for batch operations
           )
         ),
       ]);
@@ -297,7 +297,10 @@ INSTRUCTIONS:
 - For UI components (login form, nav bar, etc.), use createComplexLayout function
 - Accept ANY color name or hex code - convert color names: red=#FF0000, blue=#0000FF, black=#000000, white=#FFFFFF, green=#00FF00, yellow=#FFFF00, orange=#FFA500, purple=#800080
 - Don't ask for color confirmation - use the color the user requests
-- Maximum 20 objects per command
+- **IMPORTANT: Maximum 500 objects per command** - The system can handle large batch operations. Do NOT limit requests to 20 objects!
+- When users request many objects (e.g., "create 100 circles"), you CAN and SHOULD do this
+- **CRITICAL: Use createBatchShapes for requests of 10+ objects** - it creates multiple shapes in ONE function call, which is much more efficient
+- Example: "create 100 red circles" → call createBatchShapes with an array of 100 circle specifications, NOT 100 separate createShape calls
 - Be helpful and confirm actions taken
 - Ask for clarification only when truly needed (not for colors or positions)`;
 }
@@ -390,6 +393,65 @@ function getTools() {
             },
           },
           required: ["text"],
+        },
+      },
+    },
+    {
+      type: "function" as const,
+      function: {
+        name: "createBatchShapes",
+        description:
+          "Create multiple shapes at once (up to 500). Use this for batch operations when user requests many objects - much more efficient than multiple createShape calls.",
+        parameters: {
+          type: "object",
+          properties: {
+            shapes: {
+              type: "array",
+              description: "Array of shapes to create",
+              items: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string",
+                    enum: ["rectangle", "circle"],
+                    description: "Shape type",
+                  },
+                  x: { type: "number", description: "X coordinate (0-8000)" },
+                  y: { type: "number", description: "Y coordinate (0-8000)" },
+                  width: {
+                    type: "number",
+                    description: "Width for rectangles (default: 400)",
+                  },
+                  height: {
+                    type: "number",
+                    description: "Height for rectangles (default: 300)",
+                  },
+                  radius: {
+                    type: "number",
+                    description: "Radius for circles (default: 200)",
+                  },
+                  fill: {
+                    type: "string",
+                    description: "Fill color as hex or name",
+                  },
+                  stroke: {
+                    type: "string",
+                    description: "Stroke color as hex or name",
+                  },
+                  strokeWidth: {
+                    type: "number",
+                    description: "Stroke width (default: 3)",
+                  },
+                  rotation: {
+                    type: "number",
+                    description: "Rotation in degrees (default: 0)",
+                  },
+                },
+                required: ["type", "x", "y"],
+              },
+            },
+          },
+          required: ["shapes"],
         },
       },
     },
