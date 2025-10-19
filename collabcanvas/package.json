@@ -18,7 +18,10 @@
     "test:integration:e2e": "jest src/__tests__/integration/ai-e2e.test.ts",
     "test:performance": "jest src/__tests__/performance",
     "test:coverage": "jest --coverage",
-    "test:all": "jest --coverage --verbose"
+    "test:all": "jest --coverage --verbose",
+    "assets:validate": "node scripts/validateAssets.js",
+    "assets:template": "node scripts/generateAssetTemplate.js",
+    "assets:count": "find public/decorative-items -name '*.svg' | wc -l"
   },
   "dependencies": {
     "firebase": "^12.4.0",

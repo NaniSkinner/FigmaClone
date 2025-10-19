@@ -232,6 +232,470 @@
       "defaultWidth": 100,
       "defaultHeight": 100,
       "aspectRatio": 1.0
+    },
+    {
+      "id": "party-element-01",
+      "name": "Party Element 01",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-01.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-02",
+      "name": "Party Element 02",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-02.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-03",
+      "name": "Party Element 03",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-03.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-04",
+      "name": "Party Element 04",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-04.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-05",
+      "name": "Party Element 05",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-05.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-06",
+      "name": "Party Element 06",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-06.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-08",
+      "name": "Party Element 08",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-08.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-09",
+      "name": "Party Element 09",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-09.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-10",
+      "name": "Party Element 10",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-10.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-11",
+      "name": "Party Element 11",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-11.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "party-element-12",
+      "name": "Party Element 12",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/party-element-12.svg",
+      "tags": ["party", "celebration", "newyear", "festive", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "axolotl-cute-01",
+      "name": "Cute Axolotl",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-cute-01.svg",
+      "tags": ["axolotl", "cute", "kawaii", "pink", "amphibian", "salamander"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "axolotl-cute-02",
+      "name": "Axolotl Character",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-cute-02.svg",
+      "tags": ["axolotl", "cute", "kawaii", "character", "amphibian"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-latte-hot",
+      "name": "Hot Matcha Latte",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-latte-hot.svg",
+      "tags": ["matcha", "latte", "hot", "drink", "green", "tea"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-latte-ice",
+      "name": "Ice Matcha Latte",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-latte-ice.svg",
+      "tags": ["matcha", "latte", "ice", "cold", "drink", "green"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-latte-ice-cream",
+      "name": "Matcha Latte with Ice Cream",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-latte-ice-cream.svg",
+      "tags": ["matcha", "latte", "ice cream", "dessert", "drink"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-latte-strawberry",
+      "name": "Strawberry Matcha Latte",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-latte-strawberry.svg",
+      "tags": ["matcha", "latte", "strawberry", "drink", "fruit"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-dirty",
+      "name": "Dirty Matcha",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-dirty.svg",
+      "tags": ["matcha", "dirty", "coffee", "drink", "espresso"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-cheesecake",
+      "name": "Matcha Cheesecake",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-cheesecake.svg",
+      "tags": ["matcha", "cheesecake", "dessert", "cake", "sweet"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-tiramisu",
+      "name": "Matcha Tiramisu",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-tiramisu.svg",
+      "tags": ["matcha", "tiramisu", "dessert", "italian", "sweet"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-bowl-dessert",
+      "name": "Matcha Bowl Dessert",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-bowl-dessert.svg",
+      "tags": ["matcha", "bowl", "dessert", "sweet"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-ice-cream",
+      "name": "Matcha Ice Cream",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-ice-cream.svg",
+      "tags": ["matcha", "ice cream", "dessert", "frozen", "sweet"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-bowl-ceramic",
+      "name": "Ceramic Matcha Bowl",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-bowl-ceramic.svg",
+      "tags": ["matcha", "bowl", "ceramic", "tea", "traditional"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-powder-bowl",
+      "name": "Matcha Powder Bowl",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-powder-bowl.svg",
+      "tags": ["matcha", "powder", "bowl", "tea", "green"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-whisk-bamboo",
+      "name": "Bamboo Matcha Whisk",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-whisk-bamboo.svg",
+      "tags": ["matcha", "whisk", "bamboo", "tool", "traditional"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-teapot",
+      "name": "Matcha Teapot",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-teapot.svg",
+      "tags": ["matcha", "teapot", "tea", "pot", "traditional"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-tea-leaf",
+      "name": "Tea Leaf",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-tea-leaf.svg",
+      "tags": ["matcha", "tea", "leaf", "green", "plant"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-can-packaging",
+      "name": "Japanese Matcha Can",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-can-packaging.svg",
+      "tags": ["matcha", "can", "packaging", "japanese", "container"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
+    },
+    {
+      "id": "matcha-pouch-packaging",
+      "name": "Matcha Pouch",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-pouch-packaging.svg",
+      "tags": ["matcha", "pouch", "packaging", "container", "bag"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0,
+      "attribution": {
+        "author": "Envato Elements",
+        "source": "Envato",
+        "license": "Envato Elements License",
+        "url": "https://elements.envato.com"
+      }
     }
   ]
 }

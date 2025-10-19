@@ -149,12 +149,36 @@ export const DecorativeItemsPanel: React.FC<DecorativeItemsPanelProps> = ({
           </div>
         )}
 
-        {/* Footer with item count */}
+        {/* Footer with item count and attribution */}
         <div className="p-3 border-t border-gray-200 bg-gray-50">
           <p className="text-xs text-gray-500 text-center">
             {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}{" "}
             available
           </p>
+          {/* Attribution notice - shown if any items have attribution */}
+          {filteredItems.some((item) => item.attribution) && (
+            <p className="text-xs text-gray-400 text-center mt-1">
+              Icons from{" "}
+              <a
+                href="https://www.flaticon.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-500 transition-colors"
+              >
+                Flaticon
+              </a>
+              ,{" "}
+              <a
+                href="https://www.svgrepo.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-500 transition-colors"
+              >
+                SVG Repo
+              </a>
+              {" & other sources"}
+            </p>
+          )}
         </div>
       </div>
     </>
