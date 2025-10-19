@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useCanvasStore } from "@/store";
 import LayerItem from "./LayerItem";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
-import { CanvasObject } from "@/types";
+import { CanvasObject, ImageObject } from "@/types";
+import { GhibliTransformButton } from "@/components/UI/GhibliTransformButton";
 
 interface LayerPanelProps {
   canvasId: string;
@@ -41,6 +42,14 @@ export default function LayerPanel({
   const handleLockToggle = (id: string, locked: boolean) => {
     updateObjectInFirestore(id, { locked });
   };
+
+  // Check if a single image is selected
+  const selectedImage =
+    selectedObjectIds.size === 1
+      ? (Array.from(objects.values()).find(
+          (obj) => selectedObjectIds.has(obj.id) && obj.type === "image"
+        ) as ImageObject | undefined)
+      : undefined;
 
   return (
     <div
@@ -169,6 +178,17 @@ export default function LayerPanel({
             </svg>
             Back
           </button>
+        </div>
+      )}
+
+      {/* AI Features Section (when single image is selected) */}
+      {!isCollapsed && selectedImage && (
+        <div className="p-3 border-b border-gray-200 bg-purple-50">
+          <h3 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+            <span>✨</span>
+            <span>AI Features</span>
+          </h3>
+          <GhibliTransformButton imageId={selectedImage.id} />
         </div>
       )}
 

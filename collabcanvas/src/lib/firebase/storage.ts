@@ -190,6 +190,60 @@ export async function uploadImage(
 }
 
 /**
+ * Uploads an AI-generated image from base64 data URL to Firebase Storage
+ * Used for AI-generated images (DALL-E) - avoids CORS issues
+ * @param dataUrl - Base64 data URL (data:image/png;base64,...)
+ * @param userId - User ID for storage path
+ * @param projectId - Project ID for storage path
+ * @param metadata - Additional metadata (e.g., AI style info)
+ * @returns Promise with Firebase Storage URL and thumbnail
+ */
+export async function uploadAIGeneratedImage(
+  dataUrl: string,
+  userId: string,
+  projectId: string,
+  metadata?: Record<string, string>
+): Promise<{ url: string; thumbnailBase64: string }> {
+  try {
+    // 1. Convert data URL to blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    // 2. Generate filename
+    const timestamp = Date.now();
+    const filename = `ai_ghibli_${timestamp}.png`;
+    const storagePath = `users/${userId}/projects/${projectId}/images/${filename}`;
+
+    // 3. Upload to Firebase Storage
+    const storageRef = ref(storage, storagePath);
+    await uploadBytes(storageRef, blob, {
+      contentType: "image/png",
+      customMetadata: {
+        aiGenerated: "true",
+        generatedAt: new Date().toISOString(),
+        ...metadata,
+      },
+    });
+
+    // 4. Get download URL
+    const url = await getDownloadURL(storageRef);
+
+    // 5. Generate thumbnail from blob
+    const file = new File([blob], filename, { type: "image/png" });
+    const { thumbnailBase64 } = await generateThumbnail(file);
+
+    return { url, thumbnailBase64 };
+  } catch (error) {
+    console.error("AI image upload error:", error);
+    throw new Error(
+      `Failed to upload AI-generated image: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
  * Deletes an image from Firebase Storage
  * @param imageUrl - The Firebase Storage URL
  */

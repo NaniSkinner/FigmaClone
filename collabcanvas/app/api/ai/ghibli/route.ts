@@ -5,6 +5,7 @@
  * - GPT-4 Vision: Analyzes source image for accurate recreation
  * - DALL-E 3 HD: Generates Ghibli-style artwork
  *
+ * Note: Returns DALL-E URL for client-side upload to Firebase Storage
  * Reference: ImageAiPRD Section 3.3 - API Route Implementation
  */
 
@@ -18,23 +19,23 @@ const openai = new OpenAI({
 
 // Style-specific prompts for DALL-E 3
 const STYLE_PROMPTS = {
-  ghibli: `Studio Ghibli animation style with hand-painted watercolor aesthetics, 
-           soft dreamy lighting, gentle pastel and earth tones, whimsical details, 
-           subtle gradients, and peaceful atmosphere`,
+  anime: `Turn this image into Japanese anime-like illustration with hand-drawn animation style, 
+          expressive anime eyes, and painterly brush strokes`,
 
-  spirited_away: `Spirited Away anime style with rich saturated colors, 
-                   detailed mystical backgrounds, vibrant reds and golds, 
-                   ethereal lighting, intricate architectural details, 
-                   and magical realism`,
+  ghibli: `Japanese anime style with hand-painted watercolor aesthetics, 
+           painterly textures and soft brush strokes for a warm nostalgic feeling.
+           Transform into anime character with: soft dreamy lighting, gentle pastel and earth tones, 
+           whimsical details, subtle gradients, peaceful atmosphere, and expressive anime features`,
 
-  totoro: `My Neighbor Totoro style with soft muted pastels, 
-           lush green nature elements, gentle sunlight filtering through trees, 
-           peaceful countryside mood, simple but expressive character designs`,
+  spirited_away: `Mystical Japanese anime style with painterly textures and soft brush strokes for a warm nostalgic feeling.
+                   Transform into anime character with: rich saturated colors, detailed mystical backgrounds, 
+                   vibrant reds and golds, ethereal lighting, intricate architectural details, 
+                   magical realism, and expressive anime features`,
 
-  howls: `Howl's Moving Castle style with Victorian-era aesthetics, 
-          steampunk mechanical elements, warm golden lighting, 
-          detailed period costumes, magical transformations, 
-          and romantic atmosphere`,
+  totoro: `Gentle Japanese anime style with painterly textures and soft brush strokes for a warm nostalgic feeling.
+           Transform into anime character with: soft muted pastels, lush green nature elements, 
+           gentle sunlight filtering through trees, peaceful countryside mood, 
+           simple but expressive character designs with round gentle features`,
 };
 
 // GPT-4 Vision analysis prompt
@@ -56,10 +57,12 @@ Be extremely specific - this description will be used to recreate the image in a
  * Request body:
  * - imageUrl: string (Firebase Storage URL)
  * - style: 'ghibli' | 'spirited_away' | 'totoro' | 'howls'
+ * - userId: string
+ * - projectId: string
  *
  * Response:
  * - success: boolean
- * - generatedImageUrl?: string (DALL-E 3 URL)
+ * - firebaseUrl?: string (Firebase Storage URL of generated image)
  * - description?: string (GPT-4 Vision analysis)
  * - style: string
  * - cost: number (USD)
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { imageUrl, style = "ghibli" } = body;
+    const { imageUrl, style = "ghibli", userId, projectId } = body;
 
     // Validate inputs
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -90,12 +93,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["ghibli", "spirited_away", "totoro", "howls"].includes(style)) {
+    if (!userId || !projectId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "User ID and Project ID are required",
+          style,
+          cost: 0,
+          duration: Date.now() - startTime,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!["anime", "ghibli", "spirited_away", "totoro"].includes(style)) {
       return NextResponse.json(
         {
           success: false,
           error:
-            "Invalid style. Must be one of: ghibli, spirited_away, totoro, howls",
+            "Invalid style. Must be one of: anime, ghibli, spirited_away, totoro",
           style,
           cost: 0,
           duration: Date.now() - startTime,
@@ -159,13 +175,21 @@ export async function POST(request: NextRequest) {
 
     // Construct final prompt
     const stylePrompt = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS];
-    const finalPrompt = `${stylePrompt}.
+    const finalPrompt = `Transform this into a Japanese anime character illustration.
 
-Recreate this scene maintaining exact composition, subjects, and layout:
+STYLE: ${stylePrompt}
 
+SCENE TO RECREATE:
 ${description}
 
-Render in authentic Studio Ghibli hand-drawn animation style. Use traditional 2D animation techniques with painted backgrounds. IMPORTANT: Maintain the original scene's composition, subject positions, and overall layout exactly - only change the artistic style.`;
+IMPORTANT INSTRUCTIONS:
+- Use painterly textures and soft brush strokes for a warm, nostalgic feeling
+- Turn subjects into anime characters with expressive eyes and stylized features
+- Maintain the original composition and subject positions
+- Apply hand-drawn 2D animation techniques with painted backgrounds
+- Use traditional cel animation aesthetic
+- Make it look like a frame from an authentic Japanese anime film
+- If there are people, transform them into anime characters with characteristic large expressive eyes`;
 
     console.log(
       `[Ghibli API] DALL-E prompt length: ${finalPrompt.length} characters`
@@ -197,7 +221,32 @@ Render in authentic Studio Ghibli hand-drawn animation style. Use traditional 2D
     );
 
     // ========================================================================
-    // Step 3: Return response
+    // Step 3: Download image and convert to base64 (avoid CORS issues)
+    // ========================================================================
+    console.log("[Ghibli API] Step 3: Downloading image for client upload...");
+
+    const downloadResponse = await fetch(generatedImageUrl);
+    if (!downloadResponse.ok) {
+      throw new Error(
+        `Failed to download image from DALL-E: ${downloadResponse.statusText}`
+      );
+    }
+
+    // Convert to base64 for client-side upload (avoids CORS)
+    const imageBuffer = await downloadResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString("base64");
+    const imageDataUrl = `data:image/png;base64,${base64Image}`;
+
+    console.log(
+      `[Ghibli API] Step 3 complete. Image size: ${(
+        imageBuffer.byteLength /
+        1024 /
+        1024
+      ).toFixed(2)}MB`
+    );
+
+    // ========================================================================
+    // Step 4: Return response with base64 image data
     // ========================================================================
     const totalCost = analysisCost + generationCost;
     const duration = Date.now() - startTime;
@@ -210,7 +259,7 @@ Render in authentic Studio Ghibli hand-drawn animation style. Use traditional 2D
 
     return NextResponse.json({
       success: true,
-      generatedImageUrl,
+      imageDataUrl, // Base64 data URL for client upload
       description,
       style,
       cost: totalCost,

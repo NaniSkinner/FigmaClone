@@ -112,6 +112,15 @@ export interface ImageObject extends BaseCanvasObject {
   naturalHeight: number;
   fileSize?: number; // Bytes (for analytics)
   mimeType?: string; // 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+
+  // AI Generation Metadata (for Ghibli-transformed images)
+  aiGenerated?: boolean;
+  aiSourceImageId?: string; // ID of the original image that was transformed
+  aiStyle?: "anime" | "ghibli" | "spirited_away" | "totoro";
+  aiPromptUsed?: string;
+  aiGeneratedAt?: Date;
+  aiCost?: number; // USD cost of generation
+  aiDescription?: string; // GPT-4 Vision description
 }
 
 // Union type for all canvas objects

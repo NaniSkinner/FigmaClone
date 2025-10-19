@@ -173,3 +173,31 @@ export type ObjectReference =
   | { type: "objectType"; value: "rectangle" | "circle" | "line" | "text" }
   | { type: "text"; value: string }
   | { type: "id"; value: string };
+
+// Ghibli Style Transfer Types
+export type GhibliStyle = "anime" | "ghibli" | "spirited_away" | "totoro";
+
+export interface GhibliGenerationRequest {
+  imageUrl: string;
+  style: GhibliStyle;
+}
+
+export interface GhibliGenerationResponse {
+  success: boolean;
+  imageDataUrl?: string; // Base64 data URL (data:image/png;base64,...) for client upload
+  description?: string;
+  style: GhibliStyle;
+  cost: number;
+  duration: number;
+  error?: string;
+}
+
+export interface GhibliMetadata {
+  aiGenerated: boolean;
+  aiSourceImageId?: string;
+  aiStyle: GhibliStyle;
+  aiPromptUsed?: string;
+  aiGeneratedAt: Date;
+  aiCost: number;
+  aiDescription?: string;
+}

@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "firebase": "^12.4.0",
+    "firebase-admin": "^13.5.0",
     "konva": "^10.0.2",
     "next": "15.5.5",
     "openai": "^6.4.0",
