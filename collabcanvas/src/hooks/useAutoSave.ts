@@ -9,7 +9,7 @@ import { useCanvasStore } from "@/store/canvasStore";
  *
  * Automatically saves the current project when changes are detected.
  * - Debounces saves by 2 seconds after last change
- * - Also performs periodic saves every 30 seconds
+ * - Also performs periodic saves every 60 seconds
  * - Skips save if AI is processing or no project is loaded
  */
 export function useAutoSave() {
@@ -71,7 +71,7 @@ export function useAutoSave() {
     saveCurrentProject,
   ]);
 
-  // Periodic auto-save (every 30 seconds)
+  // Periodic auto-save (every 60 seconds)
   useEffect(() => {
     periodicTimerRef.current = setInterval(async () => {
       if (
@@ -90,7 +90,7 @@ export function useAutoSave() {
           setIsSaving(false);
         }
       }
-    }, 30000); // 30 seconds
+    }, 60000); // 60 seconds
 
     return () => {
       if (periodicTimerRef.current) {
