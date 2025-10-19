@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo, useRef } from "react";
 import { useProjectStore } from "@/store/projectStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
@@ -9,12 +9,15 @@ import UnsavedChangesDialog from "@/components/Projects/UnsavedChangesDialog";
 import ExportProgressModal from "@/components/Export/ExportProgressModal";
 import { useToast } from "@/contexts/ToastContext";
 import { useProjectSwitcher } from "@/hooks/useProjectSwitcher";
+import { useUserStore } from "@/store/userStore";
 import {
   exportToPNG,
   generateExportFilename,
   downloadPNG,
 } from "@/lib/export/pngExport";
 import { ExportProgress } from "@/types/export";
+import { uploadImage } from "@/lib/firebase/storage";
+import { ImageObject, CanvasObject } from "@/types";
 
 export type ToolMode =
   | "rectangle"
@@ -36,6 +39,7 @@ interface CanvasControlsProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  createObject: (object: CanvasObject) => Promise<void>;
 }
 
 function CanvasControls({
@@ -49,6 +53,7 @@ function CanvasControls({
   onRedo,
   canUndo = false,
   canRedo = false,
+  createObject,
 }: CanvasControlsProps) {
   const zoomPercentage = Math.round(scale * 100);
   const [isHovered, setIsHovered] = useState(false);
@@ -64,6 +69,10 @@ function CanvasControls({
     null
   );
 
+  // Image upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Use proper Zustand selectors to avoid infinite loops
   const currentProject = useProjectStore((state) => state.currentProject);
   const projects = useProjectStore((state) => state.projects);
@@ -74,6 +83,9 @@ function CanvasControls({
   );
   const loadProject = useProjectStore((state) => state.loadProject);
   const canvasIsDirty = useCanvasStore((state) => state.isDirty);
+  const currentUser = useUserStore((state) => state.currentUser);
+  const addObject = useCanvasStore((state) => state.addObject);
+  const getNextZIndex = useCanvasStore((state) => state.getNextZIndex);
 
   // Get canvas objects for export
   const objectsMap = useCanvasStore((state) => state.objects);
@@ -161,6 +173,134 @@ function CanvasControls({
       setExportProgress(null);
     }
   }, [objects, currentProject, addToast]);
+
+  // Image upload handler
+  const handleImageUpload = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      if (!currentProject) {
+        addToast("Please save your project before uploading images", "error");
+        return;
+      }
+      if (!currentUser) {
+        addToast("You must be logged in to upload images", "error");
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const filesArray = Array.from(files);
+        let successCount = 0;
+
+        for (const file of filesArray) {
+          try {
+            // Upload to Firebase Storage
+            const result = await uploadImage({
+              userId: currentUser.id,
+              projectId: currentProject.metadata.id,
+              file,
+              onProgress: (progress) => {
+                console.log(`Upload progress: ${progress}%`);
+              },
+            });
+
+            // Calculate display dimensions (max 400px width/height, maintain aspect ratio)
+            const maxDisplaySize = 400;
+            const aspectRatio = result.naturalWidth / result.naturalHeight;
+            let displayWidth = maxDisplaySize;
+            let displayHeight = maxDisplaySize;
+
+            if (aspectRatio > 1) {
+              displayHeight = maxDisplaySize / aspectRatio;
+            } else {
+              displayWidth = maxDisplaySize * aspectRatio;
+            }
+
+            // Create image object centered on canvas
+            const imageObject: ImageObject = {
+              id: crypto.randomUUID(),
+              type: "image",
+              src: result.url,
+              thumbnailSrc: result.thumbnailBase64,
+              x: 4000 - displayWidth / 2, // Center on 8000x8000 canvas
+              y: 4000 - displayHeight / 2,
+              width: displayWidth,
+              height: displayHeight,
+              naturalWidth: result.naturalWidth,
+              naturalHeight: result.naturalHeight,
+              fileSize: result.fileSize,
+              mimeType: result.mimeType,
+              opacity: 1,
+              scaleX: 1,
+              scaleY: 1,
+              userId: currentUser.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              zIndex: getNextZIndex(),
+            };
+
+            // Add to canvas (local state)
+            addObject(imageObject);
+
+            // Sync to Firestore for multi-user collaboration
+            await createObject(imageObject);
+
+            successCount++;
+
+            addToast(`Uploaded ${file.name}`, "success");
+          } catch (error) {
+            console.error(`Failed to upload ${file.name}:`, error);
+            addToast(
+              error instanceof Error
+                ? error.message
+                : `Failed to upload ${file.name}`,
+              "error"
+            );
+          }
+        }
+
+        if (successCount > 1) {
+          addToast(`Successfully uploaded ${successCount} images`, "success");
+        }
+      } finally {
+        setIsUploading(false);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [
+      currentProject,
+      currentUser,
+      addObject,
+      getNextZIndex,
+      addToast,
+      createObject,
+    ]
+  );
+
+  // Trigger file picker
+  const handleUploadButtonClick = useCallback(async () => {
+    // If no project exists, auto-create one
+    if (!currentProject) {
+      try {
+        const projectName = `Untitled Project ${new Date().toLocaleDateString()}`;
+        await createProject(projectName);
+        addToast("Project created! Now you can upload images.", "success");
+        // Small delay to ensure project is created
+        setTimeout(() => {
+          fileInputRef.current?.click();
+        }, 300);
+      } catch (error) {
+        addToast("Failed to create project. Please try again.", "error");
+        console.error("Auto-create project error:", error);
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  }, [currentProject, createProject, addToast]);
 
   // Helper to get button styles based on active state
   const getToolButtonStyles = (toolMode: ToolMode) => {
@@ -372,6 +512,45 @@ function CanvasControls({
               </span>
             )}
           </button>
+
+          {/* Upload Image Button */}
+          <button
+            onClick={handleUploadButtonClick}
+            disabled={isUploading}
+            className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
+              isHovered
+                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
+                : "px-2 py-1 text-[10px]"
+            } ${
+              isUploading
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+            }`}
+            title={
+              !currentProject
+                ? "Upload Image (will auto-save project)"
+                : "Upload Image (JPEG, PNG, WebP, GIF - max 10MB)"
+            }
+          >
+            <span className={isHovered ? "text-sm sm:text-base" : "text-base"}>
+              {isUploading ? "⏳" : "🖼️"}
+            </span>
+            {isHovered && (
+              <span className="whitespace-nowrap">
+                {isUploading ? "Uploading..." : "Upload Image"}
+              </span>
+            )}
+          </button>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+            multiple
+            onChange={(e) => handleImageUpload(e.target.files)}
+            style={{ display: "none" }}
+          />
         </div>
 
         {/* Divider */}

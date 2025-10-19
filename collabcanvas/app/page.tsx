@@ -389,6 +389,7 @@ function HomePage() {
           onRedo={redo}
           canUndo={canUndo}
           canRedo={canRedo}
+          createObject={createObject}
         />
 
         {/* Layer Panel */}

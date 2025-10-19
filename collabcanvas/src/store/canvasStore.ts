@@ -273,6 +273,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       } else if (duplicate.type === "text") {
         duplicate.x += 10;
         duplicate.y += 10;
+      } else if (duplicate.type === "image") {
+        duplicate.x += 10;
+        duplicate.y += 10;
       } else if (duplicate.type === "line") {
         // Offset both points of the line
         duplicate.points = [
@@ -348,6 +351,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         pasted.x += offsetX;
         pasted.y += offsetY;
       } else if (pasted.type === "text") {
+        pasted.x += offsetX;
+        pasted.y += offsetY;
+      } else if (pasted.type === "image") {
         pasted.x += offsetX;
         pasted.y += offsetY;
       } else if (pasted.type === "line") {

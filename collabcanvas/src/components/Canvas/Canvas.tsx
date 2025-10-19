@@ -5,11 +5,14 @@ import { Stage, Layer, Rect, Line, Circle, Text } from "react-konva";
 import Konva from "konva";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
 import { useCanvasStore } from "@/store";
+import { useProjectStore } from "@/store/projectStore";
+import { useUserStore } from "@/store/userStore";
+import { useToast } from "@/contexts/ToastContext";
 import ObjectRenderer from "@/components/Objects/ObjectRenderer";
 import SelectionBox from "@/components/Canvas/SelectionBox";
 import TextEditor from "@/components/Objects/TextEditor";
 import TextFormatToolbar from "@/components/UI/TextFormatToolbar";
-import { CanvasObject, Text as TextType } from "@/types";
+import { CanvasObject, Text as TextType, ImageObject } from "@/types";
 import {
   DEFAULT_RECTANGLE_STYLE,
   DEFAULT_CIRCLE_STYLE,
@@ -19,6 +22,7 @@ import {
 } from "@/lib/constants";
 import { v4 as uuidv4 } from "uuid";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
+import { uploadImage } from "@/lib/firebase/storage";
 
 interface CanvasProps {
   width: number;
@@ -81,8 +85,13 @@ export default function Canvas({
     { x: number; y: number }
   > | null>(null);
   const [clipboard, setClipboard] = useState<CanvasObject[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const canvasSize = CANVAS_SIZE;
+  const currentProject = useProjectStore((state) => state.currentProject);
+  const currentUser = useUserStore((state) => state.currentUser);
+  const addObject = useCanvasStore((state) => state.addObject);
+  const { addToast } = useToast();
 
   const {
     objects,
@@ -317,6 +326,240 @@ export default function Canvas({
     createObject,
     setSelectedObjectIds,
   ]);
+
+  // Clipboard paste handler for images
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Check for image in clipboard
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          e.preventDefault();
+
+          if (!currentProject) {
+            addToast(
+              "Please save your project before uploading images",
+              "error"
+            );
+            return;
+          }
+          if (!currentUser) {
+            addToast("You must be logged in to upload images", "error");
+            return;
+          }
+
+          const blob = items[i].getAsFile();
+          if (!blob) continue;
+
+          try {
+            // Upload to Firebase Storage
+            const result = await uploadImage({
+              userId: currentUser.id,
+              projectId: currentProject.metadata.id,
+              file: blob,
+              onProgress: (progress) => {
+                console.log(`Upload progress: ${progress}%`);
+              },
+            });
+
+            // Calculate display dimensions (max 400px width/height, maintain aspect ratio)
+            const maxDisplaySize = 400;
+            const aspectRatio = result.naturalWidth / result.naturalHeight;
+            let displayWidth = maxDisplaySize;
+            let displayHeight = maxDisplaySize;
+
+            if (aspectRatio > 1) {
+              displayHeight = maxDisplaySize / aspectRatio;
+            } else {
+              displayWidth = maxDisplaySize * aspectRatio;
+            }
+
+            // Create image object centered on canvas
+            const imageObject: ImageObject = {
+              id: crypto.randomUUID(),
+              type: "image",
+              src: result.url,
+              thumbnailSrc: result.thumbnailBase64,
+              x: 4000 - displayWidth / 2, // Center on 8000x8000 canvas
+              y: 4000 - displayHeight / 2,
+              width: displayWidth,
+              height: displayHeight,
+              naturalWidth: result.naturalWidth,
+              naturalHeight: result.naturalHeight,
+              fileSize: result.fileSize,
+              mimeType: result.mimeType,
+              opacity: 1,
+              scaleX: 1,
+              scaleY: 1,
+              userId: currentUser.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              zIndex: getNextZIndex(),
+            };
+
+            // Add to canvas
+            addObject(imageObject);
+            await createObject(imageObject);
+            addToast("Pasted image from clipboard", "success");
+          } catch (error) {
+            console.error("Failed to paste image:", error);
+            addToast(
+              error instanceof Error ? error.message : "Failed to paste image",
+              "error"
+            );
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, [
+    currentProject,
+    currentUser,
+    addObject,
+    getNextZIndex,
+    createObject,
+    addToast,
+  ]);
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (!currentProject) {
+      addToast("Please save your project before uploading images", "error");
+      return;
+    }
+    if (!currentUser) {
+      addToast("You must be logged in to upload images", "error");
+      return;
+    }
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    // Get drop position in canvas coordinates
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointerPosition = stage.getPointerPosition();
+    if (!pointerPosition) return;
+
+    // Convert screen coordinates to canvas coordinates
+    const dropX = (pointerPosition.x - position.x) / scale;
+    const dropY = (pointerPosition.y - position.y) / scale;
+
+    // Process each file
+    const imageFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
+
+    if (imageFiles.length === 0) {
+      addToast("No image files found in drop", "error");
+      return;
+    }
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
+
+      try {
+        // Upload to Firebase Storage
+        const result = await uploadImage({
+          userId: currentUser.id,
+          projectId: currentProject.metadata.id,
+          file,
+          onProgress: (progress) => {
+            console.log(`Upload progress: ${progress}%`);
+          },
+        });
+
+        // Calculate display dimensions (max 400px width/height, maintain aspect ratio)
+        const maxDisplaySize = 400;
+        const aspectRatio = result.naturalWidth / result.naturalHeight;
+        let displayWidth = maxDisplaySize;
+        let displayHeight = maxDisplaySize;
+
+        if (aspectRatio > 1) {
+          displayHeight = maxDisplaySize / aspectRatio;
+        } else {
+          displayWidth = maxDisplaySize * aspectRatio;
+        }
+
+        // Create image object at drop position (with offset for multiple images)
+        const offsetX = i * 50;
+        const offsetY = i * 50;
+
+        const imageObject: ImageObject = {
+          id: crypto.randomUUID(),
+          type: "image",
+          src: result.url,
+          thumbnailSrc: result.thumbnailBase64,
+          x: dropX - displayWidth / 2 + offsetX,
+          y: dropY - displayHeight / 2 + offsetY,
+          width: displayWidth,
+          height: displayHeight,
+          naturalWidth: result.naturalWidth,
+          naturalHeight: result.naturalHeight,
+          fileSize: result.fileSize,
+          mimeType: result.mimeType,
+          opacity: 1,
+          scaleX: 1,
+          scaleY: 1,
+          userId: currentUser.id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          zIndex: getNextZIndex(),
+        };
+
+        // Add to canvas
+        addObject(imageObject);
+        await createObject(imageObject);
+        addToast(`Imported ${file.name}`, "success");
+      } catch (error) {
+        console.error(`Failed to import ${file.name}:`, error);
+        addToast(
+          error instanceof Error
+            ? error.message
+            : `Failed to import ${file.name}`,
+          "error"
+        );
+      }
+    }
+
+    if (imageFiles.length > 1) {
+      addToast(`Successfully imported ${imageFiles.length} images`, "success");
+    }
+  };
 
   // Handle mouse down to start drawing a shape or panning
   const handleMouseDown = async (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -899,7 +1142,22 @@ export default function Canvas({
   const objectsArray = Array.from(objects.values());
 
   return (
-    <div className="w-full h-full overflow-hidden bg-gray-50">
+    <div
+      className="w-full h-full overflow-hidden bg-gray-50 relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag-over overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-blue-500 bg-opacity-10 border-4 border-dashed border-blue-500 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg">
+            <p className="text-lg font-semibold text-gray-800">
+              Drop images here to import
+            </p>
+          </div>
+        </div>
+      )}
       <Stage
         ref={stageRef}
         width={width}

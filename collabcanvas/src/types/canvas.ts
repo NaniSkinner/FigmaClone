@@ -4,7 +4,7 @@ export interface Point {
 }
 
 // Shape type enum
-export type ShapeType = "rectangle" | "circle" | "line" | "text";
+export type ShapeType = "rectangle" | "circle" | "line" | "text" | "image";
 
 // Object lock for collaborative editing
 export interface ObjectLock {
@@ -79,8 +79,43 @@ export interface Text extends BaseCanvasObject {
   rotation?: number; // in degrees
 }
 
+// Image filter types
+export type ImageFilter =
+  | { type: "brightness"; value: number } // -1 to 1
+  | { type: "contrast"; value: number } // -100 to 100
+  | { type: "grayscale" }
+  | { type: "blur"; radius: number }; // 0-40
+
+// Image object
+export interface ImageObject extends BaseCanvasObject {
+  type: "image";
+
+  // Storage
+  src: string; // Firebase Storage URL
+  thumbnailSrc?: string; // Base64 thumbnail (~20KB, 256x256)
+
+  // Dimensions & Transform
+  x: number; // Canvas position
+  y: number;
+  width: number; // Display dimensions
+  height: number;
+  rotation?: number; // Degrees (0-360)
+
+  // Appearance
+  opacity?: number; // 0-1 (default: 1)
+  scaleX?: number; // Flip horizontal: -1, normal: 1
+  scaleY?: number; // Flip vertical: -1, normal: 1
+  filters?: ImageFilter[];
+
+  // Original Metadata
+  naturalWidth: number; // Original image dimensions
+  naturalHeight: number;
+  fileSize?: number; // Bytes (for analytics)
+  mimeType?: string; // 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+}
+
 // Union type for all canvas objects
-export type CanvasObject = Rectangle | Circle | Line | Text;
+export type CanvasObject = Rectangle | Circle | Line | Text | ImageObject;
 
 export interface CanvasState {
   id: string;

@@ -7,6 +7,7 @@ import Rectangle from "./Rectangle";
 import Circle from "./Circle";
 import Line from "./Line";
 import Text from "./Text";
+import Image from "./Image";
 import SelectionBadge from "@/components/Canvas/SelectionBadge";
 import { ToolMode } from "@/components/Canvas/CanvasControls";
 import { useCanvasStore } from "@/store";
@@ -233,6 +234,45 @@ function ObjectRenderer({
                     onDoubleClick={() =>
                       !isLocked && onTextDoubleClick?.(obj.id)
                     }
+                    userId={userId}
+                    canvasId={canvasId}
+                  />
+                  {/* Render selection badges for other users */}
+                  {selectingUsers.map((user) => (
+                    <SelectionBadge
+                      key={`${obj.id}-${user.userId}`}
+                      object={obj}
+                      userName={user.user.name}
+                      userColor={user.user.color}
+                    />
+                  ))}
+                </Group>
+              );
+
+            case "image":
+              return (
+                <Group key={obj.id}>
+                  <Image
+                    object={obj}
+                    isSelected={isSelected}
+                    onSelect={onSelectHandler}
+                    onDragStart={() => !isLocked && onGroupDragStart(obj.id)}
+                    onDragMove={(x, y) =>
+                      !isLocked &&
+                      isMultiSelected &&
+                      onGroupDragMove(obj.id, x, y)
+                    }
+                    onDragEnd={(x, y) => {
+                      if (!isLocked) {
+                        onObjectChange(obj.id, { x, y });
+                        if (isMultiSelected) onGroupDragEnd();
+                      }
+                    }}
+                    onChange={(attrs) =>
+                      !isLocked && onObjectChange(obj.id, attrs)
+                    }
+                    tool={tool}
+                    onDelete={onDeleteHandler}
                     userId={userId}
                     canvasId={canvasId}
                   />

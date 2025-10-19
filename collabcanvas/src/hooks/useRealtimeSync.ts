@@ -16,6 +16,7 @@ import { CanvasObject } from "@/types";
 import { useCanvasStore } from "@/store";
 import { throttle } from "@/lib/utils";
 import { OBJECT_UPDATE_THROTTLE } from "@/lib/constants";
+import { deleteImage } from "@/lib/firebase/storage";
 
 export const useRealtimeSync = (canvasId: string, userId: string | null) => {
   const { addObject, updateObject, removeObject, setObjects } =
@@ -136,6 +137,10 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
     async (id: string) => {
       if (!canvasId) return;
 
+      // Get the object before deleting to check if it's an image
+      const { objects } = useCanvasStore.getState();
+      const object = objects.get(id);
+
       // Mark as deleting to prevent re-adding from snapshot
       deletingObjects.current.add(id);
 
@@ -160,6 +165,15 @@ export const useRealtimeSync = (canvasId: string, userId: string | null) => {
         // Now delete the object
         await deleteDoc(objectRef);
         console.log(`Successfully deleted object ${id}`);
+
+        // If it's an image, also delete from Firebase Storage
+        if (object && object.type === "image") {
+          // Delete from storage (non-blocking, failure logged)
+          deleteImage(object.src).catch((err) => {
+            console.error(`[Sync] Failed to delete image from storage:`, err);
+            // Don't throw - canvas deletion already succeeded
+          });
+        }
       } catch (error) {
         console.error("Error deleting object:", error);
         // Remove from deletingObjects set on error

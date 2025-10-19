@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is the owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if file is a valid image
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)');
+    }
+
+    // Helper function to check file size (max 10MB)
+    function isValidSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Images stored in user/project structure
+    match /users/{userId}/projects/{projectId}/images/{imageId} {
+      
+      // Read: Public (for development - allows loading images without CORS issues)
+      // TODO: Change to authenticated-only in production
+      allow read: if true;
+
+      // Create: Only owner, with validation
+      allow create: if isOwner(userId)
+                    && isValidImage()
+                    && isValidSize();
+
+      // Update: Only owner (for metadata updates)
+      allow update: if isOwner(userId);
+
+      // Delete: Only owner
+      allow delete: if isOwner(userId);
+    }
+
+    // Deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
