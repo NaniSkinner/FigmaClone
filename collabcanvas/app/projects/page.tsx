@@ -10,7 +10,7 @@ import AuthGuard from "@/components/Auth/AuthGuard";
 import ProjectCard from "@/components/Projects/ProjectCard";
 import ShareProjectDialog from "@/components/Projects/ShareProjectDialog";
 import { ProjectMetadata } from "@/types/project";
-import { loadProject } from "@/lib/firebase/projects";
+import { loadProject as loadProjectFromFirebase } from "@/lib/firebase/projects";
 import {
   exportToPNG,
   generateExportFilename,
@@ -171,8 +171,11 @@ function ProjectsPageContent() {
     try {
       addToast("Exporting project...", "info");
 
-      // Load project data
-      const projectData = await loadProject(currentUser.id, projectId);
+      // Load project data from Firebase (not the store's loadProject)
+      const projectData = await loadProjectFromFirebase(
+        currentUser.id,
+        projectId
+      );
 
       // Export directly
       const dataURL = await exportToPNG(projectData.objects, {

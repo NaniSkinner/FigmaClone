@@ -13,7 +13,6 @@ import CanvasControls, { ToolMode } from "@/components/Canvas/CanvasControls";
 import LoadingSpinner from "@/components/UI/LoadingSpinner";
 import ConnectionStatus from "@/components/UI/ConnectionStatus";
 import LayerPanel from "@/components/Layers/LayerPanel";
-import { CanvasStatePanel } from "@/components/AI/CanvasStatePanel";
 import { AIChatPanel } from "@/components/AI/AIChatPanel";
 import SaveStatusIndicator from "@/components/Projects/SaveStatusIndicator";
 import SaveProjectDialog from "@/components/Projects/SaveProjectDialog";
@@ -377,9 +376,6 @@ function HomePage() {
 
         {/* Show online users list */}
         <OnlineUsers onlineUsers={onlineUsers} currentUserName={user?.name} />
-
-        {/* Canvas State Panel (AI Feature) */}
-        <CanvasStatePanel />
 
         {/* AI Chat Panel (AI Feature) */}
         {user?.id && (
