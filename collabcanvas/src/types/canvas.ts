@@ -113,6 +113,14 @@ export interface ImageObject extends BaseCanvasObject {
   fileSize?: number; // Bytes (for analytics)
   mimeType?: string; // 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
 
+  // Image Source Type
+  subType?: "decorative" | "upload" | "ai-generated";
+
+  // Decorative Items Metadata (for decorative SVG stickers)
+  decorativeItemId?: string; // Reference to decorative item in library
+  category?: string; // Category: balloons, axolotl, matcha, hockey, animals
+  originalName?: string; // Original name from library
+
   // AI Generation Metadata (for Ghibli-transformed images)
   aiGenerated?: boolean;
   aiSourceImageId?: string; // ID of the original image that was transformed

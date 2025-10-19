@@ -456,6 +456,69 @@ export default function Canvas({
     e.stopPropagation();
     setIsDragOver(false);
 
+    // Check if it's a decorative item
+    const decorativeData = e.dataTransfer.getData("decorative-item");
+    if (decorativeData && currentUser) {
+      try {
+        const item = JSON.parse(decorativeData);
+
+        // Get drop position relative to canvas
+        const dropX = e.clientX;
+        const dropY = e.clientY;
+
+        // Convert screen coordinates to canvas coordinates
+        const canvasX = (dropX - position.x) / scale;
+        const canvasY = (dropY - position.y) / scale;
+
+        // Import decorative items functions
+        const { addToRecent } = await import(
+          "@/store/decorativeItemsStore"
+        ).then((m) => m.useDecorativeItemsStore.getState());
+        const { addObject, getNextZIndex } = await import(
+          "@/store/canvasStore"
+        ).then((m) => m.useCanvasStore.getState());
+
+        // Scale factor for decorative items on canvas (4x bigger)
+        const scaleFactor = 4;
+        const displayWidth = item.defaultWidth * scaleFactor;
+        const displayHeight = item.defaultHeight * scaleFactor;
+
+        // Create image object for decorative item
+        const imageObject: ImageObject = {
+          id: crypto.randomUUID(),
+          type: "image",
+          subType: "decorative",
+          decorativeItemId: item.id,
+          category: item.category,
+          originalName: item.name,
+          src: item.filePath,
+          x: canvasX - displayWidth / 2,
+          y: canvasY - displayHeight / 2,
+          width: displayWidth,
+          height: displayHeight,
+          naturalWidth: item.defaultWidth,
+          naturalHeight: item.defaultHeight,
+          opacity: 1,
+          scaleX: 1,
+          scaleY: 1,
+          userId: currentUser.id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          zIndex: getNextZIndex(),
+        };
+
+        // Add to canvas
+        addObject(imageObject);
+        await createObject(imageObject);
+        addToRecent(item.id);
+        addToast(`Added ${item.name} to canvas`, "success", 2000);
+      } catch (error) {
+        console.error("Failed to add decorative item:", error);
+        addToast("Failed to add decorative item", "error");
+      }
+      return;
+    }
+
     if (!currentProject) {
       addToast("Please save your project before uploading images", "error");
       return;

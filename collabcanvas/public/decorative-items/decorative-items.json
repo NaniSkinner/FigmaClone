@@ -1,0 +1,237 @@
+{
+  "version": "1.0",
+  "categories": [
+    {
+      "id": "balloons",
+      "name": "Balloons",
+      "icon": "🎈",
+      "color": "#FF6B9D"
+    },
+    {
+      "id": "axolotl",
+      "name": "Axolotl",
+      "icon": "🦎",
+      "color": "#FFB6C1"
+    },
+    {
+      "id": "matcha",
+      "name": "Matcha",
+      "icon": "🍵",
+      "color": "#9ACD32"
+    },
+    {
+      "id": "hockey",
+      "name": "Hockey",
+      "icon": "🏒",
+      "color": "#4682B4"
+    },
+    {
+      "id": "animals",
+      "name": "Animals",
+      "icon": "🐾",
+      "color": "#FF8C00"
+    }
+  ],
+  "items": [
+    {
+      "id": "balloon-heart-red",
+      "name": "Red Heart Balloon",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/balloon-heart-red.svg",
+      "tags": ["heart", "love", "valentine", "party", "red", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 120,
+      "aspectRatio": 0.833
+    },
+    {
+      "id": "balloon-star-gold",
+      "name": "Gold Star Balloon",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/balloon-star-gold.svg",
+      "tags": ["star", "gold", "celebration", "party", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 120,
+      "aspectRatio": 0.833
+    },
+    {
+      "id": "balloon-round-blue",
+      "name": "Blue Balloon",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/balloon-round-blue.svg",
+      "tags": ["blue", "round", "party", "celebration", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 120,
+      "aspectRatio": 0.833
+    },
+    {
+      "id": "balloon-round-pink",
+      "name": "Pink Balloon",
+      "category": "balloons",
+      "filePath": "/decorative-items/balloons/balloon-round-pink.svg",
+      "tags": ["pink", "round", "party", "celebration", "balloon"],
+      "defaultWidth": 100,
+      "defaultHeight": 120,
+      "aspectRatio": 0.833
+    },
+    {
+      "id": "axolotl-happy",
+      "name": "Happy Axolotl",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-happy.svg",
+      "tags": ["cute", "pink", "happy", "kawaii", "amphibian"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "axolotl-waving",
+      "name": "Waving Axolotl",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-waving.svg",
+      "tags": ["cute", "wave", "greeting", "friendly", "pink"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "axolotl-sleeping",
+      "name": "Sleeping Axolotl",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-sleeping.svg",
+      "tags": ["cute", "sleep", "tired", "rest", "pink"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "axolotl-heart",
+      "name": "Axolotl with Heart",
+      "category": "axolotl",
+      "filePath": "/decorative-items/axolotl/axolotl-heart.svg",
+      "tags": ["cute", "love", "heart", "romantic", "pink"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "matcha-cup",
+      "name": "Matcha Cup",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-cup.svg",
+      "tags": ["matcha", "tea", "cup", "green", "drink"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "matcha-latte",
+      "name": "Matcha Latte",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-latte.svg",
+      "tags": ["matcha", "latte", "coffee", "drink", "green"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "matcha-leaves",
+      "name": "Matcha Leaves",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-leaves.svg",
+      "tags": ["matcha", "leaves", "tea", "green", "nature"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "matcha-whisk",
+      "name": "Matcha Whisk",
+      "category": "matcha",
+      "filePath": "/decorative-items/matcha/matcha-whisk.svg",
+      "tags": ["matcha", "whisk", "tool", "tea", "traditional"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "hockey-puck",
+      "name": "Hockey Puck",
+      "category": "hockey",
+      "filePath": "/decorative-items/hockey/hockey-puck.svg",
+      "tags": ["hockey", "puck", "sports", "ice", "game"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "hockey-stick",
+      "name": "Hockey Stick",
+      "category": "hockey",
+      "filePath": "/decorative-items/hockey/hockey-stick.svg",
+      "tags": ["hockey", "stick", "sports", "equipment", "game"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "hockey-skates",
+      "name": "Hockey Skates",
+      "category": "hockey",
+      "filePath": "/decorative-items/hockey/hockey-skates.svg",
+      "tags": ["hockey", "skates", "sports", "ice", "equipment"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "hockey-goal",
+      "name": "Hockey Goal",
+      "category": "hockey",
+      "filePath": "/decorative-items/hockey/hockey-goal.svg",
+      "tags": ["hockey", "goal", "net", "sports", "game"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "cat-sitting",
+      "name": "Sitting Cat",
+      "category": "animals",
+      "filePath": "/decorative-items/animals/cat-sitting.svg",
+      "tags": ["cat", "cute", "pet", "animal", "sitting"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "dog-happy",
+      "name": "Happy Dog",
+      "category": "animals",
+      "filePath": "/decorative-items/animals/dog-happy.svg",
+      "tags": ["dog", "cute", "pet", "animal", "happy"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "bunny-cute",
+      "name": "Cute Bunny",
+      "category": "animals",
+      "filePath": "/decorative-items/animals/bunny-cute.svg",
+      "tags": ["bunny", "rabbit", "cute", "pet", "animal"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    },
+    {
+      "id": "bear-friendly",
+      "name": "Friendly Bear",
+      "category": "animals",
+      "filePath": "/decorative-items/animals/bear-friendly.svg",
+      "tags": ["bear", "cute", "friendly", "animal", "teddy"],
+      "defaultWidth": 100,
+      "defaultHeight": 100,
+      "aspectRatio": 1.0
+    }
+  ]
+}

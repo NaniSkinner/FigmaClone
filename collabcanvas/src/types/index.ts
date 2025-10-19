@@ -14,3 +14,10 @@ export type {
 } from "./canvas";
 export type { Project, ProjectMetadata, ProjectListItem } from "./project";
 export type { ExportOptions, ExportProgress, Bounds } from "./export";
+export type {
+  DecorativeItem,
+  CategoryInfo,
+  DecorativeMetadata,
+  Attribution,
+  DecorativeItemsStore,
+} from "./decorativeItems";

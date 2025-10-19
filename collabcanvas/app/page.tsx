@@ -27,6 +27,9 @@ import {
   generateExportFilename,
   downloadPNG,
 } from "@/lib/export/pngExport";
+import { DecorativeItemsPanel } from "@/components/DecorativeItems/DecorativeItemsPanel";
+import { DecorativeItemsButton } from "@/components/DecorativeItems/DecorativeItemsButton";
+import { DecorativeItem } from "@/types/decorativeItems";
 
 export default function Home() {
   return (
@@ -81,6 +84,20 @@ function HomePage() {
     enabled: true,
   });
 
+  // Keyboard shortcut for decorative items panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd+K: Toggle decorative items panel
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setShowDecorativePanel((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Toast callbacks for user join/leave events
   const handleUserJoined = useCallback(
     (userName: string) => {
@@ -117,6 +134,10 @@ function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [tool, setTool] = useState<ToolMode>("select");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDecorativePanel, setShowDecorativePanel] = useState(false);
+
+  // Get decorative items action from canvas store
+  const addDecorativeItem = useCanvasStore((state) => state.addDecorativeItem);
 
   // Project management
   const currentProject = useProjectStore((state) => state.currentProject);
@@ -135,6 +156,44 @@ function HomePage() {
       console.error("Logout error:", error);
     }
   };
+
+  // Handle adding decorative item to canvas
+  const handleAddDecorativeItem = useCallback(
+    async (item: DecorativeItem, _position: { x: number; y: number }) => {
+      if (!user?.id) {
+        addToast("You must be logged in to add decorative items", "error");
+        return;
+      }
+
+      try {
+        // Calculate canvas center position
+        const canvasCenter = {
+          x: (dimensions.width / 2 - position.x) / scale,
+          y: (dimensions.height / 2 - position.y) / scale,
+        };
+
+        // Add to canvas store
+        const imageObject = addDecorativeItem(item, canvasCenter, user.id);
+
+        // Sync to Firestore
+        await createObject(imageObject);
+
+        addToast(`Added ${item.name} to canvas`, "success", 2000);
+      } catch (error) {
+        console.error("Failed to add decorative item:", error);
+        addToast("Failed to add decorative item", "error");
+      }
+    },
+    [
+      user,
+      dimensions,
+      position,
+      scale,
+      addDecorativeItem,
+      createObject,
+      addToast,
+    ]
+  );
 
   // Get window dimensions
   useEffect(() => {
@@ -411,6 +470,22 @@ function HomePage() {
           canvasId={canvasId}
           userId={user?.id || null}
           updateObjectInFirestore={updateObjectInFirestore}
+        />
+
+        {/* Decorative Items Panel */}
+        {user?.id && (
+          <DecorativeItemsPanel
+            isOpen={showDecorativePanel}
+            onClose={() => setShowDecorativePanel(false)}
+            canvasId={canvasId}
+            userId={user.id}
+            onAddItem={handleAddDecorativeItem}
+          />
+        )}
+
+        {/* Decorative Items Toggle Button - Draggable */}
+        <DecorativeItemsButton
+          onClick={() => setShowDecorativePanel(!showDecorativePanel)}
         />
 
         {/* Save Status Indicator */}

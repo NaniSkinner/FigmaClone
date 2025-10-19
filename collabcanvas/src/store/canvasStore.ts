@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { CanvasObject, Point, SelectionBox } from "@/types";
+import { CanvasObject, Point, SelectionBox, ImageObject } from "@/types";
 import { AIOperation, UndoOperation } from "@/types/ai";
+import { DecorativeItem } from "@/types/decorativeItems";
 
 interface CanvasStore {
   canvasId: string | null;
@@ -94,6 +95,13 @@ interface CanvasStore {
   setCurrentProjectId: (projectId: string | null, name: string) => void;
   clearCanvas: () => void;
   markDirty: () => void;
+
+  // Decorative items methods
+  addDecorativeItem: (
+    item: DecorativeItem,
+    position: { x: number; y: number },
+    userId: string
+  ) => ImageObject;
 }
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
@@ -484,4 +492,47 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     }),
 
   markDirty: () => set({ isDirty: true }),
+
+  // Add decorative item to canvas
+  addDecorativeItem: (item, position, userId) => {
+    const state = useCanvasStore.getState() as CanvasStore;
+
+    // Scale factor for decorative items on canvas (4x bigger)
+    const scaleFactor = 4;
+    const displayWidth = item.defaultWidth * scaleFactor;
+    const displayHeight = item.defaultHeight * scaleFactor;
+
+    // Create image object for decorative item
+    const imageObject: ImageObject = {
+      id: crypto.randomUUID(),
+      type: "image",
+      subType: "decorative",
+      decorativeItemId: item.id,
+      category: item.category,
+      originalName: item.name,
+      src: item.filePath,
+      x: position.x - displayWidth / 2,
+      y: position.y - displayHeight / 2,
+      width: displayWidth,
+      height: displayHeight,
+      naturalWidth: item.defaultWidth,
+      naturalHeight: item.defaultHeight,
+      opacity: 1,
+      scaleX: 1,
+      scaleY: 1,
+      userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      zIndex: state.getNextZIndex(),
+    };
+
+    // Add to store
+    set((state) => {
+      const newMap = new Map(state.objects);
+      newMap.set(imageObject.id, imageObject);
+      return { objects: newMap, isDirty: true };
+    });
+
+    return imageObject;
+  },
 }));
