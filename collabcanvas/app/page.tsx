@@ -22,6 +22,12 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useUndo } from "@/hooks/useUndo";
 import { useUndoKeyboard } from "@/hooks/useUndoKeyboard";
 import { cleanupStalePresence } from "@/lib/cleanupPresence";
+import { useCanvasStore } from "@/store/canvasStore";
+import {
+  exportToPNG,
+  generateExportFilename,
+  downloadPNG,
+} from "@/lib/export/pngExport";
 
 export default function Home() {
   return (
@@ -163,7 +169,7 @@ function HomePage() {
 
   // Keyboard shortcuts for project management
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       // Ignore if user is typing in input/textarea
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
@@ -181,6 +187,40 @@ function HomePage() {
           addToast("Project saved!", "success");
         } else {
           setShowSaveDialog(true);
+        }
+      }
+
+      // Ctrl+E / Cmd+E → Export PNG
+      if (ctrlOrCmd && e.key === "e") {
+        e.preventDefault();
+        const { objects } = useCanvasStore.getState();
+
+        if (objects.size === 0) {
+          addToast("Canvas is empty. Add objects before exporting.", "error");
+          return;
+        }
+
+        try {
+          addToast("Exporting canvas...", "info", 1500);
+
+          const dataURL = await exportToPNG(Array.from(objects.values()), {
+            resolution: 2,
+            backgroundColor: "white",
+            autoCrop: true,
+          });
+
+          const filename = generateExportFilename(
+            currentProject?.metadata.name || "canvas"
+          );
+
+          downloadPNG(dataURL, filename);
+          addToast(`Exported ${filename}`, "success");
+        } catch (error) {
+          console.error("Export failed:", error);
+          const errorMessage = (error as Error).message;
+          if (!errorMessage.includes("cancelled by user")) {
+            addToast("Export failed. Please try again.", "error");
+          }
         }
       }
 
