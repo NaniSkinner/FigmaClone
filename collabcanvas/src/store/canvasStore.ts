@@ -7,6 +7,7 @@ interface CanvasStore {
   canvasId: string | null;
   scale: number;
   position: Point;
+  backgroundColor: string; // Canvas background color
   objects: Map<string, CanvasObject>;
 
   // Multi-selection support
@@ -35,6 +36,7 @@ interface CanvasStore {
   setCanvasId: (id: string) => void;
   setScale: (scale: number) => void;
   setPosition: (position: Point) => void;
+  setBackgroundColor: (color: string) => void;
 
   // Selection management
   setSelectedObjectIds: (ids: Set<string>) => void;
@@ -108,6 +110,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   canvasId: null,
   scale: 1,
   position: { x: 0, y: 0 },
+  backgroundColor: "#ffffff", // Default white background
   objects: new Map(),
   selectedObjectIds: new Set(),
   selectionBox: null,
@@ -134,6 +137,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   setScale: (scale) => set({ scale }),
 
   setPosition: (position) => set({ position }),
+
+  setBackgroundColor: (color) => set({ backgroundColor: color, isDirty: true }),
 
   // Selection management
   setSelectedObjectIds: (ids) => set({ selectedObjectIds: new Set(ids) }),

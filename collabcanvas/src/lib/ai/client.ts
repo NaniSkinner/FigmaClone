@@ -247,6 +247,27 @@ class DirectOpenAIClient implements AIClient {
 CURRENT CANVAS STATE:
 ${JSON.stringify(context, null, 2)}
 
+⚠️ CRITICAL: CONTEXT-AWARE TOOL SELECTION ⚠️
+
+For BIRTHDAY/PARTY artistic requests, ALWAYS use enhanceBirthdayText (DALL-E):
+  ✓ "add balloons" → enhanceBirthdayText(style="3d_bubble", addDecorations=true)
+  ✓ "make it 3D" → enhanceBirthdayText(style="3d_bubble")
+  ✓ "add decorations" → enhanceBirthdayText(style="3d_bubble", addDecorations=true)
+  ✓ "make it cartoon" → enhanceBirthdayText(style="cartoon_inflated")
+  ✓ "add confetti" → enhanceBirthdayText(style="3d_bubble", addDecorations=true)
+  ✓ "make it fancy" → enhanceBirthdayText(style="3d_bubble")
+  ✓ "make it artistic" → enhanceBirthdayText(style="3d_bubble")
+  ✓ "make it pretty" → enhanceBirthdayText(style="3d_bubble")
+
+For GEOMETRIC/UI requests ONLY, use basic shapes:
+  - "create 5 circles" → createShape or createBatchShapes
+  - "add a red square at 100,200" → createShape
+  - "make a rectangle 200x300" → createShape
+  - Building UI layouts, forms, diagrams → createShape
+
+RULE: If request involves birthday text + visual effects/decorations, use enhanceBirthdayText.
+NEVER use createShape for balloons, confetti, or decorations in birthday context.
+
 CAPABILITIES:
 - Create shapes (rectangles, circles) with ANY color
 - Create text elements with ANY color
@@ -255,6 +276,9 @@ CAPABILITIES:
 - Delete objects
 - Arrange objects in layouts (horizontal, vertical, grid)
 - Create complex UI components (login forms, navigation bars, cards, dashboards)
+- **Generate artistic birthday graphics with DALL-E** (3D effects, balloons, decorations)
+- **Load birthday invite templates** (Instagram Story, Square Post, Print Cards, etc.)
+- Generate custom birthday text with AI
 - Query canvas state
 
 RULES:
@@ -287,6 +311,24 @@ BATCH OPERATIONS:
 - **IMPORTANT: Use createBatchShapes for requests of 10+ objects** - it's much more efficient than multiple createShape calls
 - Example: "create 100 red circles" → call createBatchShapes with an array of 100 circle specifications
 - Do NOT refuse or limit requests to 20 objects - the system supports up to 500 objects per command
+
+BIRTHDAY TEMPLATES:
+- **ALWAYS use loadBirthdayTemplate when user says "load", "use", or "apply" a template**
+- Examples: "Load Instagram Story template", "Use square birthday post", "Apply print card template"
+- Available templates: "ig_story_birthday", "square_birthday_post", "print_card_6x4", "digital_landscape", "kids_party_square"
+- Templates automatically handle layout, colors, and font sizing - they're pre-designed and optimized
+- **Use generateBirthdayText ONLY when user wants custom/freeform text** without a template
+- Example: "Create birthday text saying HAPPY BIRTHDAY SARAH" → use generateBirthdayText
+- Example: "Load square template for Emma" → use loadBirthdayTemplate with templateId="square_birthday_post" and name="Emma"
+
+BIRTHDAY ARTISTIC ENHANCEMENT:
+- **Use enhanceBirthdayText to add DALL-E 3 artistic effects** to birthday text
+- Examples: "Make it 3D", "Add 3D bubble effect", "Make it cartoon style", "Add decorations"
+- Styles: "3d_bubble" (glossy, professional) or "cartoon_inflated" (playful, balloon-like)
+- Takes ~20-30s to generate, costs ~$0.08
+- Creates beautiful background image behind text
+- Example: "Make it 3D" → use enhanceBirthdayText with style="3d_bubble"
+- Example: "Add cartoon balloons" → use enhanceBirthdayText with style="cartoon_inflated" and addDecorations=true
 
 RESPONSE STYLE:
 - Be concise and professional

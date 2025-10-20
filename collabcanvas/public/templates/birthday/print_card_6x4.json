@@ -1,0 +1,55 @@
+{
+  "id": "print_card_6x4",
+  "name": "Print Card 6x4",
+  "displayName": "Print Birthday Card (6\" x 4\")",
+  "category": "birthday",
+  "description": "Classic birthday card for printing at 300 DPI (6x4 inches)",
+  "dimensions": {
+    "width": 1800,
+    "height": 1200,
+    "displayWidth": 1800,
+    "displayHeight": 1200,
+    "dpi": 300
+  },
+  "canvasScale": {
+    "comment": "Scaled for 8000x8000 canvas",
+    "scaleX": 4.444,
+    "scaleY": 6.667
+  },
+  "format": "print_card",
+  "elements": [
+    {
+      "type": "text",
+      "content": "HAPPY BIRTHDAY",
+      "x": 2400,
+      "y": 3200,
+      "fontSize": 380,
+      "fontFamily": "Fredoka One",
+      "color": "#FF69B4",
+      "align": "center",
+      "width": 3200
+    },
+    {
+      "type": "text",
+      "content": "[NAME]",
+      "x": 2400,
+      "y": 3800,
+      "fontSize": 320,
+      "fontFamily": "Baloo 2",
+      "color": "#9370DB",
+      "align": "center",
+      "width": 3200
+    },
+    {
+      "type": "text",
+      "content": "Wishing you a wonderful day!",
+      "x": 2400,
+      "y": 4500,
+      "fontSize": 180,
+      "fontFamily": "Pacifico",
+      "color": "#4A4A4A",
+      "align": "center",
+      "width": 3200
+    }
+  ]
+}

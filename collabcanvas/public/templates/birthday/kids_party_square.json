@@ -1,0 +1,87 @@
+{
+  "id": "kids_party_square",
+  "name": "Kids Party Square",
+  "displayName": "Kids Birthday Party (Square)",
+  "category": "birthday",
+  "description": "Colorful, playful birthday invite for children's parties",
+  "dimensions": {
+    "width": 1080,
+    "height": 1080,
+    "displayWidth": 1080,
+    "displayHeight": 1080
+  },
+  "canvasScale": {
+    "comment": "Scaled for 8000x8000 canvas",
+    "scaleX": 7.407,
+    "scaleY": 7.407
+  },
+  "format": "instagram_post",
+  "elements": [
+    {
+      "type": "text",
+      "content": "🎈 PARTY TIME 🎈",
+      "x": 2800,
+      "y": 2600,
+      "fontSize": 300,
+      "fontFamily": "Carter One",
+      "color": "#FF6B6B",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "[NAME]",
+      "x": 2800,
+      "y": 3200,
+      "fontSize": 380,
+      "fontFamily": "Lilita One",
+      "color": "#FFD93D",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "is turning",
+      "x": 2800,
+      "y": 3750,
+      "fontSize": 200,
+      "fontFamily": "Baloo 2",
+      "color": "#6BCB77",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "[AGE]",
+      "x": 2800,
+      "y": 4100,
+      "fontSize": 420,
+      "fontFamily": "Fredoka One",
+      "color": "#4D96FF",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "🎉 Let's Celebrate! 🎂",
+      "x": 2800,
+      "y": 4750,
+      "fontSize": 220,
+      "fontFamily": "Carter One",
+      "color": "#FF69B4",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "[DATE] at [TIME]",
+      "x": 2800,
+      "y": 5200,
+      "fontSize": 180,
+      "fontFamily": "Baloo 2",
+      "color": "#4A4A4A",
+      "align": "center",
+      "width": 2400
+    }
+  ]
+}

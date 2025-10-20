@@ -19,7 +19,7 @@ export const createShapeTool: AITool = {
   function: {
     name: "createShape",
     description:
-      "Create a rectangle or circle on the canvas with specified position, dimensions, and colors",
+      "Create basic geometric shapes (rectangles, circles) for UI layouts, diagrams, and explicit geometry requests. For BIRTHDAY DECORATIONS (balloons, confetti, 3D effects), use enhanceBirthdayText instead. Use this for: UI elements, explicit 'create N circles', non-decorative shapes, forms, buttons, and layouts.",
     parameters: {
       type: "object",
       properties: {
@@ -86,7 +86,7 @@ export const createTextTool: AITool = {
   function: {
     name: "createText",
     description:
-      "Create a text element on the canvas with specified content, position, and styling. If position not specified, defaults to center (4000, 4000).",
+      "Create a simple text element on the canvas with specified content, position, and styling. Use for basic text labels, UI text, and non-birthday text. For birthday/party text with special effects (3D, artistic, decorative), use enhanceBirthdayText or generateBirthdayText instead. If position not specified, defaults to center (4000, 4000).",
     parameters: {
       type: "object",
       properties: {
@@ -457,12 +457,138 @@ export const createBatchShapesTool: AITool = {
 };
 
 /**
+ * Tool 11: Generate Birthday Text
+ * AI-powered birthday banner and e-invite text generation
+ */
+export const generateBirthdayTextTool: AITool = {
+  type: "function",
+  function: {
+    name: "generateBirthdayText",
+    description:
+      "Generate simple editable birthday text objects with bubble fonts and festive colors. Use for SIMPLE/PLAIN birthday text requests WITHOUT 3D or artistic effects. Creates editable text objects for birthday invites, party banners, and celebration graphics. Fast generation (~3-5s) with smart clarification for ambiguous requests. NOTE: If user asks for '3D text', 'fancy', 'artistic', or 'decorative' effects, use enhanceBirthdayText instead.",
+    parameters: {
+      type: "object",
+      properties: {
+        userMessage: {
+          type: "string",
+          description:
+            'The user\'s birthday text request for SIMPLE TEXT (not 3D). Examples: "Create HAPPY BIRTHDAY EVA text", "Make birthday banner for Sarah", "Generate pink bubbly text saying HAPPY BDAY MOM", "Create birthday invite with date and time". Include name, style preferences (bubbly, elegant, playful), color preferences, and any additional text (date, time, location). Do NOT use this for 3D or artistic requests.',
+        },
+      },
+      required: ["userMessage"],
+    },
+  },
+};
+
+/**
+ * Tool 12: Load Birthday Template
+ * Load preset birthday invite templates with placeholder replacement
+ */
+export const loadBirthdayTemplateTool: AITool = {
+  type: "function",
+  function: {
+    name: "loadBirthdayTemplate",
+    description:
+      "Load a preset birthday invite template with automatic placeholder replacement. Templates include Instagram Story, Square Post, Print Cards, Digital Landscape, and Kids Party formats. Creates complete invite layouts with text elements.",
+    parameters: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string",
+          enum: [
+            "ig_story_birthday",
+            "square_birthday_post",
+            "print_card_6x4",
+            "digital_landscape",
+            "kids_party_square",
+          ],
+          description:
+            'Template to load: "ig_story_birthday" (Instagram Story 9:16), "square_birthday_post" (Square 1:1 for Instagram/Facebook), "print_card_6x4" (6x4 print card at 300 DPI), "digital_landscape" (16:9 landscape for email/web), "kids_party_square" (Colorful square for kids parties)',
+        },
+        name: {
+          type: "string",
+          description: "Name to replace [NAME] placeholder in template",
+        },
+        age: {
+          type: "string",
+          description: "Age to replace [AGE] placeholder (if template has it)",
+        },
+        date: {
+          type: "string",
+          description:
+            'Date to replace [DATE] placeholder, e.g., "Saturday, Dec 25"',
+        },
+        time: {
+          type: "string",
+          description: 'Time to replace [TIME] placeholder, e.g., "3:00 PM"',
+        },
+        location: {
+          type: "string",
+          description:
+            'Location to replace [LOCATION] placeholder, e.g., "Central Park"',
+        },
+      },
+      required: ["templateId"],
+    },
+  },
+};
+
+/**
  * Export all tools as an array for OpenAI
  */
+/**
+ * Tool 12: Enhance Birthday Text Artistic
+ * DALL-E 3 artistic enhancement for birthday text
+ */
+export const enhanceBirthdayTextTool: AITool = {
+  type: "function",
+  function: {
+    name: "enhanceBirthdayText",
+    description:
+      "PRIMARY TOOL for 3D birthday text and artistic birthday/party requests. Use DALL-E 3 to generate professional graphics with 3D text effects, cartoon styles, balloons, confetti, decorations, and fancy backgrounds. ALWAYS use THIS tool (NOT createText or generateBirthdayText) when user asks for: '3D text', '3D birthday', 'fancy text', 'artistic text', 'decorative text', 'balloons', 'confetti', or any artistic effects. For simple plain text without 3D/artistic effects, use generateBirthdayText instead. Takes ~20-30s to generate stunning, professional-quality images.",
+    parameters: {
+      type: "object",
+      properties: {
+        textContent: {
+          type: "string",
+          description:
+            'The birthday text to render in 3D/artistic style. IMPORTANT: Extract text from user\'s request - for example, if user says "create 3D happy birthday text", use textContent="HAPPY BIRTHDAY". If user says "make 3D text saying Happy Birthday Eva", use textContent="HAPPY BIRTHDAY EVA". If user doesn\'t specify text content AND there are text objects on canvas, combine them (e.g., "HAPPY" + "BIRTHDAY" + "EVA" = "HAPPY BIRTHDAY EVA"). If no text provided and no text on canvas, you must clarify what text to use.',
+        },
+        style: {
+          type: "string",
+          enum: ["3d_bubble", "cartoon_inflated"],
+          description:
+            'Enhancement style: "3d_bubble" (glossy, dimensional, professional, metallic - use for "3D" requests) for elegant look, "cartoon_inflated" (playful, balloon-like, hand-drawn) for fun, kids-friendly look. Default to "3d_bubble" when user says "3D".',
+        },
+        colors: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            'Array of color names or hex codes for the 3D text. Examples: ["pink", "purple", "blue"], ["#FF69B4", "#DA70D6"], ["gold", "silver"]. Extract from user request if specified. Defaults to vibrant pink/purple/blue gradient if not specified.',
+        },
+        addDecorations: {
+          type: "boolean",
+          description:
+            'Whether to add festive decorations (balloons, confetti, streamers) around the 3D text. Set to true when user requests "add decorations", "add balloons", "add confetti", "with decorations", etc. Default false.',
+        },
+      },
+      required: ["textContent", "style"],
+    },
+  },
+};
+
 export const allTools: AITool[] = [
-  createShapeTool,
+  // Birthday/Party tools (check these first for decorative requests)
+  enhanceBirthdayTextTool, // For artistic effects, decorations in birthday context
+  generateBirthdayTextTool,
+  loadBirthdayTemplateTool,
+
+  // Basic shape tools (for geometry and UI)
+  createShapeTool, // For explicit geometric shapes and UI elements
+  createBatchShapesTool,
+
+  // Other manipulation tools
   createTextTool,
-  createBatchShapesTool, // Add batch tool
   moveObjectTool,
   resizeObjectTool,
   rotateObjectTool,

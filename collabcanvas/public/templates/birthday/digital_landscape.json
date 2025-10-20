@@ -1,0 +1,65 @@
+{
+  "id": "digital_landscape",
+  "name": "Digital Landscape",
+  "displayName": "Digital Landscape Invite",
+  "category": "birthday",
+  "description": "Horizontal birthday invite for email/web display (16:9 ratio)",
+  "dimensions": {
+    "width": 1920,
+    "height": 1080,
+    "displayWidth": 1920,
+    "displayHeight": 1080
+  },
+  "canvasScale": {
+    "comment": "Scaled for 8000x8000 canvas",
+    "scaleX": 4.167,
+    "scaleY": 7.407
+  },
+  "format": "digital",
+  "elements": [
+    {
+      "type": "text",
+      "content": "HAPPY BIRTHDAY",
+      "x": 2000,
+      "y": 2800,
+      "fontSize": 420,
+      "fontFamily": "Fredoka One",
+      "color": "#FF69B4",
+      "align": "center",
+      "width": 4000
+    },
+    {
+      "type": "text",
+      "content": "[NAME]",
+      "x": 2000,
+      "y": 3500,
+      "fontSize": 360,
+      "fontFamily": "Baloo 2",
+      "color": "#DA70D6",
+      "align": "center",
+      "width": 4000
+    },
+    {
+      "type": "text",
+      "content": "Join us for a celebration!",
+      "x": 2000,
+      "y": 4300,
+      "fontSize": 200,
+      "fontFamily": "Pacifico",
+      "color": "#4A4A4A",
+      "align": "center",
+      "width": 4000
+    },
+    {
+      "type": "text",
+      "content": "[DATE] • [TIME] • [LOCATION]",
+      "x": 2000,
+      "y": 4700,
+      "fontSize": 180,
+      "fontFamily": "Arial",
+      "color": "#4A4A4A",
+      "align": "center",
+      "width": 4000
+    }
+  ]
+}

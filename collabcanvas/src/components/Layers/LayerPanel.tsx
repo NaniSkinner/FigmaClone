@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCanvasStore } from "@/store";
 import LayerItem from "./LayerItem";
 import { useLayerManagement } from "@/hooks/useLayerManagement";
-import { CanvasObject, ImageObject } from "@/types";
+import { CanvasObject, ImageObject, ImageFilter } from "@/types";
 import { GhibliTransformButton } from "@/components/UI/GhibliTransformButton";
 
 interface LayerPanelProps {
@@ -51,21 +51,50 @@ export default function LayerPanel({
         ) as ImageObject | undefined)
       : undefined;
 
+  // Get current blur value for selected image
+  const getBlurValue = (img: ImageObject) => {
+    const blurFilter = img.filters?.find((f) => f.type === "blur");
+    return blurFilter && blurFilter.type === "blur" ? blurFilter.radius : 0;
+  };
+
+  // Handle blur change
+  const handleBlurChange = (value: number) => {
+    if (!selectedImage) return;
+
+    const nonBlurFilters = (selectedImage.filters?.filter(
+      (f) => f.type !== "blur"
+    ) || []) as ImageFilter[];
+    const newFilters: ImageFilter[] = [...nonBlurFilters];
+
+    if (value > 0) {
+      newFilters.push({ type: "blur", radius: value });
+    }
+
+    updateObjectInFirestore(selectedImage.id, {
+      filters: newFilters.length > 0 ? newFilters : undefined,
+    });
+  };
+
+  // Handle opacity change
+  const handleOpacityChange = (value: number) => {
+    if (!selectedImage) return;
+    updateObjectInFirestore(selectedImage.id, { opacity: value });
+  };
+
   return (
     <div
       className={`
-        fixed right-4 bg-white rounded-lg
-        shadow-xl transition-all duration-300 z-40
+        fixed right-4 top-4 bg-white rounded-lg
+        shadow-xl transition-all duration-300 z-40 flex flex-col
         ${isCollapsed ? "w-12" : "w-64"}
       `}
       style={{
-        top: "140px",
-        height: "calc(100vh - 160px)",
-        maxHeight: "calc(100vh - 160px)",
+        height: "calc(100vh - 32px)",
+        maxHeight: "calc(100vh - 32px)",
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
         {!isCollapsed && (
           <h2 className="text-base font-bold text-gray-800">Layers</h2>
         )}
@@ -97,7 +126,7 @@ export default function LayerPanel({
 
       {/* Layer Actions (when expanded) */}
       {!isCollapsed && selectedObjectIds.size > 0 && (
-        <div className="flex gap-2 p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+        <div className="flex gap-2 p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white flex-shrink-0">
           <button
             onClick={bringToFront}
             className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
@@ -181,9 +210,73 @@ export default function LayerPanel({
         </div>
       )}
 
+      {/* Image Effects Section (when single image is selected) */}
+      {!isCollapsed && selectedImage && (
+        <div className="p-3 border-b border-gray-200 bg-blue-50 flex-shrink-0">
+          <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1">
+            <span>🎨</span>
+            <span>Image Effects</span>
+          </h3>
+
+          {/* Opacity (Fade) Control */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-gray-600">
+                Opacity
+              </label>
+              <span className="text-xs text-gray-500 font-mono">
+                {Math.round((selectedImage.opacity ?? 1) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={selectedImage.opacity ?? 1}
+              onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              style={{
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+                  (selectedImage.opacity ?? 1) * 100
+                }%, #e5e7eb ${
+                  (selectedImage.opacity ?? 1) * 100
+                }%, #e5e7eb 100%)`,
+              }}
+            />
+          </div>
+
+          {/* Blur Control */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-gray-600">Blur</label>
+              <span className="text-xs text-gray-500 font-mono">
+                {getBlurValue(selectedImage)}px
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="40"
+              step="1"
+              value={getBlurValue(selectedImage)}
+              onChange={(e) => handleBlurChange(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              style={{
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+                  (getBlurValue(selectedImage) / 40) * 100
+                }%, #e5e7eb ${
+                  (getBlurValue(selectedImage) / 40) * 100
+                }%, #e5e7eb 100%)`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* AI Features Section (when single image is selected) */}
       {!isCollapsed && selectedImage && (
-        <div className="p-3 border-b border-gray-200 bg-purple-50">
+        <div className="p-3 border-b border-gray-200 bg-purple-50 flex-shrink-0">
           <h3 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
             <span>✨</span>
             <span>AI Features</span>
@@ -194,10 +287,7 @@ export default function LayerPanel({
 
       {/* Layer List */}
       {!isCollapsed && (
-        <div
-          className="overflow-y-auto"
-          style={{ height: "calc(100% - 120px)" }}
-        >
+        <div className="flex-1 overflow-y-auto min-h-0">
           {sortedObjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm p-4">
               <svg
@@ -241,7 +331,7 @@ export default function LayerPanel({
 
       {/* Collapsed State - Mini Icons */}
       {isCollapsed && (
-        <div className="flex flex-col items-center gap-2 p-2">
+        <div className="flex flex-col items-center gap-2 p-2 flex-1">
           <div className="text-xs text-gray-500 transform -rotate-90 whitespace-nowrap origin-center mt-8">
             Layers ({sortedObjects.length})
           </div>

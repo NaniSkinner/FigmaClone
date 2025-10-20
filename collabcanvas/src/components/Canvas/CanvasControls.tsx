@@ -73,6 +73,11 @@ function CanvasControls({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Background color state
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const backgroundColor = useCanvasStore((state) => state.backgroundColor);
+  const setBackgroundColor = useCanvasStore((state) => state.setBackgroundColor);
+
   // Use proper Zustand selectors to avoid infinite loops
   const currentProject = useProjectStore((state) => state.currentProject);
   const projects = useProjectStore((state) => state.projects);
@@ -584,6 +589,95 @@ function CanvasControls({
             onChange={(e) => handleImageUpload(e.target.files)}
             style={{ display: "none" }}
           />
+
+          {/* Background Color Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
+                isHovered ? "px-3 py-2 text-sm" : "px-2 py-1 text-[10px]"
+              } bg-purple-500 hover:bg-purple-600 text-white cursor-pointer`}
+              title="Change Canvas Background Color"
+            >
+              <span
+                className={`transition-all duration-[400ms] ${
+                  isHovered ? "text-lg" : "text-base"
+                }`}
+              >
+                🎨
+              </span>
+              {isHovered && (
+                <span className="whitespace-nowrap">Canvas Color</span>
+              )}
+            </button>
+
+            {/* Color Picker Dropdown */}
+            {showColorPicker && (
+              <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50">
+                <div className="flex flex-col gap-2">
+                  <div className="text-xs font-semibold text-gray-700 mb-1">
+                    Canvas Background
+                  </div>
+                  
+                  {/* Color Input */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      className="w-12 h-12 rounded cursor-pointer border border-gray-300"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs text-gray-600 font-mono">
+                        {backgroundColor}
+                      </span>
+                      <button
+                        onClick={() => setBackgroundColor("#ffffff")}
+                        className="text-xs text-blue-500 hover:text-blue-700"
+                      >
+                        Reset to White
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preset Colors */}
+                  <div className="text-xs text-gray-600 mt-1">Quick Colors:</div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      "#ffffff", // White
+                      "#f3f4f6", // Light Gray
+                      "#fef3c7", // Light Yellow
+                      "#dbeafe", // Light Blue
+                      "#fce7f3", // Light Pink
+                      "#f3e8ff", // Light Purple
+                      "#d1fae5", // Light Green
+                      "#ffe4e6", // Light Rose
+                      "#fef2f2", // Light Red
+                      "#000000", // Black
+                    ].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          setBackgroundColor(color);
+                          setShowColorPicker(false);
+                        }}
+                        className="w-8 h-8 rounded border-2 border-gray-300 hover:border-blue-500 transition-all"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setShowColorPicker(false)}
+                    className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Divider */}

@@ -10,12 +10,26 @@ interface TextFormatToolbarProps {
 }
 
 const FONT_SIZES = [12, 14, 16, 18, 24, 32, 48, 72];
+
+// Font families organized by category (scaled for 8000x8000 canvas)
 const FONT_FAMILIES = [
-  "Arial",
-  "Georgia",
-  "Courier New",
-  "Comic Sans MS",
-  "Roboto",
+  // Party Fonts (Tier 1: Bubble/Rounded)
+  { value: "Fredoka One", label: "Fredoka One", category: "party" },
+  { value: "Baloo 2", label: "Baloo 2", category: "party" },
+  { value: "Rubik Bubbles", label: "Rubik Bubbles", category: "party" },
+  { value: "Carter One", label: "Carter One", category: "party" },
+  { value: "Lilita One", label: "Lilita One", category: "party" },
+  // Decorative Fonts (Tier 2)
+  { value: "Pacifico", label: "Pacifico", category: "decorative" },
+  { value: "Righteous", label: "Righteous", category: "decorative" },
+  { value: "Bungee", label: "Bungee", category: "decorative" },
+  { value: "Kavoon", label: "Kavoon", category: "decorative" },
+  // Standard Fonts
+  { value: "Arial", label: "Arial", category: "standard" },
+  { value: "Georgia", label: "Georgia", category: "standard" },
+  { value: "Courier New", label: "Courier New", category: "standard" },
+  { value: "Comic Sans MS", label: "Comic Sans MS", category: "standard" },
+  { value: "Roboto", label: "Roboto", category: "standard" },
 ];
 
 export default function TextFormatToolbar({
@@ -98,11 +112,31 @@ export default function TextFormatToolbar({
         className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
         title="Font Family"
       >
-        {FONT_FAMILIES.map((font) => (
-          <option key={font} value={font}>
-            {font}
-          </option>
-        ))}
+        <optgroup label="🎉 Party Fonts">
+          {FONT_FAMILIES.filter((f) => f.category === "party").map((font) => (
+            <option key={font.value} value={font.value}>
+              {font.label}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="✨ Decorative Fonts">
+          {FONT_FAMILIES.filter((f) => f.category === "decorative").map(
+            (font) => (
+              <option key={font.value} value={font.value}>
+                {font.label}
+              </option>
+            )
+          )}
+        </optgroup>
+        <optgroup label="📝 Standard Fonts">
+          {FONT_FAMILIES.filter((f) => f.category === "standard").map(
+            (font) => (
+              <option key={font.value} value={font.value}>
+                {font.label}
+              </option>
+            )
+          )}
+        </optgroup>
       </select>
 
       <div className="w-px h-6 bg-gray-300" />

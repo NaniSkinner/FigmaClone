@@ -96,6 +96,7 @@ export default function Canvas({
   const {
     objects,
     selectedObjectIds,
+    backgroundColor,
     clearSelection,
     updateObject,
     selectionBox,
@@ -1250,7 +1251,7 @@ export default function Canvas({
           {/* Grid */}
           {gridLines}
 
-          {/* Canvas boundary - White Drawing Area */}
+          {/* Canvas boundary - Drawing Area */}
           <Rect
             name="canvas-area"
             x={0}
@@ -1259,7 +1260,7 @@ export default function Canvas({
             height={canvasSize.height}
             stroke="#D0D0D0"
             strokeWidth={2}
-            fill="white"
+            fill={backgroundColor}
             listening={true}
           />
 

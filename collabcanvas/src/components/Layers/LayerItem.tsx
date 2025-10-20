@@ -107,6 +107,42 @@ export default function LayerItem({
             />
           </svg>
         );
+      case "image":
+        return (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="2"
+              y="2"
+              width="12"
+              height="12"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <circle
+              cx="5.5"
+              cy="5.5"
+              r="1.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <path
+              d="M2 11l3-3 2 2 4-4 3 3"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        );
       default:
         return null;
     }

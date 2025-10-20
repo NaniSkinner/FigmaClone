@@ -223,6 +223,7 @@ function Text({
         fontStyle={object.fontStyle || "normal"}
         fill={object.fill}
         width={object.width}
+        align={object.align || "left"}
         rotation={object.rotation || 0}
         stroke={effectiveStroke}
         strokeWidth={effectiveStrokeWidth}

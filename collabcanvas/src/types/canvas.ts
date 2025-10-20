@@ -76,7 +76,14 @@ export interface Text extends BaseCanvasObject {
   fontStyle?: "normal" | "bold" | "italic" | "bold italic";
   fill: string;
   width?: number; // auto-width initially
+  align?: "left" | "center" | "right"; // text alignment
   rotation?: number; // in degrees
+  // Birthday text metadata (AI-generated)
+  birthdayText?: boolean;
+  birthdayStyle?: string;
+  birthdayTemplate?: string;
+  aiGenerated?: boolean;
+  aiCost?: number;
 }
 
 // Image filter types
@@ -128,6 +135,11 @@ export interface ImageObject extends BaseCanvasObject {
   aiPromptUsed?: string;
   aiGeneratedAt?: Date;
   aiCost?: number; // USD cost of generation
+
+  // Birthday Enhancement Metadata (for DALL-E enhanced text)
+  birthdayEnhancement?: boolean;
+  enhancementStyle?: "3d_bubble" | "cartoon_inflated";
+  sourceText?: string; // The text that was enhanced
   aiDescription?: string; // GPT-4 Vision description
 }
 

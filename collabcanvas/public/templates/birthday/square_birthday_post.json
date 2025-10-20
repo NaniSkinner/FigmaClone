@@ -1,0 +1,87 @@
+{
+  "id": "square_birthday_post",
+  "name": "Square Post - Birthday",
+  "displayName": "Square Birthday Post",
+  "category": "birthday",
+  "description": "Square birthday post for Instagram/Facebook (1:1 ratio)",
+  "dimensions": {
+    "width": 1080,
+    "height": 1080,
+    "displayWidth": 1080,
+    "displayHeight": 1080
+  },
+  "canvasScale": {
+    "comment": "Scaled for 8000x8000 canvas",
+    "scaleX": 7.407,
+    "scaleY": 7.407
+  },
+  "format": "instagram_post",
+  "elements": [
+    {
+      "type": "text",
+      "content": "IT'S A",
+      "x": 2800,
+      "y": 2800,
+      "fontSize": 280,
+      "fontFamily": "Fredoka One",
+      "color": "#FF6B6B",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "BIRTHDAY",
+      "x": 2800,
+      "y": 3200,
+      "fontSize": 400,
+      "fontFamily": "Lilita One",
+      "color": "#FF69B4",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "PARTY!",
+      "x": 2800,
+      "y": 3750,
+      "fontSize": 360,
+      "fontFamily": "Fredoka One",
+      "color": "#DA70D6",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "[NAME]",
+      "x": 2800,
+      "y": 4400,
+      "fontSize": 280,
+      "fontFamily": "Baloo 2",
+      "color": "#9370DB",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "turning [AGE]",
+      "x": 2800,
+      "y": 4800,
+      "fontSize": 200,
+      "fontFamily": "Pacifico",
+      "color": "#6B8E4E",
+      "align": "center",
+      "width": 2400
+    },
+    {
+      "type": "text",
+      "content": "[DATE] at [TIME]",
+      "x": 2800,
+      "y": 5200,
+      "fontSize": 180,
+      "fontFamily": "Arial",
+      "color": "#4A4A4A",
+      "align": "center",
+      "width": 2400
+    }
+  ]
+}

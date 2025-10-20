@@ -57,3 +57,74 @@ export const PRESENCE_CLEANUP_INTERVAL = 15000; // 15 seconds - how often to che
 export const LOCK_SELECTION_TTL_SEC = 10; // Brief "highlight only" hold - expires if user goes idle
 export const LOCK_EDIT_TTL_SEC = 20; // Longer while actively editing (drag, resize, transform)
 export const LOCK_RENEW_INTERVAL_MS = 5000; // How often to renew lock while actively editing
+
+// Canvas dimension presets for birthday invites and templates
+export interface CanvasPreset {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  category: "social" | "print" | "digital";
+  description: string;
+  icon?: string;
+}
+
+export const CANVAS_PRESETS: CanvasPreset[] = [
+  // Social Media
+  {
+    id: "instagram_story",
+    name: "Instagram Story",
+    width: 1080,
+    height: 1920,
+    category: "social",
+    description: "9:16 ratio for Instagram Stories",
+    icon: "📱",
+  },
+  {
+    id: "instagram_post",
+    name: "Instagram Post",
+    width: 1080,
+    height: 1080,
+    category: "social",
+    description: "1:1 square for Instagram feed",
+    icon: "📸",
+  },
+  {
+    id: "facebook_post",
+    name: "Facebook Post",
+    width: 1200,
+    height: 630,
+    category: "social",
+    description: "1.91:1 ratio for Facebook",
+    icon: "👍",
+  },
+  // Print
+  {
+    id: "print_card_6x4",
+    name: 'Print Card 6"x4"',
+    width: 1800,
+    height: 1200,
+    category: "print",
+    description: "6x4 inches at 300 DPI",
+    icon: "🖨️",
+  },
+  {
+    id: "print_card_7x5",
+    name: 'Print Card 7"x5"',
+    width: 2100,
+    height: 1500,
+    category: "print",
+    description: "7x5 inches at 300 DPI",
+    icon: "🖨️",
+  },
+  // Digital
+  {
+    id: "digital_landscape",
+    name: "Digital Invite",
+    width: 1920,
+    height: 1080,
+    category: "digital",
+    description: "16:9 ratio for email/web",
+    icon: "💻",
+  },
+];

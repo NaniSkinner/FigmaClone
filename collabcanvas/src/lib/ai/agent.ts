@@ -25,6 +25,20 @@ import {
   generateButtonGroup,
   generateDashboard,
 } from "./layouts";
+import {
+  generateBirthdayText,
+  formatCost as formatTextCost,
+  formatDuration as formatTextDuration,
+} from "./birthdayTextGenerator";
+import {
+  loadTemplateAndCreateObjects,
+  TemplatePlaceholders,
+} from "../templates/templateLoader";
+import {
+  enhanceBirthdayText,
+  formatCost,
+  formatDuration,
+} from "./birthdayEnhancer";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -279,6 +293,12 @@ export class CanvasAIAgent {
         return this.executeCreateComplexLayout(args);
       case "getCanvasState":
         return this.executeGetCanvasState(args);
+      case "generateBirthdayText":
+        return await this.executeGenerateBirthdayText(args);
+      case "loadBirthdayTemplate":
+        return await this.executeLoadBirthdayTemplate(args);
+      case "enhanceBirthdayText":
+        return await this.executeEnhanceBirthdayText(args);
       default:
         return {
           type: "create",
@@ -1174,6 +1194,309 @@ export class CanvasAIAgent {
         type: "query",
         success: false,
         message: `Failed to get canvas state: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * Execute generateBirthdayText function
+   * Generates AI-powered birthday banner text with smart defaults
+   */
+  private async executeGenerateBirthdayText(args: {
+    userMessage: string;
+  }): Promise<AIAction> {
+    try {
+      const { userMessage } = args;
+
+      if (!userMessage || userMessage.trim().length === 0) {
+        return {
+          type: "create",
+          success: false,
+          message: "Birthday text request is empty",
+        };
+      }
+
+      // Call birthday text generator
+      const result = await generateBirthdayText({
+        userMessage,
+        userId: this.userId,
+        projectId: this.canvasId,
+        onProgress: (message) => {
+          console.log(`[Birthday Text] ${message}`);
+        },
+      });
+
+      // Handle clarification
+      if (result.action === "clarify") {
+        return {
+          type: "query",
+          success: true,
+          message: result.clarifyQuestion || "Need more information",
+        };
+      }
+
+      // Handle generation success
+      if (result.action === "generate" && result.textObjectIds) {
+        const costStr = result.cost ? formatCost(result.cost) : "";
+        const durationStr = result.duration
+          ? formatDuration(result.duration)
+          : "";
+
+        return {
+          type: "create",
+          success: true,
+          message: `✓ Birthday text created! ${
+            result.textObjectIds.length
+          } text elements added. ${
+            costStr && durationStr ? `(${costStr}, ${durationStr})` : ""
+          }`,
+          objectId: result.textObjectIds[0], // Return first object ID
+        };
+      }
+
+      // Unexpected result
+      return {
+        type: "create",
+        success: false,
+        message: result.error || "Failed to generate birthday text",
+      };
+    } catch (error) {
+      return {
+        type: "create",
+        success: false,
+        message: `Failed to generate birthday text: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * Execute loadBirthdayTemplate function
+   * Loads preset birthday templates with placeholder replacement
+   */
+  private async executeLoadBirthdayTemplate(args: {
+    templateId: string;
+    name?: string;
+    age?: string;
+    date?: string;
+    time?: string;
+    location?: string;
+  }): Promise<AIAction> {
+    try {
+      console.log(
+        "[AIAgent] executeLoadBirthdayTemplate called with args:",
+        args
+      );
+      const { templateId, name, age, date, time, location } = args;
+
+      if (!templateId) {
+        return {
+          type: "create",
+          success: false,
+          message: "Template ID is required",
+        };
+      }
+
+      // Build placeholders object
+      const placeholders: TemplatePlaceholders = {
+        name,
+        age,
+        date,
+        time,
+        location,
+      };
+
+      console.log("[AIAgent] Calling loadTemplateAndCreateObjects with:", {
+        templateId,
+        placeholders,
+      });
+
+      // Load template and create objects
+      const result = await loadTemplateAndCreateObjects({
+        templateId,
+        placeholders,
+        userId: this.userId,
+      });
+
+      console.log("[AIAgent] Template load result:", {
+        success: result.success,
+        objectCount: result.textObjects?.length,
+        error: result.error,
+      });
+
+      if (!result.success || !result.textObjects) {
+        return {
+          type: "create",
+          success: false,
+          message: result.error || "Failed to load template",
+        };
+      }
+
+      // Add text objects to canvas
+      const createdIds: string[] = [];
+      for (const textObj of result.textObjects) {
+        this.onCreateObject(textObj);
+        createdIds.push(textObj.id);
+
+        // Record for undo
+        if (this.onRecordCreate) {
+          this.onRecordCreate(
+            [textObj],
+            "ai",
+            this.currentOperationId || undefined
+          );
+        }
+      }
+
+      const templateName = result.template?.displayName || templateId;
+      const elementCount = result.textObjects.length;
+
+      return {
+        type: "create",
+        success: true,
+        message: `✓ Loaded "${templateName}" template with ${elementCount} text elements${
+          name ? ` for ${name}` : ""
+        }`,
+        objectId: createdIds[0], // Return first object ID
+      };
+    } catch (error) {
+      return {
+        type: "create",
+        success: false,
+        message: `Failed to load template: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * Execute enhanceBirthdayText function
+   * Generates DALL-E 3 artistic enhancement for birthday text
+   */
+  private async executeEnhanceBirthdayText(args: {
+    textContent?: string;
+    style: "3d_bubble" | "cartoon_inflated";
+    colors?: string[];
+    addDecorations?: boolean;
+  }): Promise<AIAction> {
+    try {
+      console.log(
+        "[AIAgent] executeEnhanceBirthdayText called with args:",
+        args
+      );
+      let {
+        textContent,
+        style = "3d_bubble",
+        colors = [],
+        addDecorations = false,
+      } = args;
+
+      // If no textContent provided, extract from canvas text objects
+      if (!textContent || textContent.trim().length === 0) {
+        const context = this.getCanvasContext();
+        const textObjects = context.objects.filter(
+          (obj: any) => obj.type === "text"
+        );
+
+        if (textObjects.length === 0) {
+          return {
+            type: "create",
+            success: false,
+            message:
+              "No text found on canvas to enhance. Please create birthday text first or specify text content.",
+          };
+        }
+
+        // Combine all text objects into one string
+        textContent = textObjects
+          .map((obj: any) => obj.text)
+          .join(" ")
+          .trim();
+
+        console.log("[AIAgent] Extracted text from canvas:", textContent);
+      }
+
+      if (!textContent || textContent.trim().length === 0) {
+        return {
+          type: "create",
+          success: false,
+          message: "Text content is required for enhancement",
+        };
+      }
+
+      if (!this.canvasId) {
+        return {
+          type: "create",
+          success: false,
+          message: "Project must be saved before generating enhancements",
+        };
+      }
+
+      // Call enhancement generator
+      console.log("[AIAgent] Calling enhanceBirthdayText...");
+      const result = await enhanceBirthdayText({
+        textContent,
+        style,
+        colors,
+        addDecorations,
+        userId: this.userId,
+        projectId: this.canvasId,
+        onProgress: (message) => {
+          console.log(`[Birthday Enhancement] ${message}`);
+        },
+      });
+
+      console.log("[AIAgent] Enhancement result:", {
+        success: result.success,
+        cost: result.cost,
+        duration: result.duration,
+        error: result.error,
+      });
+
+      if (!result.success || !result.imageObject) {
+        return {
+          type: "create",
+          success: false,
+          message: result.error || "Failed to generate enhancement",
+        };
+      }
+
+      // Add image to canvas
+      this.onCreateObject(result.imageObject);
+
+      // Record for undo
+      if (this.onRecordCreate) {
+        this.onRecordCreate(
+          [result.imageObject],
+          "ai",
+          this.currentOperationId || undefined
+        );
+      }
+
+      const costStr = result.cost ? formatCost(result.cost) : "";
+      const durationStr = result.duration
+        ? formatDuration(result.duration)
+        : "";
+      const styleName =
+        style === "3d_bubble" ? "3D Bubble" : "Cartoon Inflated";
+
+      return {
+        type: "create",
+        success: true,
+        message: `✓ ${styleName} enhancement created! ${
+          costStr && durationStr ? `(${costStr}, ${durationStr})` : ""
+        }`,
+        objectId: result.imageObject.id,
+      };
+    } catch (error) {
+      return {
+        type: "create",
+        success: false,
+        message: `Failed to generate enhancement: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
       };

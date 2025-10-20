@@ -201,3 +201,49 @@ export interface GhibliMetadata {
   aiCost: number;
   aiDescription?: string;
 }
+
+// Birthday Text Generation Types
+export interface BirthdayTextRequest {
+  userMessage: string;
+  canvasWidth?: number;
+  canvasHeight?: number;
+}
+
+export interface TextElementData {
+  content: string;
+  fontFamily: string;
+  fontSize: number;
+  color: string;
+  x: number;
+  y: number;
+  align?: "left" | "center" | "right";
+}
+
+export interface BirthdayTextResponse {
+  success: boolean;
+  action: "generate" | "clarify";
+  clarifyQuestion?: string;
+  textElements?: TextElementData[];
+  canvasDimensions?: {
+    width: number;
+    height: number;
+  };
+  cost?: number;
+  duration?: number;
+  error?: string;
+}
+
+export interface BirthdayEnhanceRequest {
+  textContent: string;
+  style: "3d_bubble" | "cartoon_inflated";
+  colors?: string[];
+  addDecorations?: boolean;
+}
+
+export interface BirthdayEnhanceResponse {
+  success: boolean;
+  imageDataUrl?: string;
+  cost?: number;
+  duration?: number;
+  error?: string;
+}
