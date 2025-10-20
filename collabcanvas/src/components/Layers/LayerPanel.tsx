@@ -126,212 +126,219 @@ export default function LayerPanel({
         </button>
       </div>
 
-      {/* Layer Actions (when expanded) */}
-      {!isCollapsed && selectedObjectIds.size > 0 && (
-        <div className="flex gap-2 p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white flex-shrink-0">
-          <button
-            onClick={bringToFront}
-            className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
-            title="Bring to Front (Cmd/Ctrl + Shift + ])"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="inline mr-1"
-            >
-              <rect
-                x="3"
-                y="3"
-                width="10"
-                height="10"
-                rx="1"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                fill="none"
-              />
-              <path
-                d="M8 10V6M6 8l2-2 2 2"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Front
-          </button>
-          <button
-            onClick={bringForward}
-            className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
-            title="Bring Forward (Cmd/Ctrl + ])"
-          >
-            ↑
-          </button>
-          <button
-            onClick={sendBackward}
-            className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
-            title="Send Backward (Cmd/Ctrl + [)"
-          >
-            ↓
-          </button>
-          <button
-            onClick={sendToBack}
-            className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
-            title="Send to Back (Cmd/Ctrl + Shift + [)"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="inline mr-1"
-            >
-              <rect
-                x="3"
-                y="3"
-                width="10"
-                height="10"
-                rx="1"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                fill="none"
-              />
-              <path
-                d="M8 6v4M6 8l2 2 2-2"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Back
-          </button>
-        </div>
-      )}
-
-      {/* Image Effects Section (when single image is selected) */}
-      {!isCollapsed && selectedImage && (
-        <div className="p-3 border-b border-gray-200 bg-blue-50 flex-shrink-0">
-          <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <span>🎨</span>
-            <span>Image Effects</span>
-          </h3>
-
-          {/* Opacity (Fade) Control */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-gray-600">
-                Opacity
-              </label>
-              <span className="text-xs text-gray-500 font-mono">
-                {Math.round((selectedImage.opacity ?? 1) * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={selectedImage.opacity ?? 1}
-              onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-              style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
-                  (selectedImage.opacity ?? 1) * 100
-                }%, #e5e7eb ${
-                  (selectedImage.opacity ?? 1) * 100
-                }%, #e5e7eb 100%)`,
-              }}
-            />
-          </div>
-
-          {/* Blur Control */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-gray-600">Blur</label>
-              <span className="text-xs text-gray-500 font-mono">
-                {getBlurValue(selectedImage)}px
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="40"
-              step="1"
-              value={getBlurValue(selectedImage)}
-              onChange={(e) => handleBlurChange(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-              style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
-                  (getBlurValue(selectedImage) / 40) * 100
-                }%, #e5e7eb ${
-                  (getBlurValue(selectedImage) / 40) * 100
-                }%, #e5e7eb 100%)`,
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* AI Features Section (when single image is selected) */}
-      {!isCollapsed && selectedImage && (
-        <div className="p-3 border-b border-gray-200 bg-purple-50 flex-shrink-0">
-          <h3 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-            <span>✨</span>
-            <span>AI Features</span>
-          </h3>
-          <GhibliTransformButton
-            imageId={selectedImage.id}
-            createObject={createObject}
-            updateObjectInFirestore={updateObjectInFirestore}
-          />
-        </div>
-      )}
-
-      {/* Layer List */}
+      {/* Scrollable Content Area */}
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto min-h-0">
-          {sortedObjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm p-4">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 48 48"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="mb-2 opacity-50"
+          {/* Layer Actions (when expanded) */}
+          {selectedObjectIds.size > 0 && (
+            <div className="flex gap-2 p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+              <button
+                onClick={bringToFront}
+                className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                title="Bring to Front (Cmd/Ctrl + Shift + ])"
               >
-                <rect
-                  x="12"
-                  y="12"
-                  width="24"
-                  height="24"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
                   fill="none"
-                />
-              </svg>
-              <p>No layers yet</p>
-              <p className="text-xs mt-1">Create shapes to see them here</p>
-            </div>
-          ) : (
-            <div>
-              {sortedObjects.map((obj) => (
-                <LayerItem
-                  key={obj.id}
-                  object={obj}
-                  isSelected={selectedObjectIds.has(obj.id)}
-                  onSelect={handleLayerSelect}
-                  onVisibilityToggle={handleVisibilityToggle}
-                  onLockToggle={handleLockToggle}
-                />
-              ))}
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="inline mr-1"
+                >
+                  <rect
+                    x="3"
+                    y="3"
+                    width="10"
+                    height="10"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M8 10V6M6 8l2-2 2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Front
+              </button>
+              <button
+                onClick={bringForward}
+                className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                title="Bring Forward (Cmd/Ctrl + ])"
+              >
+                ↑
+              </button>
+              <button
+                onClick={sendBackward}
+                className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                title="Send Backward (Cmd/Ctrl + [)"
+              >
+                ↓
+              </button>
+              <button
+                onClick={sendToBack}
+                className="flex-1 px-2 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                title="Send to Back (Cmd/Ctrl + Shift + [)"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="inline mr-1"
+                >
+                  <rect
+                    x="3"
+                    y="3"
+                    width="10"
+                    height="10"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M8 6v4M6 8l2 2 2-2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Back
+              </button>
             </div>
           )}
+
+          {/* Image Effects Section (when single image is selected) */}
+          {selectedImage && (
+            <div className="p-3 border-b border-gray-200 bg-blue-50">
+              <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1">
+                <span>🎨</span>
+                <span>Image Effects</span>
+              </h3>
+
+              {/* Opacity (Fade) Control */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-gray-600">
+                    Opacity
+                  </label>
+                  <span className="text-xs text-gray-500 font-mono">
+                    {Math.round((selectedImage.opacity ?? 1) * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={selectedImage.opacity ?? 1}
+                  onChange={(e) =>
+                    handleOpacityChange(parseFloat(e.target.value))
+                  }
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+                      (selectedImage.opacity ?? 1) * 100
+                    }%, #e5e7eb ${
+                      (selectedImage.opacity ?? 1) * 100
+                    }%, #e5e7eb 100%)`,
+                  }}
+                />
+              </div>
+
+              {/* Blur Control */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-gray-600">
+                    Blur
+                  </label>
+                  <span className="text-xs text-gray-500 font-mono">
+                    {getBlurValue(selectedImage)}px
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="1"
+                  value={getBlurValue(selectedImage)}
+                  onChange={(e) => handleBlurChange(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+                      (getBlurValue(selectedImage) / 40) * 100
+                    }%, #e5e7eb ${
+                      (getBlurValue(selectedImage) / 40) * 100
+                    }%, #e5e7eb 100%)`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* AI Features Section (when single image is selected) */}
+          {selectedImage && (
+            <div className="p-3 border-b border-gray-200 bg-purple-50">
+              <h3 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                <span>✨</span>
+                <span>AI Features</span>
+              </h3>
+              <GhibliTransformButton
+                imageId={selectedImage.id}
+                createObject={createObject}
+                updateObjectInFirestore={updateObjectInFirestore}
+              />
+            </div>
+          )}
+
+          {/* Layer List */}
+          <div>
+            {sortedObjects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm p-4">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="mb-2 opacity-50"
+                >
+                  <rect
+                    x="12"
+                    y="12"
+                    width="24"
+                    height="24"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                  />
+                </svg>
+                <p>No layers yet</p>
+                <p className="text-xs mt-1">Create shapes to see them here</p>
+              </div>
+            ) : (
+              <div>
+                {sortedObjects.map((obj) => (
+                  <LayerItem
+                    key={obj.id}
+                    object={obj}
+                    isSelected={selectedObjectIds.has(obj.id)}
+                    onSelect={handleLayerSelect}
+                    onVisibilityToggle={handleVisibilityToggle}
+                    onLockToggle={handleLockToggle}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
