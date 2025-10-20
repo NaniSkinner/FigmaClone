@@ -76,7 +76,9 @@ function CanvasControls({
   // Background color state
   const [showColorPicker, setShowColorPicker] = useState(false);
   const backgroundColor = useCanvasStore((state) => state.backgroundColor);
-  const setBackgroundColor = useCanvasStore((state) => state.setBackgroundColor);
+  const setBackgroundColor = useCanvasStore(
+    (state) => state.setBackgroundColor
+  );
 
   // Use proper Zustand selectors to avoid infinite loops
   const currentProject = useProjectStore((state) => state.currentProject);
@@ -335,7 +337,7 @@ function CanvasControls({
         <button
           onClick={onZoomOut}
           className={`rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-[400ms] flex items-center justify-center font-bold text-gray-700 ${
-            isHovered ? "w-9 h-9 text-lg" : "w-7 h-7 text-sm"
+            isHovered ? "w-7 h-7 text-sm" : "w-7 h-7 text-sm"
           }`}
           title="Zoom Out"
         >
@@ -357,7 +359,7 @@ function CanvasControls({
         <button
           onClick={onZoomIn}
           className={`rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-[400ms] flex items-center justify-center font-bold text-gray-700 ${
-            isHovered ? "w-9 h-9 text-lg" : "w-7 h-7 text-sm"
+            isHovered ? "w-7 h-7 text-sm" : "w-7 h-7 text-sm"
           }`}
           title="Zoom In"
         >
@@ -368,7 +370,7 @@ function CanvasControls({
       {/* Divider */}
       <div
         className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
-          isHovered ? "h-7" : "h-5"
+          isHovered ? "h-5" : "h-5"
         }`}
       ></div>
 
@@ -380,7 +382,7 @@ function CanvasControls({
               onClick={onUndo}
               disabled={!canUndo}
               className={`rounded-lg transition-all duration-[400ms] flex items-center justify-center ${
-                isHovered ? "w-9 h-9 text-lg" : "w-7 h-7 text-sm"
+                isHovered ? "w-7 h-7 text-sm" : "w-7 h-7 text-sm"
               } ${
                 canUndo
                   ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
@@ -395,7 +397,7 @@ function CanvasControls({
               onClick={onRedo}
               disabled={!canRedo}
               className={`rounded-lg transition-all duration-[400ms] flex items-center justify-center ${
-                isHovered ? "w-9 h-9 text-lg" : "w-7 h-7 text-sm"
+                isHovered ? "w-7 h-7 text-sm" : "w-7 h-7 text-sm"
               } ${
                 canRedo
                   ? "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
@@ -410,7 +412,7 @@ function CanvasControls({
           {/* Divider */}
           <div
             className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
-              isHovered ? "h-7" : "h-5"
+              isHovered ? "h-5" : "h-5"
             }`}
           ></div>
         </>
@@ -431,7 +433,7 @@ function CanvasControls({
             }}
             disabled={!canvasIsDirty && !!currentProject}
             className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
-              isHovered ? "px-3 py-2 text-sm" : "px-2 py-1 text-[10px]"
+              isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
             } ${
               !canvasIsDirty && currentProject
                 ? "bg-gray-50 text-gray-300 cursor-not-allowed"
@@ -445,7 +447,7 @@ function CanvasControls({
           >
             <span
               className={`transition-all duration-[400ms] ${
-                isHovered ? "text-lg" : "text-base"
+                isHovered ? "text-base" : "text-sm"
               }`}
             >
               💾
@@ -465,15 +467,13 @@ function CanvasControls({
           <button
             onClick={() => setShowProjectsPanel(!showProjectsPanel)}
             className={`rounded-lg bg-purple-500 hover:bg-purple-600 text-white transition-all duration-[400ms] flex items-center gap-1 relative ${
-              isHovered
-                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
-                : "px-2 py-1 text-[10px]"
+              isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
             }`}
             title="View all projects (Ctrl+P)"
           >
             <span
               className={`transition-all duration-[400ms] ${
-                isHovered ? "text-lg" : "text-base"
+                isHovered ? "text-base" : "text-sm"
               }`}
             >
               📁
@@ -498,15 +498,13 @@ function CanvasControls({
           <button
             onClick={createNewCanvas}
             className={`rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all duration-[400ms] flex items-center gap-1 ${
-              isHovered
-                ? "px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm"
-                : "px-2 py-1 text-[10px]"
+              isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
             }`}
             title="Start a new blank canvas"
           >
             <span
               className={`transition-all duration-[400ms] ${
-                isHovered ? "text-lg" : "text-base"
+                isHovered ? "text-base" : "text-sm"
               }`}
             >
               🆕
@@ -523,7 +521,7 @@ function CanvasControls({
             onClick={handleExportPNG}
             disabled={isExporting || objects.length === 0}
             className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
-              isHovered ? "px-3 py-2 text-sm" : "px-2 py-1 text-[10px]"
+              isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
             } ${
               isExporting || objects.length === 0
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
@@ -537,7 +535,7 @@ function CanvasControls({
           >
             <span
               className={`transition-all duration-[400ms] ${
-                isHovered ? "text-lg" : "text-base"
+                isHovered ? "text-base" : "text-sm"
               }`}
             >
               {isExporting ? "⏳" : "📥"}
@@ -554,7 +552,7 @@ function CanvasControls({
             onClick={handleUploadButtonClick}
             disabled={isUploading}
             className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
-              isHovered ? "px-3 py-2 text-sm" : "px-2 py-1 text-[10px]"
+              isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
             } ${
               isUploading
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
@@ -568,7 +566,7 @@ function CanvasControls({
           >
             <span
               className={`transition-all duration-[400ms] ${
-                isHovered ? "text-lg" : "text-base"
+                isHovered ? "text-base" : "text-sm"
               }`}
             >
               {isUploading ? "⏳" : "🖼️"}
@@ -595,13 +593,13 @@ function CanvasControls({
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
               className={`rounded-lg transition-all duration-[400ms] flex items-center gap-1 ${
-                isHovered ? "px-3 py-2 text-sm" : "px-2 py-1 text-[10px]"
+                isHovered ? "px-2 py-1 text-[11px]" : "px-2 py-1 text-[10px]"
               } bg-purple-500 hover:bg-purple-600 text-white cursor-pointer`}
               title="Change Canvas Background Color"
             >
               <span
                 className={`transition-all duration-[400ms] ${
-                  isHovered ? "text-lg" : "text-base"
+                  isHovered ? "text-base" : "text-sm"
                 }`}
               >
                 🎨
@@ -618,7 +616,7 @@ function CanvasControls({
                   <div className="text-xs font-semibold text-gray-700 mb-1">
                     Canvas Background
                   </div>
-                  
+
                   {/* Color Input */}
                   <div className="flex items-center gap-2">
                     <input
@@ -641,7 +639,9 @@ function CanvasControls({
                   </div>
 
                   {/* Preset Colors */}
-                  <div className="text-xs text-gray-600 mt-1">Quick Colors:</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Quick Colors:
+                  </div>
                   <div className="grid grid-cols-5 gap-1.5">
                     {[
                       "#ffffff", // White
@@ -683,7 +683,7 @@ function CanvasControls({
         {/* Divider */}
         <div
           className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
-            isHovered ? "h-7 sm:h-8 md:h-9" : "h-6"
+            isHovered ? "h-5" : "h-5"
           }`}
         ></div>
       </>
@@ -698,7 +698,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             ↖️
@@ -717,7 +717,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             🤚
@@ -729,7 +729,7 @@ function CanvasControls({
       {/* Divider */}
       <div
         className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
-          isHovered ? "h-7" : "h-5"
+          isHovered ? "h-5" : "h-5"
         }`}
       ></div>
 
@@ -743,7 +743,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             ▭
@@ -762,7 +762,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             ⭕
@@ -781,7 +781,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             📏
@@ -796,7 +796,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             T
@@ -808,7 +808,7 @@ function CanvasControls({
       {/* Divider */}
       <div
         className={`w-px bg-gray-300 flex-shrink-0 transition-all duration-[400ms] ${
-          isHovered ? "h-7" : "h-5"
+          isHovered ? "h-5" : "h-5"
         }`}
       ></div>
 
@@ -821,7 +821,7 @@ function CanvasControls({
         >
           <span
             className={`transition-all duration-[400ms] ${
-              isHovered ? "text-lg" : "text-base"
+              isHovered ? "text-base" : "text-sm"
             }`}
           >
             🗑️

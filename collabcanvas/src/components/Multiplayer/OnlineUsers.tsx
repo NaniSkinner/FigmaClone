@@ -15,9 +15,9 @@ function OnlineUsers({ onlineUsers, currentUserName }: OnlineUsersProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Set initial position on client side only
+  // Set initial position on client side only - positioned on left side under logout/projects
   useEffect(() => {
-    setPosition({ x: window.innerWidth - 220, y: 16 });
+    setPosition({ x: 20, y: 120 });
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
