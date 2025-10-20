@@ -1388,12 +1388,8 @@ export class CanvasAIAgent {
         "[AIAgent] executeEnhanceBirthdayText called with args:",
         args
       );
-      let {
-        textContent,
-        style = "3d_bubble",
-        colors = [],
-        addDecorations = false,
-      } = args;
+      let { textContent } = args;
+      const { style = "3d_bubble", colors = [], addDecorations = false } = args;
 
       // If no textContent provided, extract from canvas text objects
       if (!textContent || textContent.trim().length === 0) {

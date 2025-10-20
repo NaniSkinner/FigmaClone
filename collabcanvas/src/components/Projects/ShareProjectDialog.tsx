@@ -201,7 +201,7 @@ export default function ShareProjectDialog({
           </p>
           <p className="text-xs text-gray-500">
             Share this project with other users by entering their email address.
-            They'll be able to view and edit this project.
+            They&apos;ll be able to view and edit this project.
           </p>
         </div>
 
