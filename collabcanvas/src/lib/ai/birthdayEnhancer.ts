@@ -108,10 +108,10 @@ export async function enhanceBirthdayText(
     // Step 3: Upload to Firebase Storage
     onProgress?.("☁️ Uploading to cloud storage...");
 
-    const firebaseUrl = await uploadAIGeneratedImage(
+    const { url: firebaseUrl, thumbnailBase64 } = await uploadAIGeneratedImage(
       data.imageDataUrl,
-      projectId,
-      userId
+      userId,
+      projectId
     );
 
     console.log("[BirthdayEnhancer] Image uploaded to Firebase:", firebaseUrl);
@@ -125,6 +125,7 @@ export async function enhanceBirthdayText(
       width: 4000, // Scale from 1024x1024 to fit canvas better
       height: 4000,
       src: firebaseUrl,
+      thumbnailSrc: thumbnailBase64,
       naturalWidth: 1024,
       naturalHeight: 1024,
       subType: "ai-generated",
