@@ -11,12 +11,14 @@ interface LayerPanelProps {
   canvasId: string;
   userId: string | null;
   updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void;
+  createObject: (object: CanvasObject) => Promise<void>;
 }
 
 export default function LayerPanel({
   canvasId,
   userId,
   updateObjectInFirestore,
+  createObject,
 }: LayerPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { objects, selectedObjectIds, addToSelection, clearSelection } =
@@ -281,7 +283,11 @@ export default function LayerPanel({
             <span>✨</span>
             <span>AI Features</span>
           </h3>
-          <GhibliTransformButton imageId={selectedImage.id} />
+          <GhibliTransformButton
+            imageId={selectedImage.id}
+            createObject={createObject}
+            updateObjectInFirestore={updateObjectInFirestore}
+          />
         </div>
       )}
 

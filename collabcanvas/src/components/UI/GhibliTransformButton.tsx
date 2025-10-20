@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { GhibliStyle } from "@/types/ai";
+import { CanvasObject } from "@/types/canvas";
 import {
   generateGhibliVariant,
   getStyleDisplayName,
@@ -13,10 +14,14 @@ import { useCanvasStore } from "@/store/canvasStore";
 
 interface GhibliTransformButtonProps {
   imageId: string;
+  createObject: (object: CanvasObject) => Promise<void>;
+  updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void;
 }
 
 export const GhibliTransformButton: React.FC<GhibliTransformButtonProps> = ({
   imageId,
+  createObject,
+  updateObjectInFirestore,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showStylePicker, setShowStylePicker] = useState(false);
@@ -55,6 +60,8 @@ export const GhibliTransformButton: React.FC<GhibliTransformButtonProps> = ({
         keepOriginal,
         userId: currentUser.id,
         projectId: currentProjectId,
+        createObject,
+        updateObjectInFirestore,
         onProgress: (stage) => {
           currentStage = stage;
           // Update progress in console (toast updates are tricky with auto-dismiss)

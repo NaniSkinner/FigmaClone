@@ -470,6 +470,7 @@ function HomePage() {
           canvasId={canvasId}
           userId={user?.id || null}
           updateObjectInFirestore={updateObjectInFirestore}
+          createObject={createObject}
         />
 
         {/* Decorative Items Panel */}

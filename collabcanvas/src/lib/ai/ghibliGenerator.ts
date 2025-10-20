@@ -6,7 +6,7 @@
  */
 
 import { GhibliStyle, GhibliGenerationResponse } from "@/types/ai";
-import { ImageObject } from "@/types/canvas";
+import { ImageObject, CanvasObject } from "@/types/canvas";
 import { useCanvasStore } from "@/store/canvasStore";
 import { uploadAIGeneratedImage } from "@/lib/firebase/storage";
 
@@ -16,6 +16,8 @@ export interface GenerateGhibliOptions {
   keepOriginal: boolean;
   userId: string;
   projectId: string;
+  createObject: (object: CanvasObject) => Promise<void>;
+  updateObjectInFirestore: (id: string, updates: Partial<CanvasObject>) => void;
   onProgress?: (stage: string) => void;
 }
 
@@ -33,8 +35,16 @@ export interface GenerateGhibliResult {
 export async function generateGhibliVariant(
   options: GenerateGhibliOptions
 ): Promise<GenerateGhibliResult> {
-  const { imageId, style, keepOriginal, userId, projectId, onProgress } =
-    options;
+  const {
+    imageId,
+    style,
+    keepOriginal,
+    userId,
+    projectId,
+    createObject,
+    updateObjectInFirestore,
+    onProgress,
+  } = options;
 
   try {
     // Get the canvas store
@@ -129,7 +139,11 @@ export async function generateGhibliVariant(
         aiDescription: data.description,
       };
 
+      // Add to local store
       canvasStore.addObject(newImage);
+
+      // CRITICAL FIX: Sync to Firestore for persistence and multi-user collaboration
+      await createObject(newImage);
 
       return {
         success: true,
@@ -139,7 +153,7 @@ export async function generateGhibliVariant(
       };
     } else {
       // Replace original image
-      canvasStore.updateObject(imageId, {
+      const updates: Partial<ImageObject> = {
         src: firebaseUrl,
         thumbnailSrc: thumbnailBase64,
         width: 1024,
@@ -151,7 +165,13 @@ export async function generateGhibliVariant(
         aiGeneratedAt: new Date(),
         aiCost: data.cost,
         aiDescription: data.description,
-      } as Partial<ImageObject>);
+      };
+
+      // Update local store
+      canvasStore.updateObject(imageId, updates);
+
+      // CRITICAL FIX: Sync to Firestore for persistence and multi-user collaboration
+      updateObjectInFirestore(imageId, updates);
 
       return {
         success: true,
