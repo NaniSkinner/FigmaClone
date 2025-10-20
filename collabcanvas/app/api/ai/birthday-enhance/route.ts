@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     // DALL-E 3 HD 1024x1024 costs $0.080 per image
     cost = 0.08;
 
-    const imageUrl = dalleResponse.data[0]?.url;
+    const imageUrl = dalleResponse.data?.[0]?.url;
     if (!imageUrl) {
       throw new Error("No image URL in DALL-E response");
     }
